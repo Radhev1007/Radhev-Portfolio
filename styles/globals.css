@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+/* ── Roc Grotesk ───────────────────────────────────────────────
+   Commercial typeface (Kostic Type). Provide it in ONE of two ways:
+   1. Adobe Fonts: set NEXT_PUBLIC_ADOBE_FONTS_KIT to your kit ID
+      (family "roc-grotesk" is picked up by the stack below).
+   2. Self-host: put licensed files in public/fonts/roc-grotesk/
+      named RocGrotesk-{Light,Regular,Medium,Bold}.woff2.
+   Until then, Inter Tight is used as the fallback. */
+@font-face {
+  font-family: "Roc Grotesk";
+  src:
+    local("Roc Grotesk Light"),
+    local("RocGrotesk-Light"),
+    url("/fonts/roc-grotesk/RocGrotesk-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roc Grotesk";
+  src:
+    local("Roc Grotesk Regular"),
+    local("RocGrotesk-Regular"),
+    url("/fonts/roc-grotesk/RocGrotesk-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roc Grotesk";
+  src:
+    local("Roc Grotesk Medium"),
+    local("RocGrotesk-Medium"),
+    url("/fonts/roc-grotesk/RocGrotesk-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roc Grotesk";
+  src:
+    local("Roc Grotesk Bold"),
+    local("RocGrotesk-Bold"),
+    url("/fonts/roc-grotesk/RocGrotesk-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Design tokens ───────────────────────────────────────────── */
+@theme {
+  --color-ink: #000000;
+  --color-ink-2: #050505;
+  --color-ink-3: #121212;
+  --color-bone: #f5f2ea;
+  --color-mute: #9a9a9a;
+  --color-faint: #4a4a4a;
+  --color-line: rgb(245 242 234 / 0.1);
+  --color-accent: #5ce1ff;
+  /* Accent used on the inverse surface (bg-bone), e.g. the active process card. */
+  --color-accent-inverse: #0b7c99;
+  --color-cool: #b9c4ff;
+
+  /* One family site-wide: Roc Grotesk. */
+  --font-sans: "Roc Grotesk", "roc-grotesk", var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-sans);
+  --font-mono: var(--font-sans);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  --text-display: clamp(3.5rem, 13vw, 14rem);
+  --text-headline: clamp(2.5rem, 7vw, 7.5rem);
+  --text-title: clamp(1.75rem, 3.6vw, 3.5rem);
+}
+
+:root {
+  --gutter: clamp(1rem, 4vw, 3.5rem);
+  color-scheme: dark;
+
+  /* Flat illustration palette (dark theme) */
+  --ill-ink: #000000;
+  --ill-surface: #0e0e0e;
+  --ill-surface2: #171717;
+  --ill-surface3: #222222;
+  --ill-paper: #f5f2ea;
+  --ill-grey: #9a9a9a;
+  --ill-line: rgb(245 242 234 / 0.14);
+  --ill-faint: rgb(245 242 234 / 0.28);
+  --ill-cyan: #5ce1ff;
+  --ill-cyan-soft: rgb(92 225 255 / 0.1);
+}
+
+/* ── Light theme ─────────────────────────────────────────────────
+   Same tokens, inverted. "ink" is always the page surface and "bone"
+   the foreground, so every bg-ink / text-bone pairing flips cleanly. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-ink: #f5f2ea;
+  --color-ink-2: #efebe2;
+  --color-ink-3: #e5e0d5;
+  --color-bone: #0a0a0a;
+  --color-mute: #595959;
+  --color-faint: #a3a3a3;
+  --color-line: rgb(10 10 10 / 0.12);
+  --color-accent: #0b7c99;
+  --color-accent-inverse: #5ce1ff;
+
+  --ill-ink: #f5f2ea;
+  --ill-surface: #ffffff;
+  --ill-surface2: #ece8df;
+  --ill-surface3: #dcd7cc;
+  --ill-paper: #0a0a0a;
+  --ill-grey: #707070;
+  --ill-line: rgb(10 10 10 / 0.14);
+  --ill-faint: rgb(10 10 10 / 0.3);
+  --ill-cyan: #0b7c99;
+  --ill-cyan-soft: rgb(11 124 153 / 0.08);
+}
+
+/* Smooth cross-fade while switching themes (class added briefly by the toggle). */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease,
+    fill 0.45s ease,
+    stroke 0.45s ease !important;
+}
+
+/* ── Base ────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    background: var(--color-ink);
+    color: var(--color-bone);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+  body {
+    background: var(--color-ink);
+    font-family: var(--font-sans);
+    overflow-x: clip;
+  }
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+    border-radius: 6px;
+  }
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/* Hide the native cursor only when the custom cursor is active */
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none !important;
+}
+
+/* ── Utilities ───────────────────────────────────────────────── */
+@utility gutter {
+  padding-inline: var(--gutter);
+}
+
+@utility label {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+
+@utility glass {
+  background: rgb(20 20 24 / 0.55);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgb(236 232 225 / 0.08);
+}
+
+@utility text-outline {
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--color-bone) 35%, transparent);
+  color: transparent;
+}
+
+/* Contrasting voice within the same family (replaces the former serif italic). */
+@utility font-accent {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
