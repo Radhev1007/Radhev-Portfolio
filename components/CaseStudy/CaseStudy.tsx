@@ -119,7 +119,7 @@ function CaseIndex({ sections }: { sections: CaseSection[] }) {
                   scrollTo(s.id);
                 }}
                 aria-current={on ? "true" : undefined}
-                className={`flex items-center gap-3 py-1 text-sm transition-colors duration-500 ${on ? "text-bone" : "text-bone/35 hover:text-bone/70"}`}
+                className={`flex items-center gap-3 py-1 text-sm transition-colors duration-500 ${on ? "text-bone" : "text-mute hover:text-bone"}`}
               >
                 <span className={`h-px transition-all duration-500 ${on ? "w-8 bg-accent" : "w-3 bg-bone/25"}`} />
                 <span className="font-mono text-[11px]">{String(i + 1).padStart(2, "0")}</span>

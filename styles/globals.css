@@ -194,16 +194,14 @@ html.has-custom-cursor * {
   color: var(--color-mute);
 }
 
+/* Frosted chip for use ON media (project covers are always dark), so it is
+   theme-independent: dark glass + fixed off-white text. */
 @utility glass {
-  background: rgb(20 20 24 / 0.55);
+  background: rgb(0 0 0 / 0.6);
+  color: #f5f2ea;
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid rgb(236 232 225 / 0.08);
-}
-
-@utility text-outline {
-  -webkit-text-stroke: 1px color-mix(in srgb, var(--color-bone) 35%, transparent);
-  color: transparent;
 }
 
 /* Contrasting voice within the same family (replaces the former serif italic). */

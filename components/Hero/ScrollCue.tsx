@@ -15,7 +15,7 @@ export function ScrollCue() {
       animate={{ opacity: 1 }}
       transition={{ delay: intro.nav + 0.2, duration: 1.4 }}
     >
-      <span className="label !text-[10px] !text-bone/50">Scroll</span>
+      <span className="label !text-[10px] !text-mute">Scroll</span>
       <span className="relative block h-12 w-px overflow-hidden bg-bone/15">
         {!reduced && (
           <motion.span

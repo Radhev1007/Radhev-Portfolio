@@ -54,7 +54,7 @@ export function DesignSystem() {
                     onClick={() => setStep(i)}
                     aria-pressed={i === step}
                     className="text-left text-2xl font-medium tracking-[-0.03em] md:text-3xl"
-                    animate={{ opacity: i === step ? 1 : 0.28, x: i === step ? 0 : -6 }}
+                    animate={{ opacity: i === step ? 1 : 0.5, x: i === step ? 0 : -6 }}
                     transition={{ duration: 0.6, ease: ease.outExpo }}
                   >
                     {l.k}

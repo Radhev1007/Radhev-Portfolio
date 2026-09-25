@@ -114,7 +114,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
               {[project.palette.from, accent, project.palette.ink, "#000000"].map((c) => (
                 <div key={c}>
                   <div className="aspect-square rounded-xl border border-line" style={{ background: c }} />
-                  <p className="mt-2 font-mono text-[10px] uppercase text-bone/50">{c}</p>
+                  <p className="mt-2 font-mono text-[10px] uppercase text-mute">{c}</p>
                 </div>
               ))}
             </div>
@@ -124,7 +124,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
             {[48, 32, 20, 15].map((s) => (
               <p key={s} className="flex items-baseline justify-between border-b border-line py-2 last:border-0" style={{ fontSize: s * 0.8 }}>
                 <span className="tracking-[-0.03em]">Aa Display</span>
-                <span className="font-mono text-[10px] text-bone/40">{s}px</span>
+                <span className="font-mono text-[10px] text-mute">{s}px</span>
               </p>
             ))}
           </div>
@@ -132,11 +132,11 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
             <p className="label w-full">Components</p>
             <span className="rounded-full px-6 py-3 text-sm text-ink" style={{ background: accent }}>Primary</span>
             <span className="rounded-full border border-bone/30 px-6 py-3 text-sm">Secondary</span>
-            <span className="rounded-full bg-ink-3 px-6 py-3 text-sm text-bone/50">Disabled</span>
+            <span className="rounded-full bg-ink-3 px-6 py-3 text-sm text-mute">Disabled</span>
             <span className="relative h-8 w-14 rounded-full" style={{ background: accent }}>
               <span className="absolute right-1 top-1 size-6 rounded-full bg-white" />
             </span>
-            <span className="flex h-12 min-w-56 items-center rounded-xl border border-line px-4 text-sm text-bone/40">Input field</span>
+            <span className="flex h-12 min-w-56 items-center rounded-xl border border-line px-4 text-sm text-mute">Input field</span>
           </div>
         </div>
       );
@@ -169,7 +169,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {["[Verified result]", "[Verified result]", "[Qualitative feedback]"].map((t, i) => (
             <div key={i} className={`${frame} p-7`}>
-              <p className="text-6xl font-medium tracking-[-0.05em] text-bone/25">—</p>
+              <p className="text-6xl font-medium tracking-[-0.05em] text-mute">—</p>
               <p className="mt-6 text-bone/70">{t}</p>
             </div>
           ))}

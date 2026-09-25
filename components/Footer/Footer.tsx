@@ -88,7 +88,7 @@ export function Footer() {
 
       {/* Interactive signature — each letter rises on hover */}
       <div className="gutter mx-auto max-w-[1600px]">
-        <p aria-hidden className="flex select-none justify-between text-[clamp(4rem,19vw,20rem)] font-medium leading-[0.75] tracking-[-0.06em] text-bone/[0.07]">
+        <p aria-hidden className="flex select-none justify-between text-[clamp(4rem,19vw,20rem)] font-medium leading-[0.75] tracking-[-0.06em] text-bone/[0.12]">
           {`${site.name.first} ${site.name.last}`.split("").map((c, i) => (
             <span
               key={i}
@@ -100,7 +100,7 @@ export function Footer() {
         </p>
       </div>
 
-      <div className="gutter mx-auto flex max-w-[1600px] flex-col gap-2 border-t border-line py-6 text-xs text-bone/40 md:flex-row md:justify-between">
+      <div className="gutter mx-auto flex max-w-[1600px] flex-col gap-2 border-t border-line py-6 text-xs text-mute md:flex-row md:justify-between">
         <p>
           © {year} — All rights reserved.
         </p>

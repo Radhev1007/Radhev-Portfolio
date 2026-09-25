@@ -20,7 +20,7 @@ export function SocialLinks() {
             href={s.href}
             target="_blank"
             rel="noreferrer"
-            className="group label inline-flex items-center gap-1.5 !text-bone/50 transition-colors duration-300 hover:!text-bone"
+            className="group label inline-flex items-center gap-1.5 !text-mute transition-colors duration-300 hover:!text-bone"
           >
             {s.label}
             <span aria-hidden className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent">

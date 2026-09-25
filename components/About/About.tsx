@@ -11,8 +11,8 @@ import { LayerStack } from "./LayerStack";
 
 const headlineStyles = [
   "font-medium",
-  "font-accent text-bone/90 tracking-[-0.03em]",
-  "text-outline font-medium",
+  "font-accent text-bone tracking-[-0.03em]",
+  "font-medium text-accent",
 ];
 
 export function About() {
@@ -43,7 +43,7 @@ export function About() {
             <p className="text-[clamp(1.25rem,1.9vw,1.75rem)] leading-[1.35] tracking-[-0.015em] text-bone/90">{about.intro}</p>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="max-w-md text-base leading-relaxed text-bone/55">{about.secondary}</p>
+            <p className="max-w-md text-base leading-relaxed text-mute">{about.secondary}</p>
           </Reveal>
 
           <div>

@@ -8,6 +8,7 @@ import { Arrow } from "@/components/Animations/Button";
 import { useProjectTransition } from "@/components/Providers/ProjectTransition";
 import type { Project } from "@/lib/content";
 import { useFinePointer, usePrefersReducedMotion } from "@/lib/hooks";
+import { useTheme } from "@/lib/theme";
 import { ease, viewportOnce } from "@/lib/motion";
 import { ProjectVisual } from "./ProjectVisual";
 
@@ -27,6 +28,8 @@ export function ProjectCard({ project, index, onActive }: Props) {
   const { open } = useProjectTransition();
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
+  // Project accent that stays legible on the current theme's background.
+  const accent = useTheme() === "light" ? project.palette.from : project.palette.to;
   const flip = index % 2 === 1;
 
   // Pointer-driven tilt + drift
@@ -111,7 +114,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
               </motion.div>
               <div className="absolute left-5 top-5 flex gap-2 md:left-7 md:top-7">
                 {project.categories.slice(0, 2).map((c) => (
-                  <span key={c} className="glass rounded-full px-3 py-1.5 text-[11px] tracking-wide text-bone/90">
+                  <span key={c} className="glass rounded-full px-3 py-1.5 text-[11px] font-medium tracking-wide">
                     {c}
                   </span>
                 ))}
@@ -127,8 +130,8 @@ export function ProjectCard({ project, index, onActive }: Props) {
           <span className="label">Project {project.number}</span>
           <span
             aria-hidden
-            className="text-outline font-accent text-[clamp(4rem,9vw,9rem)] leading-[0.8] transition-colors duration-700"
-            style={hovered ? { color: project.palette.to, WebkitTextStroke: "0px" } : undefined}
+            className="font-accent text-[clamp(4rem,9vw,9rem)] leading-[0.8] text-mute transition-colors duration-700"
+            style={hovered ? { color: accent } : undefined}
           >
             {project.number}
           </span>
