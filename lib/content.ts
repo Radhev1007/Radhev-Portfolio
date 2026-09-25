@@ -14,7 +14,7 @@ export const site = {
    */
   name: { first: "Your", last: "Name" },
   /** The hero's display line — `first` in Medium, `last` in Light. */
-  heroTitle: { first: "UI UX", last: "Designer" },
+  heroTitle: { first: "UI/UX", last: "Designer" },
   brand: "Portfolio",
   role: "UI/UX Designer",
   disciplines: ["UI/UX Design", "Product Design", "Interaction Design"],
