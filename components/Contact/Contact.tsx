@@ -13,7 +13,7 @@ export function Contact() {
   const links = [{ label: "Email", href: `mailto:${site.email}`, value: site.email }, ...site.socials.map((s) => ({ ...s, value: s.label }))];
 
   return (
-    <section id="contact" aria-label="Contact" className="relative flex min-h-[100svh] flex-col py-28 md:py-32">
+    <section id="contact" aria-label="Contact" className="surface-alt relative flex min-h-[100svh] flex-col py-28 md:py-32">
 
       <div className="pointer-events-none relative z-10 flex flex-1 flex-col justify-between gap-16 gutter mx-auto w-full max-w-[1600px]">
         <SectionHeader index="07" label="Contact" />

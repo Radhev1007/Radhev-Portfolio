@@ -9,8 +9,35 @@ import { useLenis, useScrollTo } from "@/components/Providers/SmoothScroll";
 import { navItems, site, type SectionId } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, intro } from "@/lib/motion";
+import { SoundToggle } from "@/components/Chrome/SoundToggle";
 import { StatusBadge } from "./StatusBadge";
 import { ThemeToggle } from "./ThemeToggle";
+
+/** 14px Geist, sentence case, −0.01em — the reference's nav type. */
+function NavLink({
+  item,
+  active,
+  onClick,
+}: {
+  item: (typeof navItems)[number];
+  active: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <Magnetic strength={0.4}>
+      <Link
+        href={item.id === "home" ? "/" : `/#${item.id}`}
+        onClick={onClick}
+        aria-current={active ? "true" : undefined}
+        className={`block text-[14px] tracking-[-0.01em] transition-colors duration-300 ${
+          active ? "text-bone" : "text-mute hover:text-bone"
+        }`}
+      >
+        {item.label}
+      </Link>
+    </Magnetic>
+  );
+}
 
 function useActiveSection(enabled: boolean) {
   const [active, setActive] = useState<SectionId>("home");
@@ -28,6 +55,13 @@ function useActiveSection(enabled: boolean) {
   }, [enabled]);
   return active;
 }
+
+/**
+ * Flanking groups either side of a centred wordmark, as on the reference.
+ * "Home" is carried by the wordmark itself, so the two groups stay even.
+ */
+const leftItems = navItems.filter((n) => n.id === "work" || n.id === "process");
+const rightItems = navItems.filter((n) => n.id === "about" || n.id === "contact");
 
 export function Navigation() {
   const pathname = usePathname();
@@ -74,87 +108,78 @@ export function Navigation() {
   return (
     <>
       <motion.header
-        className="fixed inset-x-0 top-0 z-50 gutter pt-4 md:pt-5"
+        className="fixed inset-x-0 top-0 z-50"
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: !ready ? -40 : hidden ? -110 : 0, opacity: ready ? 1 : 0 }}
         transition={{ duration: 0.8, ease: ease.outExpo }}
       >
-        <nav
-          aria-label="Primary"
-          className={`mx-auto flex h-14 max-w-[1600px] items-center justify-between rounded-full border pl-2 pr-2 transition-[background-color,border-color,backdrop-filter] duration-700 md:h-[52px] md:pl-2.5 ${
-            scrolled || menuOpen ? "border-bone/10 bg-ink/60 backdrop-blur-xl" : "border-bone/[0.06] bg-transparent"
+        <div
+          className={`transition-[background-color,backdrop-filter] duration-700 ${
+            scrolled || menuOpen ? "bg-ink/70 backdrop-blur-xl" : "bg-transparent"
           }`}
         >
+        <nav
+          aria-label="Primary"
+          className="mx-auto grid h-[88px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gutter"
+        >
+          <ul className="hidden items-center gap-12 md:flex">
+            {leftItems.map((item) => (
+              <li key={item.id}>
+                <NavLink item={item} active={isHome && active === item.id} onClick={go(item.id)} />
+              </li>
+            ))}
+          </ul>
+
           <Magnetic strength={0.3}>
             <Link
               href="/"
               onClick={go("home")}
-              className="flex items-center gap-3 rounded-full py-1 pl-1 pr-3"
+              className="col-start-2 block font-display text-[28px] font-bold leading-none tracking-[-0.03em] text-bone"
               aria-label={`${site.name.first} ${site.name.last} — home`}
             >
-              <span className="flex size-9 items-center justify-center rounded-full border border-bone/20 text-[13px] font-medium tracking-[-0.02em]">
-                {site.name.first[0]}
-                <span className="font-accent">{site.name.last[0]}</span>
-              </span>
+              {site.name.first[0]}
+              {site.name.last[0]}
             </Link>
           </Magnetic>
 
-          <ul className="hidden items-center gap-1 md:flex">
-            {navItems.map((item) => {
-              const isActive = isHome && active === item.id;
-              return (
+          <div className="col-start-3 flex items-center justify-end gap-12">
+            <ul className="hidden items-center gap-12 md:flex">
+              {rightItems.map((item) => (
                 <li key={item.id}>
-                  <Magnetic strength={0.4}>
-                    <Link
-                      href={item.id === "home" ? "/" : `/#${item.id}`}
-                      onClick={go(item.id)}
-                      aria-current={isActive ? "true" : undefined}
-                      className={`relative block rounded-full px-4 py-1.5 text-[13px] transition-colors duration-300 ${
-                        isActive ? "text-ink" : "text-bone/60 hover:text-bone"
-                      }`}
-                    >
-                      {isActive && (
-                        <motion.span
-                          layoutId="nav-active"
-                          className="absolute inset-0 -z-10 rounded-full bg-bone"
-                          transition={{ duration: 0.6, ease: ease.outExpo }}
-                        />
-                      )}
-                      {item.label}
-                    </Link>
-                  </Magnetic>
+                  <NavLink item={item} active={isHome && active === item.id} onClick={go(item.id)} />
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
 
-          <div className="flex items-center gap-2">
-            {site.available && <StatusBadge className="hidden lg:flex" />}
-            <ThemeToggle />
-            <button
-              type="button"
-              className="relative grid size-11 place-items-center rounded-full bg-bone/10 md:hidden"
-              aria-expanded={menuOpen}
-              aria-controls="mobile-menu"
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              onClick={() => setMenuOpen((v) => !v)}
-            >
-              <span
-                className={`absolute h-px w-4 bg-bone transition-transform duration-500 ${menuOpen ? "rotate-45" : "-translate-y-[3px]"}`}
-              />
-              <span
-                className={`absolute h-px w-4 bg-bone transition-transform duration-500 ${menuOpen ? "-rotate-45" : "translate-y-[3px]"}`}
-              />
-            </button>
+            <div className="flex items-center gap-3">
+              <SoundToggle />
+              <ThemeToggle />
+              <button
+                type="button"
+                className="relative grid size-5 place-items-center"
+                aria-expanded={menuOpen}
+                aria-controls="mobile-menu"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                onClick={() => setMenuOpen((v) => !v)}
+              >
+                <span
+                  className={`absolute h-px w-4 bg-bone transition-transform duration-500 ${menuOpen ? "rotate-45" : "-translate-y-[3px]"}`}
+                />
+                <span
+                  className={`absolute h-px w-4 bg-bone transition-transform duration-500 ${menuOpen ? "-rotate-45" : "translate-y-[3px]"}`}
+                />
+              </button>
+            </div>
           </div>
         </nav>
+        </div>
       </motion.header>
 
       <AnimatePresence>
         {menuOpen && (
           <motion.div
             id="mobile-menu"
-            className="fixed inset-0 z-40 flex flex-col justify-between bg-ink gutter pb-10 pt-28 md:hidden"
+            className="fixed inset-0 z-40 flex flex-col justify-between bg-ink gutter pb-10 pt-32"
             initial={{ clipPath: "inset(0 0 100% 0)" }}
             animate={{ clipPath: "inset(0 0 0% 0)" }}
             exit={{ clipPath: "inset(0 0 100% 0)" }}
@@ -175,7 +200,7 @@ export function Navigation() {
                         setMenuOpen(false);
                         go(item.id)(e);
                       }}
-                      className="flex items-baseline gap-4 py-1 text-[13vw] font-medium leading-[1.05] tracking-[-0.04em]"
+                      className="flex items-baseline gap-4 py-1 text-[13vw] font-medium leading-[1.05] tracking-[-0.04em] md:text-[7vw]"
                     >
                       <span className="label">0{i + 1}</span>
                       {item.label}
@@ -190,7 +215,7 @@ export function Navigation() {
               animate={{ opacity: 1, transition: { delay: 0.5 } }}
               exit={{ opacity: 0 }}
             >
-              {site.available && <StatusBadge />}
+              {site.available && <StatusBadge className="inline-flex self-start" />}
               <a href={`mailto:${site.email}`} className="text-lg">
                 {site.email}
               </a>

@@ -2,6 +2,16 @@
 
 A minimal, flat-vector portfolio for a UI/UX designer, built with Next.js 16, React 19, TypeScript, Tailwind CSS 4, Framer Motion and Lenis. There is no WebGL or 3D: every visual is crisp SVG artwork.
 
+## Typography
+
+Three self-hosted families, all wired through `next/font` in `app/layout.tsx` — no external font requests at runtime:
+
+| Role | Family | Source |
+| --- | --- | --- |
+| Display (`h1`–`h3`, `font-accent`) | Cabinet Grotesk 500/700/800 | `public/fonts/cabinet-grotesk/`, Fontshare, ITF Free Font License |
+| UI and body | Geist | `next/font/google` |
+| Meta labels (`label` utility, status bar) | Geist Mono | `next/font/google` |
+
 ## Run
 
 ```bash
@@ -14,7 +24,7 @@ Node was installed locally at `~/.local/node` for this project. Add it to your P
 
 ## Replacing the content
 
-All copy lives in **`lib/content.ts`**. The site carries **no personal data**: no location, years, employers or testimonials. The hero identity is a placeholder, `site.name = { first: "Your", last: "Name" }`: the first word is set in the grotesk and the second in the italic serif. The nav initials, footer and page title all follow it.
+All copy lives in **`lib/content.ts`**. Content is populated from the owner's CV: name, role, contact, projects, skills and about copy all live in `site`, `projects`, `skills` and `about`. The nav initials, footer and page title all follow it.
 
 | What | Where |
 | --- | --- |

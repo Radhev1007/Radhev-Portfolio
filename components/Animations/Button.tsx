@@ -16,13 +16,13 @@ type Props = {
   cursorLabel?: string;
 };
 
-/** Pill button with a rolling-label hover and magnetic pull. */
+/** Squared button with a rolling-label hover and magnetic pull. */
 export function Button({ children, href, onClick, variant = "primary", icon = true, external, cursor = "cta", cursorLabel }: Props) {
   const base =
-    "group relative inline-flex h-12 items-center gap-3 overflow-hidden rounded-full pl-6 text-[14px] md:h-14 md:pl-7 md:text-[15px] font-medium tracking-tight transition-colors duration-500";
+    "group relative inline-flex h-12 items-center gap-3 overflow-hidden pl-6 font-mono text-[11px] uppercase tracking-[0.12em] md:h-14 md:pl-7 transition-colors duration-500";
   const styles =
     variant === "primary"
-      ? "bg-bone pr-1.5 text-ink hover:bg-bone/90 md:pr-2"
+      ? "bg-accent pr-1.5 text-bone hover:bg-accent/90 md:pr-2"
       : "border border-line pr-6 text-bone hover:border-accent/50 hover:shadow-[0_0_32px_-6px_color-mix(in_srgb,var(--color-accent)_45%,transparent)] md:pr-7";
 
   const inner = (
@@ -39,7 +39,7 @@ export function Button({ children, href, onClick, variant = "primary", icon = tr
         </span>
       </span>
       {icon && variant === "primary" && (
-        <span className="grid size-9 place-items-center rounded-full bg-ink text-bone md:size-10 transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:rotate-[-45deg]">
+        <span className="grid size-9 place-items-center bg-ink/20 text-bone md:size-10 transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:rotate-[-45deg]">
           <Arrow />
         </span>
       )}

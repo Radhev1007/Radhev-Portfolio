@@ -1,71 +1,27 @@
 @import "tailwindcss";
 
-/* ── Roc Grotesk ───────────────────────────────────────────────
-   Commercial typeface (Kostic Type). Provide it in ONE of two ways:
-   1. Adobe Fonts: set NEXT_PUBLIC_ADOBE_FONTS_KIT to your kit ID
-      (family "roc-grotesk" is picked up by the stack below).
-   2. Self-host: put licensed files in public/fonts/roc-grotesk/
-      named RocGrotesk-{Light,Regular,Medium,Bold}.woff2.
-   Until then, Inter Tight is used as the fallback. */
-@font-face {
-  font-family: "Roc Grotesk";
-  src:
-    local("Roc Grotesk Light"),
-    local("RocGrotesk-Light"),
-    url("/fonts/roc-grotesk/RocGrotesk-Light.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roc Grotesk";
-  src:
-    local("Roc Grotesk Regular"),
-    local("RocGrotesk-Regular"),
-    url("/fonts/roc-grotesk/RocGrotesk-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roc Grotesk";
-  src:
-    local("Roc Grotesk Medium"),
-    local("RocGrotesk-Medium"),
-    url("/fonts/roc-grotesk/RocGrotesk-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roc Grotesk";
-  src:
-    local("Roc Grotesk Bold"),
-    local("RocGrotesk-Bold"),
-    url("/fonts/roc-grotesk/RocGrotesk-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* ── Design tokens ───────────────────────────────────────────── */
+/* ── Design tokens ─────────────────────────────────────────────
+   Typography: Cabinet Grotesk (display) + Geist / Geist Mono (UI, meta).
+   All three are self-hosted through next/font — see app/layout.tsx.
+   Palette: near-black ground, cream foreground, one hot accent. */
 @theme {
-  --color-ink: #000000;
-  --color-ink-2: #050505;
-  --color-ink-3: #121212;
-  --color-bone: #f5f2ea;
-  --color-mute: #9a9a9a;
-  --color-faint: #4a4a4a;
-  --color-line: rgb(245 242 234 / 0.1);
-  --color-accent: #5ce1ff;
-  /* Accent used on the inverse surface (bg-bone), e.g. the active process card. */
-  --color-accent-inverse: #0b7c99;
-  --color-cool: #b9c4ff;
+  --color-ink: #141414;
+  --color-ink-2: #191919;
+  --color-ink-3: #222222;
+  --color-bone: #f2efe6;
+  --color-mute: #9c9c9c;
+  --color-faint: #5c5c5c;
+  --color-line: rgb(242 239 230 / 0.12);
+  --color-accent: #f43c00;
+  /* Accent used on the inverse surface (bg-bone), darkened to hold contrast. */
+  --color-accent-inverse: #c62f00;
+  --color-cool: #9c9c9c;
 
-  /* One family site-wide: Roc Grotesk. */
-  --font-sans: "Roc Grotesk", "roc-grotesk", var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-sans);
-  --font-mono: var(--font-sans);
+  /* Display voice is Cabinet Grotesk; everything else is Geist. */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cabinet), var(--font-geist), ui-sans-serif, sans-serif;
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
@@ -80,16 +36,16 @@
   color-scheme: dark;
 
   /* Flat illustration palette (dark theme) */
-  --ill-ink: #000000;
-  --ill-surface: #0e0e0e;
-  --ill-surface2: #171717;
-  --ill-surface3: #222222;
-  --ill-paper: #f5f2ea;
-  --ill-grey: #9a9a9a;
-  --ill-line: rgb(245 242 234 / 0.14);
-  --ill-faint: rgb(245 242 234 / 0.28);
-  --ill-cyan: #5ce1ff;
-  --ill-cyan-soft: rgb(92 225 255 / 0.1);
+  --ill-ink: #141414;
+  --ill-surface: #1a1a1a;
+  --ill-surface2: #222222;
+  --ill-surface3: #2c2c2c;
+  --ill-paper: #f2efe6;
+  --ill-grey: #9c9c9c;
+  --ill-line: rgb(242 239 230 / 0.14);
+  --ill-faint: rgb(242 239 230 / 0.28);
+  --ill-cyan: #f43c00;
+  --ill-cyan-soft: rgb(244 60 0 / 0.1);
 }
 
 /* ── Light theme ─────────────────────────────────────────────────
@@ -97,28 +53,27 @@
    the foreground, so every bg-ink / text-bone pairing flips cleanly. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --color-ink: #f5f2ea;
-  --color-ink-2: #efebe2;
-  --color-ink-3: #e5e0d5;
-  --color-bone: #0a0a0a;
-  --color-mute: #595959;
-  --color-faint: #a3a3a3;
-  --color-line: rgb(10 10 10 / 0.12);
-  --color-accent: #0b7c99;
-  --color-accent-inverse: #5ce1ff;
+  --color-ink: #f2efe6;
+  --color-ink-2: #ebe7dc;
+  --color-ink-3: #e0dbce;
+  --color-bone: #141414;
+  --color-mute: #5f5f5f;
+  --color-faint: #a3a09a;
+  --color-line: rgb(20 20 20 / 0.14);
+  --color-accent: #c62f00;
+  --color-accent-inverse: #f43c00;
 
-  --ill-ink: #f5f2ea;
+  --ill-ink: #f2efe6;
   --ill-surface: #ffffff;
-  --ill-surface2: #ece8df;
-  --ill-surface3: #dcd7cc;
-  --ill-paper: #0a0a0a;
-  --ill-grey: #707070;
-  --ill-line: rgb(10 10 10 / 0.14);
-  --ill-faint: rgb(10 10 10 / 0.3);
-  --ill-cyan: #0b7c99;
-  --ill-cyan-soft: rgb(11 124 153 / 0.08);
+  --ill-surface2: #ebe7dc;
+  --ill-surface3: #dcd7c9;
+  --ill-paper: #141414;
+  --ill-grey: #6e6e6e;
+  --ill-line: rgb(20 20 20 / 0.16);
+  --ill-faint: rgb(20 20 20 / 0.3);
+  --ill-cyan: #d13200;
+  --ill-cyan-soft: rgb(209 50 0 / 0.08);
 }
-
 /* Smooth cross-fade while switching themes (class added briefly by the toggle). */
 html.theme-transition,
 html.theme-transition *,
@@ -147,6 +102,13 @@ html.theme-transition *::after {
     font-family: var(--font-sans);
     overflow-x: clip;
   }
+  /* Headings carry the display voice site-wide; body copy stays Geist. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.035em;
+  }
   ::selection {
     background: var(--color-accent);
     color: var(--color-ink);
@@ -154,7 +116,7 @@ html.theme-transition *::after {
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 4px;
-    border-radius: 6px;
+    border-radius: 2px;
   }
   a,
   button {
@@ -186,10 +148,10 @@ html.has-custom-cursor * {
 }
 
 @utility label {
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  font-weight: 400;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-mute);
 }
@@ -198,17 +160,104 @@ html.has-custom-cursor * {
    theme-independent: dark glass + fixed off-white text. */
 @utility glass {
   background: rgb(0 0 0 / 0.6);
-  color: #f5f2ea;
+  color: #f2efe6;
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid rgb(236 232 225 / 0.08);
+  border: 1px solid rgb(242 239 230 / 0.1);
 }
 
-/* Contrasting voice within the same family (replaces the former serif italic). */
+/* Contrasting display voice — Cabinet Grotesk against Geist body copy. */
 @utility font-accent {
-  font-family: var(--font-sans);
-  font-weight: 300;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+/* Display setting: tight tracking and leading, as on the reference sites. */
+@utility font-display-tight {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+/* ── Section surfaces ─────────────────────────────────────────────
+   Both utilities re-declare the palette tokens on the section itself,
+   so every descendant using bg-ink / text-bone / border-line follows
+   automatically — no per-child overrides, and light mode still flips. */
+
+/* One subtle step off the page ground. */
+@utility surface-alt {
+  --color-ink: #191919;
+  --color-ink-2: #1f1f1f;
+  --color-ink-3: #292929;
+  --ill-ink: #191919;
+  --ill-surface: #1f1f1f;
+  --ill-surface2: #272727;
+  --ill-surface3: #313131;
+  background-color: var(--color-ink);
+}
+
+/* Full inversion: a cream block between the dark ones. */
+@utility surface-invert {
+  --color-ink: #f2efe6;
+  --color-ink-2: #ebe7dc;
+  --color-ink-3: #e0dbce;
+  --color-bone: #141414;
+  --color-mute: #5f5f5f;
+  --color-faint: #a3a09a;
+  --color-line: rgb(20 20 20 / 0.14);
+  --color-accent: #c62f00;
+  --color-accent-inverse: #f43c00;
+  --color-cool: #5f5f5f;
+
+  --ill-ink: #f2efe6;
+  --ill-surface: #ffffff;
+  --ill-surface2: #ebe7dc;
+  --ill-surface3: #dcd7c9;
+  --ill-paper: #141414;
+  --ill-grey: #6e6e6e;
+  --ill-line: rgb(20 20 20 / 0.16);
+  --ill-faint: rgb(20 20 20 / 0.3);
+  --ill-cyan: #c62f00;
+  --ill-cyan-soft: rgb(198 47 0 / 0.08);
+
+  background-color: var(--color-ink);
+  color: var(--color-bone);
+}
+
+/* In light mode the inverted block becomes the dark one, keeping the rhythm. */
+:root[data-theme="light"] .surface-invert {
+  --color-ink: #141414;
+  --color-ink-2: #191919;
+  --color-ink-3: #222222;
+  --color-bone: #f2efe6;
+  --color-mute: #9c9c9c;
+  --color-faint: #5c5c5c;
+  --color-line: rgb(242 239 230 / 0.12);
+  --color-accent: #f43c00;
+  --color-accent-inverse: #c62f00;
+
+  --ill-ink: #141414;
+  --ill-surface: #1a1a1a;
+  --ill-surface2: #222222;
+  --ill-surface3: #2c2c2c;
+  --ill-paper: #f2efe6;
+  --ill-grey: #9c9c9c;
+  --ill-line: rgb(242 239 230 / 0.14);
+  --ill-faint: rgb(242 239 230 / 0.28);
+  --ill-cyan: #f43c00;
+  --ill-cyan-soft: rgb(244 60 0 / 0.1);
+}
+
+:root[data-theme="light"] .surface-alt {
+  --color-ink: #ebe7dc;
+  --color-ink-2: #e4dfd2;
+  --color-ink-3: #dcd7c9;
+  --ill-ink: #ebe7dc;
+  --ill-surface: #f7f5ef;
+  --ill-surface2: #e4dfd2;
+  --ill-surface3: #d6d0c0;
 }
 
 @utility no-scrollbar {

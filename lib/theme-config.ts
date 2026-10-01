@@ -3,7 +3,7 @@
 export type Theme = "dark" | "light";
 
 export const THEME_STORAGE_KEY = "theme";
-export const THEME_COLORS: Record<Theme, string> = { dark: "#000000", light: "#f5f2ea" };
+export const THEME_COLORS: Record<Theme, string> = { dark: "#141414", light: "#f2efe6" };
 
 /**
  * Runs before first paint (see app/layout.tsx) so the saved theme is applied

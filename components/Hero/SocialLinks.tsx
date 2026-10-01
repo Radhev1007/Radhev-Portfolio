@@ -4,12 +4,12 @@ import { motion } from "framer-motion";
 import { site } from "@/lib/content";
 import { intro, transition } from "@/lib/motion";
 
-/** Understated profile links along the bottom-left of the hero. */
+/** Understated profile links; the hero places them under its call to action. */
 export function SocialLinks() {
   return (
     <motion.ul
       aria-label="Profiles"
-      className="absolute bottom-8 left-[var(--gutter)] z-10 hidden items-center gap-6 md:flex"
+      className="z-10 mt-6 flex flex-wrap items-center gap-x-6 gap-y-2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={transition(intro.nav, 1.2)}

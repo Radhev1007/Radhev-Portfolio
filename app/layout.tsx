@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter_Tight } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import Script from "next/script";
 import type { ReactNode } from "react";
+import { Backdrop } from "@/components/Chrome/Backdrop";
+import { StatusBar } from "@/components/Chrome/StatusBar";
 import { Cursor } from "@/components/Cursor/Cursor";
 import { Footer } from "@/components/Footer/Footer";
 import { Navigation } from "@/components/Navigation/Navigation";
@@ -11,9 +14,19 @@ import { site } from "@/lib/content";
 import { THEME_COLORS, themeInitScript } from "@/lib/theme-config";
 import "@/styles/globals.css";
 
-const sans = Inter_Tight({ subsets: ["latin"], variable: "--font-inter-tight", display: "swap" });
-/** Adobe Fonts kit that serves Roc Grotesk (optional; see styles/globals.css). */
-const adobeKit = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT;
+const sans = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
+
+/** Cabinet Grotesk (Fontshare, ITF Free Font License) carries the display voice. */
+const display = localFont({
+  variable: "--font-cabinet",
+  display: "swap",
+  src: [
+    { path: "../public/fonts/cabinet-grotesk/CabinetGrotesk-500.woff2", weight: "500", style: "normal" },
+    { path: "../public/fonts/cabinet-grotesk/CabinetGrotesk-700.woff2", weight: "700", style: "normal" },
+    { path: "../public/fonts/cabinet-grotesk/CabinetGrotesk-800.woff2", weight: "800", style: "normal" },
+  ],
+});
 
 export const metadata: Metadata = {
   title: { default: `${site.name.first} ${site.name.last} — ${site.role}`, template: `%s — ${site.name.first} ${site.name.last}` },
@@ -25,28 +38,29 @@ export const viewport: Viewport = { themeColor: THEME_COLORS.dark, colorScheme: 
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="dark" className={sans.variable} suppressHydrationWarning>
-      {adobeKit && (
-        <head>
-          <link rel="preconnect" href="https://use.typekit.net" crossOrigin="" />
-          <link rel="stylesheet" href={`https://use.typekit.net/${adobeKit}.css`} />
-        </head>
-      )}
+    <html
+      lang="en"
+      data-theme="dark"
+      className={`${sans.variable} ${mono.variable} ${display.variable}`}
+      suppressHydrationWarning
+    >
       <body suppressHydrationWarning>
         {/* Open every page on its hero so entrance choreography plays in full. */}
         <Script id="theme-init" strategy="beforeInteractive">{themeInitScript}</Script>
         <Script id="scroll-restoration" strategy="beforeInteractive">{`history.scrollRestoration='manual'`}</Script>
         <a
           href="#main"
-          className="fixed left-4 top-4 z-[200] -translate-y-24 rounded-full bg-bone px-5 py-3 text-sm text-ink focus:translate-y-0"
+          className="fixed left-4 top-4 z-[200] -translate-y-24 bg-bone px-5 py-3 text-sm text-ink focus:translate-y-0"
         >
           Skip to content
         </a>
+        <Backdrop />
         <SmoothScroll>
           <ProjectTransitionProvider>
             <Navigation />
             {children}
             <Footer />
+            <StatusBar />
             <Cursor />
           </ProjectTransitionProvider>
         </SmoothScroll>
