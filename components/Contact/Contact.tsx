@@ -12,6 +12,11 @@ import { site } from "@/lib/content";
 export function Contact() {
   const links = [{ label: "Email", href: `mailto:${site.email}`, value: site.email }, ...site.socials.map((s) => ({ ...s, value: s.label }))];
 
+  // Track count follows the number of channels, so the row never ends on an
+  // empty cell showing the divider colour through it.
+  const columns =
+    links.length >= 4 ? "md:grid-cols-4" : links.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
+
   return (
     <section id="contact" aria-label="Contact" className="surface-alt relative flex min-h-[100svh] flex-col py-28 md:py-32">
 
@@ -37,7 +42,12 @@ export function Contact() {
           </Reveal>
         </div>
 
-        <ul className="pointer-events-auto grid grid-cols-2 gap-2 overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-4">
+        {/* The 1px gap is a divider, not spacing: the container's background
+            shows through it as a hairline between cells, the same role a
+            border-width plays, so it sits outside the 8pt spacing scale. */}
+        <ul
+          className={`pointer-events-auto grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line ${columns}`}
+        >
           {links.map((l) => (
             <li key={l.label} className="bg-ink">
               <Magnetic strength={0.12} className="block">
