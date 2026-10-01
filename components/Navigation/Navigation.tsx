@@ -9,6 +9,7 @@ import { useLenis, useScrollTo } from "@/components/Providers/SmoothScroll";
 import { navItems, site, type SectionId } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, intro } from "@/lib/motion";
+import { Logo } from "@/components/Chrome/Logo";
 import { SoundToggle } from "@/components/Chrome/SoundToggle";
 import { StatusBadge } from "./StatusBadge";
 import { ThemeToggle } from "./ThemeToggle";
@@ -130,17 +131,21 @@ export function Navigation() {
             ))}
           </ul>
 
-          <Magnetic strength={0.3}>
-            <Link
-              href="/"
-              onClick={go("home")}
-              className="col-start-2 block font-display text-[28px] font-bold leading-none tracking-[-0.03em] text-bone"
-              aria-label={`${site.name.first} ${site.name.last} — home`}
-            >
-              {site.name.first[0]}
-              {site.name.last[0]}
-            </Link>
-          </Magnetic>
+          {/* Placement sits on the grid child itself: the link groups are
+              display:none below md, which drops them out of auto-placement and
+              would otherwise pull the mark into the first column. */}
+          <div className="col-start-2 justify-self-center">
+            <Magnetic strength={0.3}>
+              <Link
+                href="/"
+                onClick={go("home")}
+                className="block text-bone"
+                aria-label={`${site.name.first} ${site.name.last} — home`}
+              >
+                <Logo className="h-7 w-auto" />
+              </Link>
+            </Magnetic>
+          </div>
 
           <div className="col-start-3 flex items-center justify-end gap-12">
             <ul className="hidden items-center gap-12 md:flex">
