@@ -1,13 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <rect width="100" height="100" fill="#141414"/>
-  <!-- Geometric R: straight bar, true circle for the bowl, diagonal leg.
-       The whole letterform is one colour so it reads as a single shape —
-       colouring the leg instead made it parse as a P with a slash — and the
-       accent lives in the counter. Joins overlap to avoid hairline seams. -->
+  <!-- Geometric lowercase r, the foot of the stem carrying the accent. The
+       shoulder starts inside the stem (x=36, not at its edge) so the join
+       cannot anti-alias into a hairline seam, and it terminates square rather
+       than tapering, which kept an earlier attempt reading as a bracket. -->
   <g fill="#F2EFE6">
-    <rect x="18" y="14" width="17" height="72"/>
-    <circle cx="48" cy="34" r="20"/>
-    <path d="M40 48h19l23 38H63z"/>
+    <rect x="26" y="24" width="17" height="56"/>
+    <path d="M36 24h12a28 28 0 0 1 28 28H59a11 11 0 0 0-11-11H36z"/>
   </g>
-  <circle cx="48" cy="34" r="8.5" fill="#F43C00"/>
+  <rect x="26" y="68" width="17" height="12" fill="#F43C00"/>
 </svg>
