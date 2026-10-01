@@ -32,9 +32,9 @@ export function Hero() {
   return (
     <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col overflow-hidden">
       <HeroVideo />
-      <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-8 gutter pb-10 pt-20 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-20">
+      <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-6 gutter pb-8 pt-24 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-24">
         {/* Illustration leads on narrow screens, right-hand column on wide ones. */}
-        <div className="order-1 w-full [&_svg]:max-h-[28svh] [&_svg]:w-auto md:order-2 md:col-span-5 md:col-start-8 md:[&_svg]:ml-auto md:[&_svg]:max-h-[60svh]">
+        <div className="order-1 w-full [&_svg]:max-h-[24svh] [&_svg]:w-auto md:order-2 md:col-span-5 md:col-start-8 md:[&_svg]:ml-auto md:[&_svg]:max-h-[60svh]">
           <HeroIllustration delay={intro.objects} />
         </div>
 
