@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <rect width="100" height="100" fill="#F43C00"/>
+  <!-- Stem, bowl and leg overlap by a couple of units so the joins do not
+       anti-alias against each other and leave hairline seams at large sizes. -->
+  <g fill="#F2EFE6">
+    <rect x="24" y="18" width="17" height="64"/>
+    <path d="M39 18h17a17 17 0 0 1 0 34H39z"/>
+    <path d="M41 49h17l20 33H60z"/>
+  </g>
+  <path d="M41 30h15a5.5 5.5 0 0 1 0 11H41z" fill="#F43C00"/>
+</svg>
