@@ -19,7 +19,7 @@ export function Footer() {
           {Array.from({ length: 2 }, (_, k) => (
             <span key={k} className="flex shrink-0 items-center">
               {["Product Design", "Interaction", "Design Systems", "Prototyping", "Visual Design"].map((w) => (
-                <span key={w} className="flex items-center text-[clamp(2rem,5vw,4.5rem)] tracking-[-0.04em]">
+                <span key={w} className="flex items-center text-title tracking-[-0.04em]">
                   <span className="px-8">{w}</span>
                   <span className="font-accent text-accent">✳</span>
                 </span>
@@ -31,7 +31,7 @@ export function Footer() {
 
       <div className="gutter mx-auto grid max-w-[1600px] grid-cols-2 gap-10 py-14 md:grid-cols-12">
         <div className="col-span-2 md:col-span-5">
-          <p className="text-2xl font-medium tracking-[-0.03em]">
+          <p className="text-subtitle font-medium tracking-[-0.03em]">
             {site.name.first} <span className="font-accent ">{site.name.last}</span>
           </p>
           <p className="text-bone/60">{site.role}</p>
@@ -88,7 +88,7 @@ export function Footer() {
 
       {/* Interactive signature — each letter rises on hover */}
       <div className="gutter mx-auto max-w-[1600px]">
-        <p aria-hidden className="flex select-none justify-between text-[clamp(4rem,19vw,20rem)] font-medium leading-[0.75] tracking-[-0.06em] text-bone/[0.12]">
+        <p aria-hidden className="flex select-none justify-between text-mega font-medium leading-[0.75] tracking-[-0.06em] text-bone/[0.12]">
           {`${site.name.first} ${site.name.last}`.split("").map((c, i) => (
             <span
               key={i}
@@ -100,7 +100,7 @@ export function Footer() {
         </p>
       </div>
 
-      <div className="gutter mx-auto flex max-w-[1600px] flex-col gap-2 border-t border-line py-6 text-xs text-mute md:flex-row md:justify-between">
+      <div className="gutter mx-auto flex max-w-[1600px] flex-col gap-2 border-t border-line py-6 text-caption text-mute md:flex-row md:justify-between">
         <p>
           © {year} — All rights reserved.
         </p>

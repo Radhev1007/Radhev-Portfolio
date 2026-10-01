@@ -25,7 +25,7 @@ export function About() {
       <SectionHeader index="05" label="About" />
 
       <Parallax speed={50}>
-      <h2 className="mt-12 text-[clamp(2.6rem,7.2vw,8rem)] leading-[0.9] tracking-[-0.05em] md:mt-20">
+      <h2 className="mt-12 text-headline leading-[0.9] tracking-[-0.05em] md:mt-20">
         {about.headline.map((line, i) => (
           <TextReveal key={line} as="span" text={line} delay={i * 0.12} className={`block ${headlineStyles[i]}`} />
         ))}
@@ -40,10 +40,10 @@ export function About() {
 
         <div className="flex flex-col gap-12 md:col-span-6 lg:col-span-5">
           <Reveal>
-            <p className="text-[clamp(1.25rem,1.9vw,1.75rem)] leading-[1.35] tracking-[-0.015em] text-bone/90">{about.intro}</p>
+            <p className="text-lead leading-[1.35] tracking-[-0.015em] text-bone/90">{about.intro}</p>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="max-w-md text-base leading-relaxed text-mute">{about.secondary}</p>
+            <p className="max-w-md text-body leading-relaxed text-mute">{about.secondary}</p>
           </Reveal>
 
           <div>
@@ -52,7 +52,7 @@ export function About() {
               {about.disciplines.map((d, i) => (
                 <Reveal key={d} delay={i * 0.05}>
                   <li className="group flex items-center justify-between border-b border-line py-4 transition-colors duration-500 hover:text-accent">
-                    <span className="text-lg tracking-tight transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-2">
+                    <span className="text-lead tracking-tight transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-2">
                       {d}
                     </span>
                     <span className="label">0{i + 1}</span>

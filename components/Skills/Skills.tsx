@@ -92,7 +92,7 @@ export function Skills() {
       <div className="mt-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <Parallax speed={45}>
         <Reveal>
-          <h2 className="text-[clamp(2.25rem,5vw,5rem)] font-medium leading-[0.95] tracking-[-0.045em]">
+          <h2 className="text-title font-medium leading-[0.95] tracking-[-0.045em]">
             What I bring
             <br />
             <span className="font-accent text-bone/80">to a team</span>
@@ -119,8 +119,8 @@ export function Skills() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.45, ease: ease.outExpo }}
               >
-                <p className="font-accent text-4xl">{current.label}</p>
-                <p className="mt-2 text-sm text-bone/60">{current.note}</p>
+                <p className="font-accent text-subtitle">{current.label}</p>
+                <p className="mt-2 text-small text-bone/60">{current.note}</p>
               </motion.div>
             ) : (
               <motion.p key="idle" className="label" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -181,7 +181,7 @@ export function Skills() {
                 type="button"
                 onClick={() => setFocus(focus === i ? null : i)}
                 aria-expanded={focus === i}
-                className={`rounded-full border px-4 py-2 text-[15px] transition-colors duration-300 ${
+                className={`rounded-full border px-4 py-2 text-small transition-colors duration-300 ${
                   focus === i ? "border-bone bg-bone text-ink" : "border-line text-bone"
                 }`}
               >
@@ -199,7 +199,7 @@ export function Skills() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
             >
-              <span className="font-accent text-2xl text-bone">{current.label}</span>
+              <span className="font-accent text-subtitle text-bone">{current.label}</span>
               <br />
               {current.note}
             </motion.p>

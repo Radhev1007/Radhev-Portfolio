@@ -19,10 +19,10 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {["[Insight one — what people need]", "[Insight two — where they struggle]", "[Insight three — what they value]"].map((t, i) => (
             <div key={i} className={`${frame} flex min-h-56 flex-col justify-between p-6`}>
-              <span className="font-accent text-6xl" style={{ color: accent }}>
+              <span className="font-accent text-title" style={{ color: accent }}>
                 {i + 1}
               </span>
-              <p className="text-lg leading-snug text-bone/80">{t}</p>
+              <p className="text-lead leading-snug text-bone/80">{t}</p>
             </div>
           ))}
         </div>
@@ -54,7 +54,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
             {["Entry", "[Step]", "[Decision]", "[Step]", "Success"].map((s, i, arr) => (
               <li key={i} className="flex flex-1 items-center">
                 <motion.span
-                  className={`grid h-20 flex-1 place-items-center border text-sm ${i === 2 ? "rotate-0 rounded-[40%]" : "rounded-2xl"} ${
+                  className={`grid h-20 flex-1 place-items-center border text-small ${i === 2 ? "rotate-0 rounded-[40%]" : "rounded-2xl"} ${
                     i === arr.length - 1 ? "text-ink" : "border-line text-bone/80"
                   }`}
                   style={i === arr.length - 1 ? { background: accent, borderColor: accent } : undefined}
@@ -114,7 +114,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
               {[project.palette.from, accent, project.palette.ink, "#000000"].map((c) => (
                 <div key={c}>
                   <div className="aspect-square rounded-xl border border-line" style={{ background: c }} />
-                  <p className="mt-2 font-mono text-[10px] uppercase text-mute">{c}</p>
+                  <p className="mt-2 font-mono text-micro uppercase text-mute">{c}</p>
                 </div>
               ))}
             </div>
@@ -124,19 +124,19 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
             {[48, 32, 20, 15].map((s) => (
               <p key={s} className="flex items-baseline justify-between border-b border-line py-2 last:border-0" style={{ fontSize: s * 0.8 }}>
                 <span className="tracking-[-0.03em]">Aa Display</span>
-                <span className="font-mono text-[10px] text-mute">{s}px</span>
+                <span className="font-mono text-micro text-mute">{s}px</span>
               </p>
             ))}
           </div>
           <div className={`${frame} flex flex-wrap items-center gap-2 p-6 md:col-span-2`}>
             <p className="label w-full">Components</p>
-            <span className="rounded-full px-6 py-2 text-sm text-ink" style={{ background: accent }}>Primary</span>
-            <span className="rounded-full border border-bone/30 px-6 py-2 text-sm">Secondary</span>
-            <span className="rounded-full bg-ink-3 px-6 py-2 text-sm text-mute">Disabled</span>
+            <span className="rounded-full px-6 py-2 text-small text-ink" style={{ background: accent }}>Primary</span>
+            <span className="rounded-full border border-bone/30 px-6 py-2 text-small">Secondary</span>
+            <span className="rounded-full bg-ink-3 px-6 py-2 text-small text-mute">Disabled</span>
             <span className="relative h-8 w-14 rounded-full" style={{ background: accent }}>
               <span className="absolute right-1 top-1 size-6 rounded-full bg-white" />
             </span>
-            <span className="flex h-12 min-w-56 items-center rounded-xl border border-line px-4 text-sm text-mute">Input field</span>
+            <span className="flex h-12 min-w-56 items-center rounded-xl border border-line px-4 text-small text-mute">Input field</span>
           </div>
         </div>
       );
@@ -169,7 +169,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {["[Verified result]", "[Verified result]", "[Qualitative feedback]"].map((t, i) => (
             <div key={i} className={`${frame} p-6`}>
-              <p className="text-6xl font-medium tracking-[-0.05em] text-mute">—</p>
+              <p className="text-title font-medium tracking-[-0.05em] text-mute">—</p>
               <p className="mt-6 text-bone/70">{t}</p>
             </div>
           ))}
@@ -181,7 +181,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
 function Node({ label, strong, accent }: { label: string; strong?: boolean; accent?: string }) {
   return (
     <span
-      className={`rounded-xl border px-4 py-2 text-sm ${strong ? "text-ink" : "border-line text-bone/80"}`}
+      className={`rounded-xl border px-4 py-2 text-small ${strong ? "text-ink" : "border-line text-bone/80"}`}
       style={strong ? { background: accent, borderColor: accent } : undefined}
     >
       {label}

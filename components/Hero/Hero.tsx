@@ -57,7 +57,7 @@ export function Hero() {
           </div>
 
           <motion.p
-            className="mt-4 max-w-[52ch] font-mono text-[11px] uppercase leading-[1.7] tracking-[0.1em] text-mute md:mt-6"
+            className="mt-4 max-w-[52ch] font-mono text-caption uppercase leading-[1.7] tracking-[0.1em] text-mute md:mt-6"
             {...appear(intro.supporting)}
           >
             {site.statement}

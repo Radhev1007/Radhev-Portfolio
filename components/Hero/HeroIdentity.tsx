@@ -21,7 +21,7 @@ export function HeroIdentity({ first, last, delay = 0 }: Props) {
   return (
     <h1
       aria-label={`${first} ${last}`}
-      className="text-[min(16vw,12svh)] leading-[0.92] md:text-[min(7.4vw,13svh,8.5rem)]"
+      className="text-hero leading-[0.92] md:text-hero-lg"
     >
       {lines.map((line) => (
         <span

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
 import { Backdrop } from "@/components/Chrome/Backdrop";
@@ -12,8 +11,6 @@ import { SmoothScroll } from "@/components/Providers/SmoothScroll";
 import { site } from "@/lib/content";
 import { THEME_COLORS, themeInitScript } from "@/lib/theme-config";
 import "@/styles/globals.css";
-
-const sans = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
 
 export const metadata: Metadata = {
@@ -29,7 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html
       lang="en"
       data-theme="dark"
-      className={sans.variable}
+     
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>
@@ -38,7 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Script id="scroll-restoration" strategy="beforeInteractive">{`history.scrollRestoration='manual'`}</Script>
         <a
           href="#main"
-          className="fixed left-4 top-4 z-[200] -translate-y-24 bg-bone px-4 py-2 text-sm text-ink focus:translate-y-0"
+          className="fixed left-4 top-4 z-[200] -translate-y-24 bg-bone px-4 py-2 text-small text-ink focus:translate-y-0"
         >
           Skip to content
         </a>

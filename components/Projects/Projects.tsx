@@ -27,13 +27,13 @@ export function Projects() {
 
         <div className="mt-10 grid grid-cols-1 gap-10 md:mt-16 md:grid-cols-12 md:items-end">
           <Parallax speed={60} className="md:col-span-7">
-            <h2 className="text-[clamp(3rem,9vw,9rem)] leading-[0.88]">
+            <h2 className="text-display leading-[0.88]">
               <TextReveal as="span" text="Selected" className="block font-medium tracking-[-0.05em]" />
               <TextReveal as="span" text="Work" delay={0.1} className="block font-accent text-bone/85" />
             </h2>
           </Parallax>
           <Reveal className="md:col-span-4 md:col-start-9" delay={0.2}>
-            <p className="max-w-md text-base leading-relaxed text-bone/65">
+            <p className="max-w-md text-body leading-relaxed text-bone/65">
               A selection of digital products, platforms, and experiences designed around people, business goals, and
               meaningful interactions.
             </p>

@@ -39,9 +39,9 @@ export function DesignSystem() {
             <TextReveal
               as="h2"
               text="Design Beyond the Screen"
-              className="mt-8 max-w-[12ch] text-[clamp(2.25rem,5vw,5rem)] font-medium leading-[0.95] tracking-[-0.045em]"
+              className="mt-8 max-w-[12ch] text-title font-medium leading-[0.95] tracking-[-0.045em]"
             />
-            <p className="mt-6 max-w-sm text-base leading-relaxed text-mute">
+            <p className="mt-6 max-w-sm text-body leading-relaxed text-mute">
               Interfaces are systems before they are screens. A shared set of decisions keeps products coherent as they grow.
             </p>
 
@@ -53,7 +53,7 @@ export function DesignSystem() {
                     type="button"
                     onClick={() => setStep(i)}
                     aria-pressed={i === step}
-                    className="text-left text-2xl font-medium tracking-[-0.03em] md:text-3xl"
+                    className="text-left text-subtitle font-medium tracking-[-0.03em] md:text-subtitle"
                     animate={{ opacity: i === step ? 1 : 0.5, x: i === step ? 0 : -6 }}
                     transition={{ duration: 0.6, ease: ease.outExpo }}
                   >
@@ -64,7 +64,7 @@ export function DesignSystem() {
             </ol>
             <motion.p
               key={step}
-              className="mt-4 min-h-[3em] max-w-sm text-sm leading-relaxed text-mute"
+              className="mt-4 min-h-[3em] max-w-sm text-small leading-relaxed text-mute"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: ease.outExpo }}

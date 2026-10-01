@@ -63,10 +63,10 @@ function CaseHero({ project }: { project: Project }) {
             immediate
             delay={0.35}
             text={project.title}
-            className="mt-6 max-w-[16ch] text-[clamp(2.75rem,8vw,8.5rem)] font-medium leading-[0.9] tracking-[-0.05em]"
+            className="mt-6 max-w-[16ch] text-headline font-medium leading-[0.9] tracking-[-0.05em]"
           />
           <motion.dl
-            className="mt-10 grid grid-cols-2 gap-6 border-t border-bone/15 pt-6 text-sm md:grid-cols-3"
+            className="mt-10 grid grid-cols-2 gap-6 border-t border-bone/15 pt-6 text-small md:grid-cols-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8, duration: 1 }}
@@ -119,10 +119,10 @@ function CaseIndex({ sections }: { sections: CaseSection[] }) {
                   scrollTo(s.id);
                 }}
                 aria-current={on ? "true" : undefined}
-                className={`flex items-center gap-2 py-2 text-sm transition-colors duration-500 ${on ? "text-bone" : "text-mute hover:text-bone"}`}
+                className={`flex items-center gap-2 py-2 text-small transition-colors duration-500 ${on ? "text-bone" : "text-mute hover:text-bone"}`}
               >
                 <span className={`h-px transition-all duration-500 ${on ? "w-8 bg-accent" : "w-3 bg-bone/25"}`} />
-                <span className="font-mono text-[11px]">{String(i + 1).padStart(2, "0")}</span>
+                <span className="font-mono text-caption">{String(i + 1).padStart(2, "0")}</span>
                 {s.label}
               </a>
             </li>
@@ -141,11 +141,11 @@ function CaseBlock({ section, index, project }: { section: CaseSection; index: n
           <p className="label">{String(index + 1).padStart(2, "0")} — {section.label}</p>
         </div>
         <div className="lg:col-span-6">
-          <h2 id={`${section.id}-title`} className="text-[clamp(2rem,4vw,3.75rem)] font-medium leading-[0.95] tracking-[-0.045em]">
+          <h2 id={`${section.id}-title`} className="text-title font-medium leading-[0.95] tracking-[-0.045em]">
             {section.title}
           </h2>
           <Reveal>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-bone/70">{section.body}</p>
+            <p className="mt-6 max-w-2xl text-lead leading-relaxed text-bone/70">{section.body}</p>
           </Reveal>
           {section.points && (
             <ul className="mt-8 grid grid-cols-1 gap-2 overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
@@ -189,7 +189,7 @@ function NextProject({ project }: { project: Project }) {
         <div className="flex items-end justify-between border-t border-line pt-8">
           <div>
             <p className="label">Next project — {project.number}</p>
-            <p className="mt-4 text-[clamp(2.25rem,6vw,6rem)] font-medium leading-[0.95] tracking-[-0.05em] transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:translate-x-4">
+            <p className="mt-4 text-headline font-medium leading-[0.95] tracking-[-0.05em] transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:translate-x-4">
               {project.title}
             </p>
           </div>

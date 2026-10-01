@@ -25,10 +25,10 @@ export function Contact() {
           <TextReveal
             as="h2"
             text="Let's Create Something Meaningful."
-            className="max-w-[14ch] text-[clamp(2.75rem,8.5vw,9.5rem)] font-medium leading-[0.88] tracking-[-0.055em]"
+            className="max-w-[14ch] text-headline font-medium leading-[0.88] tracking-[-0.055em]"
           />
           <Reveal delay={0.2}>
-            <p className="mx-auto mt-8 max-w-md text-base leading-relaxed text-bone/80 md:text-lg">
+            <p className="mx-auto mt-8 max-w-md text-body leading-relaxed text-bone/80 md:text-lead">
               Have a product, platform, or digital experience in mind? Let&apos;s build something thoughtful together.
             </p>
           </Reveal>
@@ -47,7 +47,7 @@ export function Contact() {
                   className="group flex h-full flex-col gap-6 p-4 transition-colors duration-500 hover:bg-bone hover:text-ink md:p-6"
                 >
                   <span className="label transition-colors group-hover:text-ink/60">{l.label}</span>
-                  <span className="flex items-end justify-between gap-2 text-sm md:text-base">
+                  <span className="flex items-end justify-between gap-2 text-small md:text-body">
                     <span className="truncate">{l.value}</span>
                     <span aria-hidden className="transition-transform duration-500 group-hover:-translate-y-1 group-hover:translate-x-1">
                       ↗

@@ -1,5 +1,32 @@
 @import "tailwindcss";
 
+/* ── Suisse Int'l ──────────────────────────────────────────────────
+   Licensed files are not distributed with this repo. To enable: drop
+   the woff2 files into public/fonts/suisse-intl/ and uncomment.
+
+@font-face {
+  font-family: "Suisse Intl";
+  src: url("/fonts/suisse-intl/SuisseIntl-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Suisse Intl";
+  src: url("/fonts/suisse-intl/SuisseIntl-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Suisse Intl";
+  src: url("/fonts/suisse-intl/SuisseIntl-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+*/
+
 /* ── Design tokens ─────────────────────────────────────────────
    Typography: Cabinet Grotesk (display) + Geist / Geist Mono (UI, meta).
    All three are self-hosted through next/font — see app/layout.tsx.
@@ -17,10 +44,15 @@
   --color-accent-inverse: #c62f00;
   --color-cool: #9c9c9c;
 
-  /* One family site-wide: Geist. Hierarchy comes from size, weight and
-     tracking rather than from switching typeface. The display, serif and
-     mono tokens are kept pointing at it so existing utilities resolve. */
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  /* One family site-wide. Hierarchy comes from size, weight and tracking
+     rather than from switching typeface, so the display, serif and mono
+     tokens all point here and existing utilities keep resolving.
+
+     Suisse Int'l is a commercial face (Swiss Typefaces) and is NOT in this
+     repo — until licensed files are added under public/fonts/suisse-intl/
+     and the @font-face block below is uncommented, the site renders in
+     Arial / Helvetica. That fallback is intentional, not a bug. */
+  --font-sans: "Suisse Intl", Arial, Helvetica, sans-serif;
   --font-display: var(--font-sans);
   --font-serif: var(--font-sans);
   --font-mono: var(--font-sans);
@@ -28,9 +60,21 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
-  --text-display: clamp(3.5rem, 13vw, 14rem);
-  --text-headline: clamp(2.5rem, 7vw, 7.5rem);
-  --text-title: clamp(1.75rem, 3.6vw, 3.5rem);
+  /* ── Type scale ────────────────────────────────────────────────
+     One step per role. `hero` is bound to svh as well as vw because the
+     hero has to fit the viewport height, so it cannot be a plain clamp. */
+  --text-hero: min(16vw, 12svh);
+  --text-hero-lg: min(7.4vw, 13svh, 8.5rem);
+  --text-mega: clamp(4rem, 19vw, 20rem);
+  --text-display: clamp(3rem, 9vw, 9rem);
+  --text-headline: clamp(2.25rem, 7vw, 8rem);
+  --text-title: clamp(2rem, 5vw, 5rem);
+  --text-subtitle: clamp(1.5rem, 3.2vw, 3.25rem);
+  --text-lead: clamp(1.125rem, 1.6vw, 1.75rem);
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-caption: 0.6875rem;
+  --text-micro: 0.625rem;
 }
 
 :root {

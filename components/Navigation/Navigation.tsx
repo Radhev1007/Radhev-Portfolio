@@ -30,7 +30,7 @@ function NavLink({
         href={item.id === "home" ? "/" : `/#${item.id}`}
         onClick={onClick}
         aria-current={active ? "true" : undefined}
-        className={`block text-[14px] tracking-[-0.01em] transition-colors duration-300 ${
+        className={`block text-small tracking-[-0.01em] transition-colors duration-300 ${
           active ? "text-bone" : "text-mute hover:text-bone"
         }`}
       >
@@ -205,7 +205,7 @@ export function Navigation() {
                         setMenuOpen(false);
                         go(item.id)(e);
                       }}
-                      className="flex items-baseline gap-4 py-2 text-[13vw] font-medium leading-[1.05] tracking-[-0.04em] md:text-[7vw]"
+                      className="flex items-baseline gap-4 py-2 text-headline font-medium leading-[1.05] tracking-[-0.04em] md:text-headline"
                     >
                       <span className="label">0{i + 1}</span>
                       {item.label}
@@ -221,7 +221,7 @@ export function Navigation() {
               exit={{ opacity: 0 }}
             >
               {site.available && <StatusBadge className="inline-flex self-start" />}
-              <a href={`mailto:${site.email}`} className="text-lg">
+              <a href={`mailto:${site.email}`} className="text-lead">
                 {site.email}
               </a>
               <div className="flex gap-4">

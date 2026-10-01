@@ -19,9 +19,9 @@ function Intro() {
   return (
     <div className="flex flex-col gap-8">
       <SectionHeader index="04" label="Process" />
-      <TextReveal as="h2" text="How I Design" className="text-[length:var(--text-headline)] font-medium leading-[0.9] tracking-[-0.05em]" />
+      <TextReveal as="h2" text="How I Design" className="text-headline font-medium leading-[0.9] tracking-[-0.05em]" />
       <Reveal delay={0.15}>
-        <p className="max-w-sm text-[17px] leading-relaxed text-bone/80">
+        <p className="max-w-sm text-body leading-relaxed text-bone/80">
           A flexible, evidence-led process — six stages that move from understanding to a refined, shippable product.
         </p>
       </Reveal>
@@ -116,12 +116,12 @@ function StepPanel({ step, index, progress, active }: { step: Step; index: numbe
       <div>
         <span
           aria-hidden
-          className={`block text-[9rem] font-light leading-[0.8] tracking-[-0.04em] transition-colors duration-500 ${active ? "text-ink" : "text-accent"}`}
+          className={`block text-display font-light leading-[0.8] tracking-[-0.04em] transition-colors duration-500 ${active ? "text-ink" : "text-accent"}`}
         >
           {step.n}
         </span>
-        <h3 className="mt-6 text-5xl font-medium tracking-[-0.04em]">{step.title}</h3>
-        <p className={`mt-4 max-w-xs text-[17px] leading-relaxed transition-colors duration-500 ${active ? "text-ink/75" : "text-bone/80"}`}>
+        <h3 className="mt-6 text-title font-medium tracking-[-0.04em]">{step.title}</h3>
+        <p className={`mt-4 max-w-xs text-body leading-relaxed transition-colors duration-500 ${active ? "text-ink/75" : "text-bone/80"}`}>
           {step.body}
         </p>
       </div>
@@ -149,8 +149,8 @@ function StackedProcess() {
                 <span className="label !text-accent">Stage {s.n}</span>
                 <ProcessGlyph index={i} small />
               </div>
-              <h3 className="mt-2 text-4xl font-medium tracking-[-0.04em]">{s.title}</h3>
-              <p className="mt-2 max-w-md text-base leading-relaxed text-bone/80">{s.body}</p>
+              <h3 className="mt-2 text-subtitle font-medium tracking-[-0.04em]">{s.title}</h3>
+              <p className="mt-2 max-w-md text-body leading-relaxed text-bone/80">{s.body}</p>
             </Reveal>
           </li>
         ))}
