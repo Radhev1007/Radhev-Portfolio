@@ -9,6 +9,7 @@ import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { intro, transition } from "@/lib/motion";
 import { HeroIdentity } from "./HeroIdentity";
+import { HeroVideo } from "./HeroVideo";
 import { ScrollCue } from "./ScrollCue";
 import { SocialLinks } from "./SocialLinks";
 
@@ -29,7 +30,8 @@ export function Hero() {
   });
 
   return (
-    <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col">
+    <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col overflow-hidden">
+      <HeroVideo />
       <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-8 gutter pb-10 pt-20 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-20">
         {/* Illustration leads on narrow screens, right-hand column on wide ones. */}
         <div className="order-1 w-full [&_svg]:max-h-[28svh] [&_svg]:w-auto md:order-2 md:col-span-5 md:col-start-8 md:[&_svg]:ml-auto md:[&_svg]:max-h-[60svh]">
