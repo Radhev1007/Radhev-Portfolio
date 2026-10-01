@@ -134,7 +134,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
             <span className="rounded-full border border-bone/30 px-6 py-2 text-small">Secondary</span>
             <span className="rounded-full bg-ink-3 px-6 py-2 text-small text-mute">Disabled</span>
             <span className="relative h-8 w-14 rounded-full" style={{ background: accent }}>
-              <span className="absolute right-1 top-1 size-6 rounded-full bg-white" />
+              <span className="absolute right-2 top-2 size-6 rounded-full bg-white" />
             </span>
             <span className="flex h-12 min-w-56 items-center rounded-xl border border-line px-4 text-small text-mute">Input field</span>
           </div>
@@ -158,7 +158,7 @@ export function CaseVisual({ kind, project }: { kind: Exclude<CaseSectionVisual,
                 <div className="h-2 w-3/4 rounded bg-bone/30" />
                 <div className="h-2 w-1/2 rounded bg-bone/15" />
               </div>
-              <div className="absolute inset-x-3 bottom-4 h-7 rounded-full" style={{ background: i === 1 ? accent : "var(--color-line)" }} />
+              <div className="absolute inset-x-2 bottom-4 h-7 rounded-full" style={{ background: i === 1 ? accent : "var(--color-line)" }} />
             </motion.div>
           ))}
         </div>

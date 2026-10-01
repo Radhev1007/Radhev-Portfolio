@@ -112,7 +112,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
                   <ProjectVisual project={project} fgX={interactive ? fgX : undefined} fgY={interactive ? fgY : undefined} />
                 </motion.div>
               </motion.div>
-              <div className="absolute left-5 top-5 flex gap-2 md:left-7 md:top-7">
+              <div className="absolute left-4 top-4 flex gap-2 md:left-6 md:top-6">
                 {project.categories.slice(0, 2).map((c) => (
                   <span key={c} className="glass rounded-full px-2 py-2 text-caption font-medium tracking-wide">
                     {c}

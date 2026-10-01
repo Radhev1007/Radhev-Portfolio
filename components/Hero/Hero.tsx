@@ -64,8 +64,8 @@ export function Hero() {
           </motion.p>
 
           <motion.div className="mt-4 flex flex-wrap items-center gap-2 md:mt-6" {...appear(intro.cta)}>
-            <Button onClick={() => scrollTo("work")} cursor="view" cursorLabel="View">
-              View My Work
+            <Button href={site.resume} external cursor="view" cursorLabel="Open">
+              View My Resume
             </Button>
             <Button variant="ghost" onClick={() => scrollTo("contact")} cursor="view" cursorLabel="Open">
               Let&apos;s Connect

@@ -19,6 +19,8 @@ export const site = {
   availabilityLabel: "Available for work",
   email: "radhev1999@gmail.com",
   phone: "+91 808 982 1700",
+  /** Served from public/ — note this file is publicly downloadable. */
+  resume: "/radhev-r-resume.pdf",
   location: "Kollam, Kerala",
   statement:
     "UI/UX designer with 4+ years turning user needs and business requirements into intuitive, pixel-perfect experiences across web, mobile and desktop.",

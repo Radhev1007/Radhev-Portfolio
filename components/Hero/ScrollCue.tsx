@@ -10,7 +10,7 @@ export function ScrollCue() {
   return (
     <motion.div
       aria-hidden
-      className="pointer-events-none absolute bottom-7 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 md:bottom-10 [@media(max-height:720px)]:hidden"
+      className="pointer-events-none absolute bottom-8 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 md:bottom-10 md:flex [@media(max-height:720px)]:hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: intro.nav + 0.2, duration: 1.4 }}
