@@ -114,7 +114,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
               </motion.div>
               <div className="absolute left-5 top-5 flex gap-2 md:left-7 md:top-7">
                 {project.categories.slice(0, 2).map((c) => (
-                  <span key={c} className="glass rounded-full px-3 py-1.5 text-[11px] font-medium tracking-wide">
+                  <span key={c} className="glass rounded-full px-2 py-2 text-[11px] font-medium tracking-wide">
                     {c}
                   </span>
                 ))}
@@ -137,7 +137,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
           </span>
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           <motion.h3
             className="text-[clamp(1.9rem,3.2vw,3.25rem)] font-medium leading-[1] tracking-[-0.035em]"
             style={{ x: interactive ? titleX : 0 }}
@@ -155,22 +155,22 @@ export function ProjectCard({ project, index, onActive }: Props) {
             transition={{ duration: 0.7, ease: ease.outExpo }}
           >
             <div className="min-h-0">
-              <p className="max-w-sm pt-1 text-[15px] leading-relaxed text-bone/75">{project.description}</p>
+              <p className="max-w-sm pt-2 text-[15px] leading-relaxed text-bone/75">{project.description}</p>
             </div>
           </motion.div>
 
-          <dl className="grid grid-cols-2 gap-4 border-t border-line pt-5 text-sm">
+          <dl className="grid grid-cols-2 gap-4 border-t border-line pt-4 text-sm">
             <div>
-              <dt className="label mb-1">Discipline</dt>
+              <dt className="label mb-2">Discipline</dt>
               <dd>{project.categories[0]}</dd>
             </div>
             <div>
-              <dt className="label mb-1">Role</dt>
+              <dt className="label mb-2">Role</dt>
               <dd>{project.role}</dd>
             </div>
           </dl>
 
-          <span className="flex items-center gap-3 text-sm" aria-hidden>
+          <span className="flex items-center gap-2 text-sm" aria-hidden>
             <span
               className="grid size-10 place-items-center rounded-full border border-line transition-all duration-500"
               style={hovered ? { background: "var(--color-bone)", color: "var(--color-ink)", transform: "rotate(-45deg)" } : undefined}

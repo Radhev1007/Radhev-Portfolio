@@ -152,7 +152,7 @@ export function Skills() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.9, ease: ease.outExpo, delay: i * 0.05 }}
-                  className={`whitespace-nowrap rounded-full border px-5 py-2.5 tracking-[-0.02em] transition-[background-color,color,border-color,opacity] duration-500 ${
+                  className={`whitespace-nowrap rounded-full border px-4 py-2 tracking-[-0.02em] transition-[background-color,color,border-color,opacity] duration-500 ${
                     focus === i ? "border-bone bg-bone text-ink" : "border-line bg-ink text-bone"
                   }`}
                   style={{
@@ -181,7 +181,7 @@ export function Skills() {
                 type="button"
                 onClick={() => setFocus(focus === i ? null : i)}
                 aria-expanded={focus === i}
-                className={`rounded-full border px-4 py-2.5 text-[15px] transition-colors duration-300 ${
+                className={`rounded-full border px-4 py-2 text-[15px] transition-colors duration-300 ${
                   focus === i ? "border-bone bg-bone text-ink" : "border-line text-bone"
                 }`}
               >

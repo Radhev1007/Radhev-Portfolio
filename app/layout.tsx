@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import localFont from "next/font/local";
+import { Geist } from "next/font/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
 import { Backdrop } from "@/components/Chrome/Backdrop";
@@ -15,18 +14,7 @@ import { THEME_COLORS, themeInitScript } from "@/lib/theme-config";
 import "@/styles/globals.css";
 
 const sans = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
-/** Cabinet Grotesk (Fontshare, ITF Free Font License) carries the display voice. */
-const display = localFont({
-  variable: "--font-cabinet",
-  display: "swap",
-  src: [
-    { path: "../public/fonts/cabinet-grotesk/CabinetGrotesk-500.woff2", weight: "500", style: "normal" },
-    { path: "../public/fonts/cabinet-grotesk/CabinetGrotesk-700.woff2", weight: "700", style: "normal" },
-    { path: "../public/fonts/cabinet-grotesk/CabinetGrotesk-800.woff2", weight: "800", style: "normal" },
-  ],
-});
 
 export const metadata: Metadata = {
   title: { default: `${site.name.first} ${site.name.last} — ${site.role}`, template: `%s — ${site.name.first} ${site.name.last}` },
@@ -41,7 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html
       lang="en"
       data-theme="dark"
-      className={`${sans.variable} ${mono.variable} ${display.variable}`}
+      className={sans.variable}
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>
@@ -50,7 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Script id="scroll-restoration" strategy="beforeInteractive">{`history.scrollRestoration='manual'`}</Script>
         <a
           href="#main"
-          className="fixed left-4 top-4 z-[200] -translate-y-24 bg-bone px-5 py-3 text-sm text-ink focus:translate-y-0"
+          className="fixed left-4 top-4 z-[200] -translate-y-24 bg-bone px-4 py-2 text-sm text-ink focus:translate-y-0"
         >
           Skip to content
         </a>

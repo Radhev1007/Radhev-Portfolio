@@ -19,11 +19,11 @@ type Props = {
 /** Squared button with a rolling-label hover and magnetic pull. */
 export function Button({ children, href, onClick, variant = "primary", icon = true, external, cursor = "cta", cursorLabel }: Props) {
   const base =
-    "group relative inline-flex h-12 items-center gap-3 overflow-hidden pl-6 font-mono text-[11px] uppercase tracking-[0.12em] md:h-14 md:pl-7 transition-colors duration-500";
+    "group relative inline-flex h-12 items-center gap-2 overflow-hidden pl-6 font-mono text-[11px] uppercase tracking-[0.12em] md:h-14 md:pl-6 transition-colors duration-500";
   const styles =
     variant === "primary"
-      ? "bg-accent pr-1.5 text-bone hover:bg-accent/90 md:pr-2"
-      : "border border-line pr-6 text-bone hover:border-accent/50 hover:shadow-[0_0_32px_-6px_color-mix(in_srgb,var(--color-accent)_45%,transparent)] md:pr-7";
+      ? "bg-accent pr-2 text-bone hover:bg-accent/90 md:pr-2"
+      : "border border-line pr-6 text-bone hover:border-accent/50 hover:shadow-[0_0_32px_-6px_color-mix(in_srgb,var(--color-accent)_45%,transparent)] md:pr-6";
 
   const inner = (
     <>

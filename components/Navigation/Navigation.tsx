@@ -156,7 +156,7 @@ export function Navigation() {
               ))}
             </ul>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <SoundToggle />
               <ThemeToggle />
               <button
@@ -190,7 +190,7 @@ export function Navigation() {
             exit={{ clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: 0.8, ease: ease.inOutQuart }}
           >
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col gap-2">
               {navItems.map((item, i) => (
                 <li key={item.id} className="overflow-hidden">
                   <motion.div
@@ -205,7 +205,7 @@ export function Navigation() {
                         setMenuOpen(false);
                         go(item.id)(e);
                       }}
-                      className="flex items-baseline gap-4 py-1 text-[13vw] font-medium leading-[1.05] tracking-[-0.04em] md:text-[7vw]"
+                      className="flex items-baseline gap-4 py-2 text-[13vw] font-medium leading-[1.05] tracking-[-0.04em] md:text-[7vw]"
                     >
                       <span className="label">0{i + 1}</span>
                       {item.label}
@@ -224,7 +224,7 @@ export function Navigation() {
               <a href={`mailto:${site.email}`} className="text-lg">
                 {site.email}
               </a>
-              <div className="flex gap-5">
+              <div className="flex gap-4">
                 {site.socials.map((s) => (
                   <a key={s.label} href={s.href} target="_blank" rel="noreferrer" className="label !text-bone">
                     {s.label}

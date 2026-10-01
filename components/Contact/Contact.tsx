@@ -37,14 +37,14 @@ export function Contact() {
           </Reveal>
         </div>
 
-        <ul className="pointer-events-auto grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-4">
+        <ul className="pointer-events-auto grid grid-cols-2 gap-2 overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-4">
           {links.map((l) => (
             <li key={l.label} className="bg-ink">
               <Magnetic strength={0.12} className="block">
                 <a
                   href={l.href}
                   {...(l.href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}
-                  className="group flex h-full flex-col gap-6 p-5 transition-colors duration-500 hover:bg-bone hover:text-ink md:p-6"
+                  className="group flex h-full flex-col gap-6 p-4 transition-colors duration-500 hover:bg-bone hover:text-ink md:p-6"
                 >
                   <span className="label transition-colors group-hover:text-ink/60">{l.label}</span>
                   <span className="flex items-end justify-between gap-2 text-sm md:text-base">

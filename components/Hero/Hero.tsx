@@ -40,30 +40,30 @@ export function Hero() {
 
         <div className="order-2 md:order-1 md:col-span-6">
           <motion.ul
-            className="label flex flex-wrap items-center gap-x-3 gap-y-1 !text-bone/60"
+            className="label flex flex-wrap items-center gap-x-2 gap-y-2 !text-bone/60"
             aria-label="Disciplines"
             {...appear(intro.label)}
           >
             {site.disciplines.map((d, i) => (
-              <li key={d} className="flex items-center gap-3">
+              <li key={d} className="flex items-center gap-2">
                 {i > 0 && <span aria-hidden className="size-1 bg-accent" />}
                 <Scramble text={d} delay={intro.label + 0.1 + i * 0.12} />
               </li>
             ))}
           </motion.ul>
 
-          <div className="mt-4 md:mt-5">
+          <div className="mt-4 md:mt-4">
             <HeroIdentity first={site.heroTitle.first} last={site.heroTitle.last} delay={intro.title} />
           </div>
 
           <motion.p
-            className="mt-5 max-w-[52ch] font-mono text-[11px] uppercase leading-[1.7] tracking-[0.1em] text-mute md:mt-6"
+            className="mt-4 max-w-[52ch] font-mono text-[11px] uppercase leading-[1.7] tracking-[0.1em] text-mute md:mt-6"
             {...appear(intro.supporting)}
           >
             {site.statement}
           </motion.p>
 
-          <motion.div className="mt-5 flex flex-wrap items-center gap-3 md:mt-6" {...appear(intro.cta)}>
+          <motion.div className="mt-4 flex flex-wrap items-center gap-2 md:mt-6" {...appear(intro.cta)}>
             <Button onClick={() => scrollTo("work")} cursor="view" cursorLabel="View">
               View My Work
             </Button>

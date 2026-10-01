@@ -17,11 +17,13 @@
   --color-accent-inverse: #c62f00;
   --color-cool: #9c9c9c;
 
-  /* Display voice is Cabinet Grotesk; everything else is Geist. */
+  /* One family site-wide: Geist. Hierarchy comes from size, weight and
+     tracking rather than from switching typeface. The display, serif and
+     mono tokens are kept pointing at it so existing utilities resolve. */
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-cabinet), var(--font-geist), ui-sans-serif, sans-serif;
-  --font-serif: var(--font-display);
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: var(--font-sans);
+  --font-serif: var(--font-sans);
+  --font-mono: var(--font-sans);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
@@ -148,10 +150,10 @@ html.has-custom-cursor * {
 }
 
 @utility label {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.6875rem;
-  font-weight: 400;
-  letter-spacing: 0.14em;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-mute);
 }
@@ -168,8 +170,8 @@ html.has-custom-cursor * {
 
 /* Contrasting display voice — Cabinet Grotesk against Geist body copy. */
 @utility font-accent {
-  font-family: var(--font-display);
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-weight: 300;
   letter-spacing: -0.03em;
 }
 

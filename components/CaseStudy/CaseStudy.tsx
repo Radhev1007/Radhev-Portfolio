@@ -77,7 +77,7 @@ function CaseHero({ project }: { project: Project }) {
               ["Discipline", project.categories.join(", ")],
             ].map(([k, v]) => (
               <div key={k}>
-                <dt className="label mb-1">{k}</dt>
+                <dt className="label mb-2">{k}</dt>
                 <dd className="text-bone/90">{v}</dd>
               </div>
             ))}
@@ -107,7 +107,7 @@ function CaseIndex({ sections }: { sections: CaseSection[] }) {
 
   return (
     <nav aria-label="Case study sections" className="hidden md:col-span-3 md:block">
-      <ol className="sticky top-28 flex flex-col gap-1">
+      <ol className="sticky top-28 flex flex-col gap-2">
         {sections.map((s, i) => {
           const on = s.id === active;
           return (
@@ -119,7 +119,7 @@ function CaseIndex({ sections }: { sections: CaseSection[] }) {
                   scrollTo(s.id);
                 }}
                 aria-current={on ? "true" : undefined}
-                className={`flex items-center gap-3 py-1 text-sm transition-colors duration-500 ${on ? "text-bone" : "text-mute hover:text-bone"}`}
+                className={`flex items-center gap-2 py-2 text-sm transition-colors duration-500 ${on ? "text-bone" : "text-mute hover:text-bone"}`}
               >
                 <span className={`h-px transition-all duration-500 ${on ? "w-8 bg-accent" : "w-3 bg-bone/25"}`} />
                 <span className="font-mono text-[11px]">{String(i + 1).padStart(2, "0")}</span>
@@ -148,9 +148,9 @@ function CaseBlock({ section, index, project }: { section: CaseSection; index: n
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-bone/70">{section.body}</p>
           </Reveal>
           {section.points && (
-            <ul className="mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
+            <ul className="mt-8 grid grid-cols-1 gap-2 overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
               {section.points.map((p, i) => (
-                <li key={i} className="flex items-center gap-4 bg-ink p-5 text-bone/80">
+                <li key={i} className="flex items-center gap-4 bg-ink p-4 text-bone/80">
                   <span className="label">{String(i + 1).padStart(2, "0")}</span>
                   {p}
                 </li>
@@ -193,7 +193,7 @@ function NextProject({ project }: { project: Project }) {
               {project.title}
             </p>
           </div>
-          <span className="mb-3 hidden size-16 place-items-center rounded-full border border-line transition-all duration-500 group-hover:-rotate-45 group-hover:bg-bone group-hover:text-ink md:grid">
+          <span className="mb-2 hidden size-16 place-items-center rounded-full border border-line transition-all duration-500 group-hover:-rotate-45 group-hover:bg-bone group-hover:text-ink md:grid">
             <Arrow />
           </span>
         </div>

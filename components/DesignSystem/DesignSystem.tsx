@@ -45,7 +45,7 @@ export function DesignSystem() {
               Interfaces are systems before they are screens. A shared set of decisions keeps products coherent as they grow.
             </p>
 
-            <ol className="mt-10 flex flex-col gap-1" aria-label="Design system layers">
+            <ol className="mt-10 flex flex-col gap-2" aria-label="Design system layers">
               {layers.map((l, i) => (
                 <li key={l.k} className="flex items-baseline gap-4">
                   <span className="label w-6">0{i + 1}</span>
@@ -71,7 +71,7 @@ export function DesignSystem() {
             >
               {layers[step].d}
             </motion.p>
-            <div className="mt-5 hidden h-px w-full max-w-sm bg-line md:block">
+            <div className="mt-4 hidden h-px w-full max-w-sm bg-line md:block">
               <motion.div className="h-px bg-accent" style={{ width: progressWidth }} />
             </div>
           </div>

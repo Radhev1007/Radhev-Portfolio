@@ -149,8 +149,8 @@ function StackedProcess() {
                 <span className="label !text-accent">Stage {s.n}</span>
                 <ProcessGlyph index={i} small />
               </div>
-              <h3 className="mt-3 text-4xl font-medium tracking-[-0.04em]">{s.title}</h3>
-              <p className="mt-3 max-w-md text-base leading-relaxed text-bone/80">{s.body}</p>
+              <h3 className="mt-2 text-4xl font-medium tracking-[-0.04em]">{s.title}</h3>
+              <p className="mt-2 max-w-md text-base leading-relaxed text-bone/80">{s.body}</p>
             </Reveal>
           </li>
         ))}
