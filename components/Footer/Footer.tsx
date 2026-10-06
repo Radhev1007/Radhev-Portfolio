@@ -45,8 +45,9 @@ export function Footer() {
             {navItems.map((n) => (
               <li key={n.id}>
                 <Link
-                  href={n.id === "home" ? "/" : `/#${n.id}`}
+                  href={"href" in n && n.href ? n.href : n.id === "home" ? "/" : `/#${n.id}`}
                   onClick={(e) => {
+                    if ("href" in n && n.href) return; // a route, not an anchor
                     if (!isHome) return;
                     e.preventDefault();
                     scrollTo(n.id);

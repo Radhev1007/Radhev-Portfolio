@@ -33,9 +33,8 @@ export const site = {
 export const navItems = [
   { id: "home", label: "Home" },
   { id: "work", label: "Work" },
-  { id: "process", label: "Process" },
-  { id: "experience", label: "Experience" },
-  { id: "about", label: "About" },
+  /** A route rather than an anchor: the self-description lives off the landing page. */
+  { id: "about", label: "About", href: "/about" },
   { id: "contact", label: "Contact" },
 ] as const;
 

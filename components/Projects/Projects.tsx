@@ -23,7 +23,7 @@ export function Projects() {
       />
 
       <div className="relative gutter mx-auto max-w-[1600px]">
-        <SectionHeader index="02" label="Selected Work" count={projects.length} />
+        <SectionHeader index="01" label="Selected Work" count={projects.length} />
 
         <div className="mt-10 grid grid-cols-1 gap-10 md:mt-16 md:grid-cols-12 md:items-end">
           <Parallax speed={60} className="md:col-span-7">

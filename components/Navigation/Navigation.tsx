@@ -27,8 +27,8 @@ function NavLink({
   return (
     <Magnetic strength={0.4}>
       <Link
-        href={item.id === "home" ? "/" : `/#${item.id}`}
-        onClick={onClick}
+        href={"href" in item && item.href ? item.href : item.id === "home" ? "/" : `/#${item.id}`}
+        onClick={"href" in item && item.href ? undefined : onClick}
         aria-current={active ? "true" : undefined}
         className={`block text-small tracking-[-0.01em] transition-colors duration-300 ${
           active ? "text-bone" : "text-mute hover:text-bone"
@@ -61,7 +61,7 @@ function useActiveSection(enabled: boolean) {
  * Flanking groups either side of a centred wordmark, as on the reference.
  * "Home" is carried by the wordmark itself, so the two groups stay even.
  */
-const leftItems = navItems.filter((n) => n.id === "work" || n.id === "process" || n.id === "experience");
+const leftItems = navItems.filter((n) => n.id === "work");
 const rightItems = navItems.filter((n) => n.id === "about" || n.id === "contact");
 
 export function Navigation() {
@@ -200,10 +200,10 @@ export function Navigation() {
                     transition={{ duration: 0.8, ease: ease.outExpo, delay: 0.15 + i * 0.05 }}
                   >
                     <Link
-                      href={item.id === "home" ? "/" : `/#${item.id}`}
+                      href={"href" in item && item.href ? item.href : item.id === "home" ? "/" : `/#${item.id}`}
                       onClick={(e) => {
                         setMenuOpen(false);
-                        go(item.id)(e);
+                        if (!("href" in item && item.href)) go(item.id)(e);
                       }}
                       className="flex items-baseline gap-4 py-2 text-headline font-medium leading-[1.05] tracking-[-0.04em] md:text-headline"
                     >

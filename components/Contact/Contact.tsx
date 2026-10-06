@@ -21,7 +21,7 @@ export function Contact() {
     <section id="contact" aria-label="Contact" className="surface-alt relative flex min-h-[100svh] flex-col py-28 md:py-32">
 
       <div className="pointer-events-none relative z-10 flex flex-1 flex-col justify-between gap-16 gutter mx-auto w-full max-w-[1600px]">
-        <SectionHeader index="08" label="Contact" />
+        <SectionHeader index="02" label="Contact" />
 
         <div className="flex flex-col items-center text-center">
           <Parallax speed={70} className="mb-10 w-40 md:mb-12 md:w-52">
