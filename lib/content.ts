@@ -34,6 +34,7 @@ export const navItems = [
   { id: "home", label: "Home" },
   { id: "work", label: "Work" },
   { id: "process", label: "Process" },
+  { id: "experience", label: "Experience" },
   { id: "about", label: "About" },
   { id: "contact", label: "Contact" },
 ] as const;
@@ -247,6 +248,61 @@ export function getCaseStudy(p: Project): CaseSection[] {
 export function getProject(slug: string) {
   return projects.find((p) => p.slug === slug);
 }
+
+/* ── Experience ─────────────────────────────────────────────── */
+
+export type Role = {
+  company: string;
+  location: string;
+  title: string;
+  from: string;
+  to: string;
+  points: string[];
+};
+
+/** Roles in reverse chronological order; `to` of "Present" marks the current one. */
+export const experience: Role[] = [
+  {
+    company: "Appstation",
+    location: "Technopark, Trivandrum",
+    title: "UI/UX Designer",
+    from: "Jan 2025",
+    to: "Present",
+    points: [
+      "Translate complex client requirements into intuitive UX solutions for GCC-region clients across Government, Fintech, SaaS, HRTech, Media and Events.",
+      "Create wireframes, user flows and high-fidelity mockups in Figma using Auto Layout, components and variants for scalable design systems.",
+      "Use AI-assisted design workflows, including Figma MCP, to shorten delivery and iteration cycles.",
+      "Deliver front-end-ready specifications in HTML and CSS so developers can implement pixel-perfect.",
+      "Manage stakeholder expectations across cross-functional teams in fast-paced project environments.",
+    ],
+  },
+  {
+    company: "Beinex Consulting",
+    location: "Infopark, Kochi",
+    title: "UI/UX Designer",
+    from: "Apr 2023",
+    to: "Nov 2024",
+    points: [
+      "Designed a leading enterprise Governance, Risk and Compliance SaaS product across web, mobile and tablet.",
+      "Built and maintained a scalable Figma design system, keeping every product touchpoint consistent and faster to ship.",
+      "Worked closely with development teams on pixel-perfect, responsive and accessible implementation.",
+      "Ran usability testing sessions and refined concepts through competitive analysis and feedback-driven iteration.",
+    ],
+  },
+  {
+    company: "OrisysIndia Consultancy Services",
+    location: "Technopark, Trivandrum",
+    title: "UI/UX Designer",
+    from: "Oct 2021",
+    to: "Apr 2023",
+    points: [
+      "Designed interfaces for web apps, mobile apps and websites across Education and IT & Technology.",
+      "Delivered end-to-end artifacts: requirement gathering, user flows, wireframes, high-fidelity mockups and interactive prototypes.",
+      "Translated designs into front-end-ready specifications and supported developers through handoff.",
+      "Partnered with project managers, BA teams and clients to align designs with user needs and business goals.",
+    ],
+  },
+];
 
 /* ── Process ────────────────────────────────────────────────── */
 

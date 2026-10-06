@@ -4,13 +4,28 @@ import { motion } from "framer-motion";
 import { ease, viewportOnce } from "@/lib/motion";
 
 /** Thin editorial rule that opens each section: index, label, optional count. */
-export function SectionHeader({ index, label, count }: { index: string; label: string; count?: number }) {
+export function SectionHeader({
+  index,
+  label,
+  count,
+  countNoun = "Projects",
+}: {
+  index: string;
+  label: string;
+  count?: number;
+  /** Noun shown beside `count` — the header is not only used by Projects. */
+  countNoun?: string;
+}) {
   return (
     <div className="relative flex items-center justify-between pb-4">
       <span className="label">
         <span className="text-bone">({index})</span>&nbsp;&nbsp;{label}
       </span>
-      {count !== undefined && <span className="label">{String(count).padStart(2, "0")} Projects</span>}
+      {count !== undefined && (
+        <span className="label">
+          {String(count).padStart(2, "0")} {countNoun}
+        </span>
+      )}
       <motion.span
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-px origin-left bg-line"
