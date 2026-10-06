@@ -1,9 +1,11 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { ease, viewportOnce } from "@/lib/motion";
-
-/** Thin editorial rule that opens each section: index, label, optional count. */
+/**
+ * Opens each section: index, label, optional count.
+ *
+ * This used to draw an animated rule beneath itself, which put seven
+ * hairlines down the page. The index and label carry the job on their own,
+ * so the rule is gone and the header no longer needs to be a client
+ * component or animate anything.
+ */
 export function SectionHeader({
   index,
   label,
@@ -17,7 +19,7 @@ export function SectionHeader({
   countNoun?: string;
 }) {
   return (
-    <div className="relative flex items-center justify-between pb-4">
+    <div className="flex items-center justify-between">
       <span className="label">
         <span className="text-bone">({index})</span>&nbsp;&nbsp;{label}
       </span>
@@ -26,14 +28,6 @@ export function SectionHeader({
           {String(count).padStart(2, "0")} {countNoun}
         </span>
       )}
-      <motion.span
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-px origin-left bg-line"
-        initial={{ scaleX: 0 }}
-        whileInView={{ scaleX: 1 }}
-        viewport={viewportOnce}
-        transition={{ duration: 1.4, ease: ease.outExpo }}
-      />
     </div>
   );
 }
