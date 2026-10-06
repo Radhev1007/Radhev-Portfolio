@@ -44,7 +44,7 @@ export function Experience() {
               key={`${role.company}-${role.from}`}
               onMouseEnter={() => setActive(i)}
               onMouseLeave={() => setActive(null)}
-              className="relative border-t border-line last:border-b"
+              className="relative"
             >
               {/* Raised surface on hover, drawn from the row's own top edge. */}
               <motion.span

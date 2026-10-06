@@ -1,23 +1,15 @@
 /**
- * Page backdrop: the 12-column grid the layout is actually built on, drawn
- * as hairlines, plus a soft accent bloom and a fine grain.
+ * Page backdrop: a soft accent bloom and a fine grain.
  *
- * It sits behind everything at very low contrast — the aim is for the page
- * to feel measured rather than for anyone to consciously notice a grid.
- * Purely decorative, so it is inert and hidden from assistive tech.
+ * This used to draw the 12-column grid as hairlines too. Across a full
+ * viewport that is thirteen vertical rules sitting behind every section,
+ * which read as clutter rather than as structure — the depth comes from the
+ * bloom and the grain alone now. Purely decorative, so it is inert and
+ * hidden from assistive tech.
  */
 export function Backdrop() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      {/* Column hairlines, aligned to the same max-width and gutter as the content. */}
-      <div className="absolute inset-0 hidden gutter md:block">
-        <div className="mx-auto grid h-full max-w-[1600px] grid-cols-12 gap-10">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="h-full border-l border-line last:border-r" />
-          ))}
-        </div>
-      </div>
-
       {/* A single warm bloom, anchored off the top-right where the artwork sits. */}
       <div
         className="absolute -right-[10%] -top-[15%] size-[55vw] rounded-full opacity-[0.11] blur-[130px]"
