@@ -8,7 +8,6 @@ import { Arrow } from "@/components/Animations/Button";
 import { useProjectTransition } from "@/components/Providers/ProjectTransition";
 import type { Project } from "@/lib/content";
 import { useFinePointer, usePrefersReducedMotion } from "@/lib/hooks";
-import { useTheme } from "@/lib/theme";
 import { ease, viewportOnce } from "@/lib/motion";
 import { ProjectVisual } from "./ProjectVisual";
 
@@ -28,8 +27,8 @@ export function ProjectCard({ project, index, onActive }: Props) {
   const { open } = useProjectTransition();
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
-  // Project accent that stays legible on the current theme's background.
-  const accent = useTheme() === "light" ? project.palette.from : project.palette.to;
+  // Project accent, chosen to stay legible on the page's dark ground.
+  const accent = project.palette.to;
   const flip = index % 2 === 1;
 
   // Pointer-driven tilt + drift

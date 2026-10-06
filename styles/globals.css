@@ -93,45 +93,6 @@
   --ill-cyan-soft: rgb(244 60 0 / 0.1);
 }
 
-/* ── Light theme ─────────────────────────────────────────────────
-   Same tokens, inverted. "ink" is always the page surface and "bone"
-   the foreground, so every bg-ink / text-bone pairing flips cleanly. */
-:root[data-theme="light"] {
-  color-scheme: light;
-  --color-ink: #f2efe6;
-  --color-ink-2: #ebe7dc;
-  --color-ink-3: #e0dbce;
-  --color-bone: #141414;
-  --color-mute: #5f5f5f;
-  --color-faint: #a3a09a;
-  --color-line: rgb(20 20 20 / 0.14);
-  --color-accent: #c62f00;
-  --color-accent-inverse: #f43c00;
-
-  --ill-ink: #f2efe6;
-  --ill-surface: #ffffff;
-  --ill-surface2: #ebe7dc;
-  --ill-surface3: #dcd7c9;
-  --ill-paper: #141414;
-  --ill-grey: #6e6e6e;
-  --ill-line: rgb(20 20 20 / 0.16);
-  --ill-faint: rgb(20 20 20 / 0.3);
-  --ill-cyan: #d13200;
-  --ill-cyan-soft: rgb(209 50 0 / 0.08);
-}
-/* Smooth cross-fade while switching themes (class added briefly by the toggle). */
-html.theme-transition,
-html.theme-transition *,
-html.theme-transition *::before,
-html.theme-transition *::after {
-  transition:
-    background-color 0.45s ease,
-    color 0.45s ease,
-    border-color 0.45s ease,
-    fill 0.45s ease,
-    stroke 0.45s ease !important;
-}
-
 /* ── Base ────────────────────────────────────────────────────── */
 @layer base {
   html {
@@ -269,40 +230,6 @@ html.has-custom-cursor * {
 
   background-color: var(--color-ink);
   color: var(--color-bone);
-}
-
-/* In light mode the inverted block becomes the dark one, keeping the rhythm. */
-:root[data-theme="light"] .surface-invert {
-  --color-ink: #141414;
-  --color-ink-2: #191919;
-  --color-ink-3: #222222;
-  --color-bone: #f2efe6;
-  --color-mute: #9c9c9c;
-  --color-faint: #5c5c5c;
-  --color-line: rgb(242 239 230 / 0.12);
-  --color-accent: #f43c00;
-  --color-accent-inverse: #c62f00;
-
-  --ill-ink: #141414;
-  --ill-surface: #1a1a1a;
-  --ill-surface2: #222222;
-  --ill-surface3: #2c2c2c;
-  --ill-paper: #f2efe6;
-  --ill-grey: #9c9c9c;
-  --ill-line: rgb(242 239 230 / 0.14);
-  --ill-faint: rgb(242 239 230 / 0.28);
-  --ill-cyan: #f43c00;
-  --ill-cyan-soft: rgb(244 60 0 / 0.1);
-}
-
-:root[data-theme="light"] .surface-alt {
-  --color-ink: #ebe7dc;
-  --color-ink-2: #e4dfd2;
-  --color-ink-3: #dcd7c9;
-  --ill-ink: #ebe7dc;
-  --ill-surface: #f7f5ef;
-  --ill-surface2: #e4dfd2;
-  --ill-surface3: #d6d0c0;
 }
 
 @utility no-scrollbar {

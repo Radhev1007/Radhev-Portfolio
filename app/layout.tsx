@@ -9,7 +9,7 @@ import { Navigation } from "@/components/Navigation/Navigation";
 import { ProjectTransitionProvider } from "@/components/Providers/ProjectTransition";
 import { SmoothScroll } from "@/components/Providers/SmoothScroll";
 import { site } from "@/lib/content";
-import { THEME_COLORS, themeInitScript } from "@/lib/theme-config";
+import { THEME_COLOR } from "@/lib/theme-config";
 import "@/styles/globals.css";
 
 
@@ -19,19 +19,17 @@ export const metadata: Metadata = {
   openGraph: { title: `${site.name.first} ${site.name.last} — ${site.role}`, description: site.statement, type: "website" },
 };
 
-export const viewport: Viewport = { themeColor: THEME_COLORS.dark, colorScheme: "dark light" };
+export const viewport: Viewport = { themeColor: THEME_COLOR, colorScheme: "dark" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      data-theme="dark"
      
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>
         {/* Open every page on its hero so entrance choreography plays in full. */}
-        <Script id="theme-init" strategy="beforeInteractive">{themeInitScript}</Script>
         <Script id="scroll-restoration" strategy="beforeInteractive">{`history.scrollRestoration='manual'`}</Script>
         <a
           href="#main"

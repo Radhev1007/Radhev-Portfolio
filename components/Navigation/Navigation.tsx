@@ -10,9 +10,7 @@ import { navItems, site, type SectionId } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, intro } from "@/lib/motion";
 import { Logo } from "@/components/Chrome/Logo";
-import { SoundToggle } from "@/components/Chrome/SoundToggle";
 import { StatusBadge } from "./StatusBadge";
-import { ThemeToggle } from "./ThemeToggle";
 
 /** 14px Geist, sentence case, −0.01em — the reference's nav type. */
 function NavLink({
@@ -157,8 +155,6 @@ export function Navigation() {
             </ul>
 
             <div className="flex items-center gap-2">
-              <SoundToggle />
-              <ThemeToggle />
               <button
                 type="button"
                 className="relative grid size-5 place-items-center"
