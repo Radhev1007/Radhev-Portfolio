@@ -86,20 +86,6 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Interactive signature — each letter rises on hover */}
-      <div className="gutter mx-auto max-w-[1600px]">
-        <p aria-hidden className="flex select-none justify-between text-mega font-medium leading-[0.75] tracking-[-0.06em] text-bone/[0.12]">
-          {`${site.name.first} ${site.name.last}`.split("").map((c, i) => (
-            <span
-              key={i}
-              className="inline-block transition-[transform,color] duration-700 ease-[var(--ease-out-expo)] hover:-translate-y-[0.12em] hover:text-accent"
-            >
-              {c === " " ? " " : c}
-            </span>
-          ))}
-        </p>
-      </div>
-
       <div className="gutter mx-auto flex max-w-[1600px] flex-col gap-2 border-t border-line py-6 text-caption text-mute md:flex-row md:justify-between">
         <p>
           © {year} — All rights reserved.

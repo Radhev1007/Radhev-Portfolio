@@ -65,7 +65,6 @@
      hero has to fit the viewport height, so it cannot be a plain clamp. */
   --text-hero: min(16vw, 12svh);
   --text-hero-lg: min(7.4vw, 13svh, 8.5rem);
-  --text-mega: clamp(4rem, 19vw, 20rem);
   --text-display: clamp(3rem, 9vw, 9rem);
   --text-headline: clamp(2.25rem, 7vw, 8rem);
   --text-title: clamp(2rem, 5vw, 5rem);
