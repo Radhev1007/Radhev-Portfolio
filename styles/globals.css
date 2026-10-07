@@ -7,13 +7,13 @@
    All three are self-hosted through next/font — see app/layout.tsx.
    Palette: near-black ground, cream foreground, one hot accent. */
 @theme {
-  --color-ink: #141414;
-  --color-ink-2: #191919;
-  --color-ink-3: #222222;
-  --color-bone: #f2efe6;
+  --color-ink: #000000;
+  --color-ink-2: #0a0a0a;
+  --color-ink-3: #141414;
+  --color-bone: #ffffff;
   --color-mute: #9c9c9c;
   --color-faint: #5c5c5c;
-  --color-line: rgb(242 239 230 / 0.12);
+  --color-line: rgb(255 255 255 / 0.14);
   --color-accent: #f43c00;
   /* Accent used on the inverse surface (bg-bone), darkened to hold contrast. */
   --color-accent-inverse: #c62f00;
@@ -54,14 +54,14 @@
   color-scheme: dark;
 
   /* Flat illustration palette (dark theme) */
-  --ill-ink: #141414;
-  --ill-surface: #1a1a1a;
-  --ill-surface2: #222222;
-  --ill-surface3: #2c2c2c;
-  --ill-paper: #f2efe6;
+  --ill-ink: #000000;
+  --ill-surface: #0d0d0d;
+  --ill-surface2: #161616;
+  --ill-surface3: #222222;
+  --ill-paper: #ffffff;
   --ill-grey: #9c9c9c;
-  --ill-line: rgb(242 239 230 / 0.14);
-  --ill-faint: rgb(242 239 230 / 0.28);
+  --ill-line: rgb(255 255 255 / 0.16);
+  --ill-faint: rgb(255 255 255 / 0.3);
   --ill-cyan: #f43c00;
   --ill-cyan-soft: rgb(244 60 0 / 0.1);
 }
@@ -139,10 +139,10 @@ html.has-custom-cursor * {
    theme-independent: dark glass + fixed off-white text. */
 @utility glass {
   background: rgb(0 0 0 / 0.6);
-  color: #f2efe6;
+  color: #ffffff;
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid rgb(242 239 230 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.12);
 }
 
 /* Contrasting display voice — Cabinet Grotesk against Geist body copy. */
@@ -167,37 +167,37 @@ html.has-custom-cursor * {
 
 /* One subtle step off the page ground. */
 @utility surface-alt {
-  --color-ink: #191919;
-  --color-ink-2: #1f1f1f;
-  --color-ink-3: #292929;
-  --ill-ink: #191919;
-  --ill-surface: #1f1f1f;
-  --ill-surface2: #272727;
-  --ill-surface3: #313131;
+  --color-ink: #0a0a0a;
+  --color-ink-2: #101010;
+  --color-ink-3: #1a1a1a;
+  --ill-ink: #0a0a0a;
+  --ill-surface: #101010;
+  --ill-surface2: #181818;
+  --ill-surface3: #222222;
   background-color: var(--color-ink);
 }
 
 /* Full inversion: a cream block between the dark ones. */
 @utility surface-invert {
-  --color-ink: #f2efe6;
-  --color-ink-2: #ebe7dc;
-  --color-ink-3: #e0dbce;
-  --color-bone: #141414;
+  --color-ink: #ffffff;
+  --color-ink-2: #f4f4f4;
+  --color-ink-3: #e8e8e8;
+  --color-bone: #000000;
   --color-mute: #5f5f5f;
   --color-faint: #a3a09a;
-  --color-line: rgb(20 20 20 / 0.14);
+  --color-line: rgb(0 0 0 / 0.14);
   --color-accent: #c62f00;
   --color-accent-inverse: #f43c00;
   --color-cool: #5f5f5f;
 
-  --ill-ink: #f2efe6;
+  --ill-ink: #ffffff;
   --ill-surface: #ffffff;
-  --ill-surface2: #ebe7dc;
-  --ill-surface3: #dcd7c9;
-  --ill-paper: #141414;
+  --ill-surface2: #f0f0f0;
+  --ill-surface3: #e0e0e0;
+  --ill-paper: #000000;
   --ill-grey: #6e6e6e;
-  --ill-line: rgb(20 20 20 / 0.16);
-  --ill-faint: rgb(20 20 20 / 0.3);
+  --ill-line: rgb(0 0 0 / 0.16);
+  --ill-faint: rgb(0 0 0 / 0.3);
   --ill-cyan: #c62f00;
   --ill-cyan-soft: rgb(198 47 0 / 0.08);
 
