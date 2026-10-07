@@ -251,3 +251,66 @@ def empty(name, loc=(0, 0, 0), parent=None, collection=None):
     if parent:
         obj.parent = parent
     return obj
+
+
+# ── Lofted surfaces ─────────────────────────────────────────────
+
+def profile(hw_bottom, hw_top, z0, z1, k=28, power=5.0):
+    """
+    One cross-section of a body panel: a rounded rectangle that can be narrower
+    at the top than the bottom.
+
+    Built as a superellipse so the corner radius is continuous rather than a
+    fillet bolted onto a box, and so every section returns the same number of
+    points in the same order — which is what lets consecutive sections be
+    bridged into a surface.
+
+    `power` controls how square it is: 2 is an ellipse, 8 is nearly a box.
+    `hw_top` below `hw_bottom` gives tumblehome, the inward lean a greenhouse
+    has and a box does not.
+    """
+    pts = []
+    zc, hz = (z0 + z1) / 2, (z1 - z0) / 2
+    e = 2.0 / power
+    for i in range(k):
+        t = (i / k) * math.tau
+        ct, st = math.cos(t), math.sin(t)
+        sx = math.copysign(abs(ct) ** e, ct)
+        sz = math.copysign(abs(st) ** e, st)
+        z = zc + hz * sz
+        lean = (z - z0) / (z1 - z0) if z1 != z0 else 0.0
+        pts.append((sx * (hw_bottom + (hw_top - hw_bottom) * lean), z))
+    return pts
+
+
+def loft(name, sections, mat=None, parent=None, caps=True, bevel=None, collection=None):
+    """
+    Bridge a run of cross-sections into one smooth shell.
+
+    `sections` is [(y, [(x, z), ...]), ...] in millimetres, every section the
+    same length. This is how the body gets a nose that tapers and a roofline
+    that curves: box primitives cannot do either.
+    """
+    bm = bmesh.new()
+    rings = []
+    for y, pts in sections:
+        rings.append([bm.verts.new((mm(x), mm(y), mm(z))) for (x, z) in pts])
+    bm.verts.index_update()
+
+    for a, b in zip(rings, rings[1:]):
+        n = len(a)
+        for i in range(n):
+            j = (i + 1) % n
+            try:
+                bm.faces.new((a[i], a[j], b[j], b[i]))
+            except ValueError:
+                pass  # duplicate face where two sections coincide
+    if caps:
+        for ring, flip in ((rings[0], True), (rings[-1], False)):
+            try:
+                bm.faces.new(ring[::-1] if flip else ring)
+            except ValueError:
+                pass
+
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return _finish(bm, name, mat, parent, bevel, collection=collection)

@@ -42,7 +42,8 @@ import bpy
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scx30_lib  # noqa: E402
 from scx30_lib import (  # noqa: E402
-    add_box, add_cone, box, cylinder, empty, material, mm, sphere, spring, text_mesh, tube,
+    add_box, add_cone, box, cylinder, empty, loft, material, mm, profile, sphere, spring,
+    text_mesh, tube,
 )
 import bmesh  # noqa: E402
 
@@ -67,15 +68,16 @@ BODY_W = 60.0         # hard body across the doors
 FLARE_X = 35.0        # outer face of the flares
 SILL_Z = 19.0         # underside of the tub
 BELT_Z = 42.0         # bottom of the side glass
-ROOF_Z = 58.0         # underside of the hardtop
-ROOF_TOP = 61.0
+ROOF_Z = 56.0         # underside of the hardtop
+ROOF_TOP = 59.0
 RACK_TOP = 70.0
-HOOD_Z = 44.0
+HOOD_Z = 44.5         # bonnet panel, which the fender pods stand above
 NOSE_Y = 62.0         # grille face
 TAIL_Y = -60.0        # tailgate
-COWL_Y = 28.0         # base of the windscreen
-SCREEN_TOP_Y = 18.0
-GRILLE_X = 15.0       # half-width of the grille
+COWL_Y = 29.0         # base of the windscreen
+SCREEN_TOP_Y = 18.0   # 36 degrees of rake, as a JL has
+GRILLE_X = 13.0       # half-width of the grille
+FENDER_X = 22.0       # centre of each raised front fender pod
 AXLE_F = WB / 2
 AXLE_R = -WB / 2
 
@@ -241,118 +243,177 @@ def wheel(name, loc, parent, tyre_me, rim_me, flip=False):
 # ── Body ────────────────────────────────────────────────────────
 
 def build_body(root):
-    body = empty("Body", (0, 0, 0), root)
+    """
+    The shell, lofted rather than assembled from boxes.
 
-    box("BodyTub", (BODY_W, NOSE_Y - TAIL_Y, BELT_Z - SILL_Z),
-        loc=(0, (NOSE_Y + TAIL_Y) / 2, (BELT_Z + SILL_Z) / 2), mat=WHITE, parent=body, bevel=1.6)
-    box("Hood", (BODY_W - 3.5, NOSE_Y - COWL_Y, 5),
-        loc=(0, (NOSE_Y + COWL_Y) / 2, HOOD_Z - 2.5), mat=WHITE, parent=body, bevel=1.1)
+    A Wrangler's front is three volumes, not one: a low bonnet between two
+    raised fender pods. Building it as a single slab across the full width is
+    what made the previous version read as a generic Jeep however good the
+    grille got, and no amount of bevelling fixes it. The tub also tapers toward
+    the nose and the greenhouse leans inward toward the roof — both things a
+    box cannot do, and both things the eye reads immediately.
+    """
+    body = empty("Body", (0, 0, 0), root)
+    K = 28 if D["micro"] else 20
+
+    # ── Tub: tailgate to grille plane, narrowing at the nose ───
+    tub = [
+        (-60.0, (28.5, 29.5, SILL_Z, 42.0)),
+        (-54.0, (29.5, 30.0, SILL_Z, 42.0)),
+        (-30.0, (30.0, 30.0, SILL_Z, 42.0)),
+        (0.0, (30.0, 30.0, SILL_Z, 42.0)),
+        (24.0, (30.0, 29.8, SILL_Z, 43.0)),
+        (34.0, (29.5, 29.0, SILL_Z, 43.5)),
+        (48.0, (28.5, 27.0, 19.5, 43.5)),
+        (58.0, (27.0, 25.0, 20.0, 43.0)),
+        (62.0, (25.5, 23.0, 21.0, 42.5)),
+    ]
+    loft("BodyTub", [(y, profile(a, b, z0, z1, K, 6.0)) for y, (a, b, z0, z1) in tub],
+         mat=WHITE, parent=body)
+
+    # ── Greenhouse: tumblehome, so it leans in toward the roof ─
+    green = [
+        (-60.0, (28.4, 27.0, BELT_Z, 55.0)),
+        (-52.0, (29.5, 28.4, BELT_Z, 56.0)),
+        (-20.0, (29.5, 28.6, BELT_Z, ROOF_Z)),
+        (2.0, (29.5, 28.6, BELT_Z, ROOF_Z)),
+        (18.0, (29.3, 28.2, BELT_Z, ROOF_Z)),
+    ]
+    loft("Greenhouse", [(y, profile(a, b, z0, z1, K, 5.0)) for y, (a, b, z0, z1) in green],
+         mat=WHITE, parent=body)
+
+    # ── Raised front fenders, flanking the bonnet ──────────────
+    for sx in (-1, 1):
+        pod = [
+            (26.0, (7.6, 7.0, 41.0, 44.2)),
+            (34.0, (8.4, 7.8, 41.0, 46.0)),
+            (46.0, (8.4, 7.8, 41.0, 46.3)),
+            (56.0, (8.0, 7.2, 41.0, 45.2)),
+            (62.0, (6.8, 5.6, 41.0, 43.4)),
+        ]
+        loft(
+            f"FrontFender{sx}",
+            [(y, [(x + sx * FENDER_X, z) for (x, z) in profile(a, b, z0, z1, K, 4.6)])
+             for y, (a, b, z0, z1) in pod],
+            mat=WHITE, parent=body,
+        )
+
+    # ── Bonnet, sitting between and below the fenders ──────────
+    hood = [
+        (28.0, (14.5, 14.0, 41.0, 43.8)),
+        (40.0, (14.5, 14.0, 41.0, HOOD_Z)),
+        (54.0, (13.8, 13.2, 41.0, HOOD_Z)),
+        (62.0, (12.4, 11.6, 41.0, 43.4)),
+    ]
+    loft("Hood", [(y, profile(a, b, z0, z1, K, 4.0)) for y, (a, b, z0, z1) in hood],
+         mat=WHITE, parent=body)
     if D["micro"]:
-        for x in (-12, 12):
-            box(f"HoodVent{x}", (10, 13, 2.2), loc=(x, 40, HOOD_Z + 0.6),
-                mat=WHITE, parent=body, bevel=0.5)
+        for x in (-8, 8):
             for j in range(3):
-                box(f"HoodLouvre{x}{j}", (8, 1.6, 1.4), loc=(x, 37 + j * 3.2, HOOD_Z + 1.5),
+                box(f"HoodLouvre{x}{j}", (7.5, 1.4, 1.2), loc=(x, 40 + j * 3.0, HOOD_Z + 0.4),
                     mat=SATIN, parent=body, bevel=0.2)
 
-    # Greenhouse: white box with the glass laid into it, so the pillars come
-    # out the right width rather than being whatever is left over.
-    box("Greenhouse", (BODY_W - 1.5, SCREEN_TOP_Y - TAIL_Y, ROOF_Z - BELT_Z),
-        loc=(0, (SCREEN_TOP_Y + TAIL_Y) / 2, (ROOF_Z + BELT_Z) / 2), mat=WHITE, parent=body, bevel=1.5)
-
+    # ── Glass ──────────────────────────────────────────────────
     for sx in (-1, 1):
-        for y0, y1 in ((-7, 15), (-33, -11)):
-            box(f"SideGlass{sx}{y0}", (1.2, y1 - y0, 13),
-                loc=(sx * (BODY_W / 2 - 1.1), (y0 + y1) / 2, (BELT_Z + ROOF_Z) / 2 + 0.5),
+        for y0, y1 in ((-7, 14), (-33, -11)):
+            box(f"SideGlass{sx}{y0}", (1.4, y1 - y0, 11.5),
+                loc=(sx * 29.6, (y0 + y1) / 2, (BELT_Z + ROOF_Z) / 2 + 0.8),
                 mat=GLASS, parent=body, bevel=0.2)
-            box(f"WindowFrame{sx}{y0}", (1.6, y1 - y0 + 2.4, 15),
-                loc=(sx * (BODY_W / 2 - 1.4), (y0 + y1) / 2, (BELT_Z + ROOF_Z) / 2 + 0.5),
+            box(f"WindowFrame{sx}{y0}", (1.2, y1 - y0 + 2.2, 13.4),
+                loc=(sx * 29.3, (y0 + y1) / 2, (BELT_Z + ROOF_Z) / 2 + 0.8),
                 mat=SATIN, parent=body, bevel=0.3)
 
     rake = math.atan2(COWL_Y - SCREEN_TOP_Y, ROOF_Z - BELT_Z)
-    box("Windscreen", (BODY_W - 4, 1.4, 20),
-        loc=(0, (COWL_Y + SCREEN_TOP_Y) / 2 + 0.6, (BELT_Z + ROOF_Z) / 2),
+    box("Windscreen", (54, 1.3, 19),
+        loc=(0, (COWL_Y + SCREEN_TOP_Y) / 2 + 0.4, (BELT_Z + ROOF_Z) / 2),
         rot=(rake, 0, 0), mat=GLASS, parent=body, bevel=0.2)
     for sx in (-1, 1):
-        box(f"APillar{sx}", (3.4, 2.6, 22),
-            loc=(sx * (BODY_W / 2 - 1.7), (COWL_Y + SCREEN_TOP_Y) / 2 + 0.9, (BELT_Z + ROOF_Z) / 2),
+        box(f"APillar{sx}", (3.2, 2.4, 21),
+            loc=(sx * 28.2, (COWL_Y + SCREEN_TOP_Y) / 2 + 0.7, (BELT_Z + ROOF_Z) / 2),
             rot=(rake, 0, 0), mat=SATIN, parent=body, bevel=0.5)
-    box("ScreenHeader", (BODY_W - 1.5, 3.2, 3), loc=(0, SCREEN_TOP_Y + 1, ROOF_Z - 0.6),
+    box("ScreenHeader", (56, 3.0, 2.8), loc=(0, SCREEN_TOP_Y + 0.8, ROOF_Z - 0.4),
         mat=SATIN, parent=body, bevel=0.5)
-    box("Cowl", (BODY_W - 3, 5, 3), loc=(0, COWL_Y + 1.4, BELT_Z + 0.6),
-        mat=WHITE, parent=body, bevel=0.5)
-    box("RearGlass", (BODY_W - 8, 1.4, 11),
-        loc=(0, TAIL_Y - 0.4, (BELT_Z + ROOF_Z) / 2 + 1.5), mat=GLASS, parent=body, bevel=0.2)
+    box("Cowl", (54, 4.5, 2.6), loc=(0, COWL_Y + 1.2, BELT_Z + 0.4), mat=SATIN, parent=body, bevel=0.5)
+    box("RearGlass", (50, 1.3, 10), loc=(0, TAIL_Y - 0.3, (BELT_Z + ROOF_Z) / 2 + 1.2),
+        mat=GLASS, parent=body, bevel=0.2)
 
-    box("Hardtop", (BODY_W + 1.5, SCREEN_TOP_Y - TAIL_Y + 4, ROOF_TOP - ROOF_Z),
-        loc=(0, (SCREEN_TOP_Y + TAIL_Y) / 2 - 0.6, (ROOF_TOP + ROOF_Z) / 2),
-        mat=WHITE, parent=body, bevel=1.3)
+    # ── Hardtop ────────────────────────────────────────────────
+    roof_sec = [
+        (TAIL_Y - 3.5, (28.6, 27.4, ROOF_Z - 1.6, ROOF_TOP)),
+        (TAIL_Y + 6, (30.0, 28.8, ROOF_Z - 1.6, ROOF_TOP)),
+        (0.0, (30.2, 29.0, ROOF_Z - 1.6, ROOF_TOP)),
+        (SCREEN_TOP_Y + 1.5, (29.8, 28.4, ROOF_Z - 1.6, ROOF_TOP - 0.4)),
+    ]
+    loft("Hardtop", [(y, profile(a, b, z0, z1, K, 5.0)) for y, (a, b, z0, z1) in roof_sec],
+         mat=WHITE, parent=body)
 
     if D["micro"]:
-        for x in (-10, 9):
-            tube(f"Wiper{x}", [(x - 6, COWL_Y + 2.5, BELT_Z + 0.6), (x + 1.5, COWL_Y + 0.6, BELT_Z + 3.5)],
-                 0.35, SATIN, body)
+        for x in (-9, 8):
+            tube(f"Wiper{x}", [(x - 5, COWL_Y + 2, BELT_Z + 0.4), (x + 1.4, COWL_Y + 0.4, BELT_Z + 3)],
+                 0.32, SATIN, body)
 
-    # ── Front: grille, lamps, ICON Pro Series bumper ───────────
-    box("Grille", (GRILLE_X * 2, 3.5, 21), loc=(0, NOSE_Y + 0.8, 35), mat=WHITE, parent=body, bevel=0.7)
+    # ── Front face: grille between the fenders, lamps beside it ─
+    box("GrilleSurround", (GRILLE_X * 2 + 3, 2.6, 19.5), loc=(0, NOSE_Y + 0.4, 34),
+        mat=WHITE, parent=body, bevel=0.8)
+    box("GrilleRecess", (GRILLE_X * 2, 1.6, 17.5), loc=(0, NOSE_Y + 0.9, 34),
+        mat=SATIN, parent=body, bevel=0.3)
     for i in range(7):
-        box(f"GrilleSlot{i}", (2.6, 1.8, 17),
-            loc=((i - 3) * 4.0, NOSE_Y + 2.0, 35), mat=SATIN, parent=body, bevel=0.2)
-    for x in (-21, 21):
-        cylinder(f"HeadlampHousing{x}", 7.0, 3.4, loc=(x, NOSE_Y + 0.9, 35), axis="Y",
+        box(f"GrilleBar{i}", (2.9, 1.8, 15.8),
+            loc=((i - 3) * 3.5, NOSE_Y + 1.5, 34), mat=WHITE, parent=body, bevel=0.25)
+
+    for x in (-19, 19):
+        cylinder(f"HeadlampHousing{x}", 7.0, 3.0, loc=(x, NOSE_Y + 0.2, 35), axis="Y",
                  segments=D["cyl"], mat=SATIN, parent=body)
-        cylinder(f"HeadlampReflector{x}", 5.4, 1.0, loc=(x, NOSE_Y + 2.1, 35), axis="Y",
+        cylinder(f"HeadlampReflector{x}", 4.6, 1.0, loc=(x, NOSE_Y + 1.2, 35), axis="Y",
                  segments=D["cyl"], mat=CHROME, parent=body, bevel=0.15)
-        cylinder(f"HeadlampLens{x}", 4.6, 1.1, loc=(x, NOSE_Y + 2.7, 35), axis="Y",
+        cylinder(f"HeadlampLens{x}", 4.0, 1.0, loc=(x, NOSE_Y + 1.8, 35), axis="Y",
                  segments=D["cyl"], mat=LENS, parent=body, bevel=0.15)
 
-    # ICON Pro Series: a tube bumper, not a slab.
-    tube("BumperFrontTube",
-         [(-30, NOSE_Y + 7, 21), (-30, NOSE_Y + 10, 21), (30, NOSE_Y + 10, 21), (30, NOSE_Y + 7, 21)],
-         1.6, SATIN, body)
-    for x in (-19, 19):
-        tube(f"BumperStay{x}", [(x, NOSE_Y + 1, 23), (x, NOSE_Y + 9.4, 21)], 1.2, SATIN, body)
-    tube("BullBar", [(-14, NOSE_Y + 9, 23), (-13, NOSE_Y + 6.5, 38), (0, NOSE_Y + 5.6, 40),
-                     (13, NOSE_Y + 6.5, 38), (14, NOSE_Y + 9, 23)], 1.0, SATIN, body)
-    tube("BullBarBrace", [(-6.5, NOSE_Y + 6, 38.5), (6.5, NOSE_Y + 6, 38.5)], 0.8, SATIN, body)
-    box("SkidPlateFront", (30, 15, 1.8), loc=(0, NOSE_Y - 2, 15.5), rot=(-0.34, 0, 0),
+    # ── ICON Pro Series front bumper ───────────────────────────
+    box("BumperFront", (56, 7.5, 6.5), loc=(0, NOSE_Y + 6.5, 24), mat=SATIN, parent=body, bevel=0.8)
+    if D["micro"]:
+        for x in (-14, -7, 0, 7, 14):
+            cylinder(f"BumperHole{x}", 1.2, 3, loc=(x, NOSE_Y + 6.5, 24), axis="Y",
+                     segments=10, mat=BLACK, parent=body, bevel=0.2)
+    tube("BullBar", [(-13, NOSE_Y + 7, 27), (-12, NOSE_Y + 4.5, 40), (0, NOSE_Y + 3.8, 42),
+                     (12, NOSE_Y + 4.5, 40), (13, NOSE_Y + 7, 27)], 1.1, SATIN, body)
+    tube("BullBarBrace", [(-6, NOSE_Y + 4.2, 40.5), (6, NOSE_Y + 4.2, 40.5)], 0.8, SATIN, body)
+    box("SkidPlateFront", (30, 14, 1.6), loc=(0, NOSE_Y + 1, 17.5), rot=(-0.36, 0, 0),
         mat=SATIN, parent=body, bevel=0.5)
-    for x in (-24, 24):
-        box(f"TowHook{x}", (3.2, 4, 3.2), loc=(x, NOSE_Y + 10.5, 21), mat=ORANGE, parent=body, bevel=0.4)
+    for x in (-23, 23):
+        box(f"TowHook{x}", (3.0, 3.6, 3.0), loc=(x, NOSE_Y + 9, 24), mat=ORANGE, parent=body, bevel=0.4)
 
-    # ── Sides ─────────────────────────────────────────────────
+    # ── Sides ──────────────────────────────────────────────────
     for sx in (-1, 1):
         for y in (AXLE_F, AXLE_R):
             for i in range(11):
                 a = math.radians(-75 + i * 15)
                 box(
                     f"Flare{sx}{int(y)}{i}",
-                    (FLARE_X - BODY_W / 2 + 4.5, 5.2, 2.8),
-                    loc=(sx * (BODY_W / 2 + 1.2),
+                    (FLARE_X - 30 + 4.5, 5.2, 2.8),
+                    loc=(sx * 31.0,
                          y + math.sin(a) * (TYRE_R + 2.4),
                          TYRE_R + math.cos(a) * (TYRE_R + 2.4)),
                     rot=(-a, 0, 0), mat=SATIN, parent=body, bevel=0.8,
                 )
-        box(f"Slider{sx}", (4.6, 50, 3.6), loc=(sx * (BODY_W / 2 - 0.5), 0, SILL_Z + 0.6),
+        box(f"Slider{sx}", (4.6, 50, 3.6), loc=(sx * 29.5, 0, SILL_Z + 0.6),
             mat=SATIN, parent=body, bevel=0.8)
         if D["micro"]:
-            for y in (15, -9, -34):
+            for y in (14, -9, -34):
                 box(f"Shut{sx}{y}", (0.7, 0.8, BELT_Z - SILL_Z - 4),
-                    loc=(sx * (BODY_W / 2 + 0.15), y, (BELT_Z + SILL_Z) / 2), mat=SATIN,
-                    parent=body, bevel=0.15)
-            for y in (2, -22):
-                box(f"Handle{sx}{y}", (1.5, 6, 2),
-                    loc=(sx * (BODY_W / 2 + 0.8), y, BELT_Z - 6), mat=SATIN, parent=body, bevel=0.4)
-            for y in (15, -9):
-                box(f"Hinge{sx}{y}", (1.2, 2.4, 3.2),
-                    loc=(sx * (BODY_W / 2 + 0.4), y, BELT_Z - 4), mat=SATIN, parent=body, bevel=0.3)
-        tube(f"MirrorArm{sx}", [(sx * (BODY_W / 2 - 0.6), COWL_Y - 1.2, BELT_Z + 4),
-                                (sx * (BODY_W / 2 + 2.6), COWL_Y + 0.6, BELT_Z + 5.4)], 0.8, SATIN, body)
-        box(f"Mirror{sx}", (2.4, 2.6, 5.6), loc=(sx * (BODY_W / 2 + 4), COWL_Y + 0.6, BELT_Z + 6),
+                    loc=(sx * 30.1, y, (BELT_Z + SILL_Z) / 2), mat=SATIN, parent=body, bevel=0.15)
+            for y in (1, -22):
+                box(f"Handle{sx}{y}", (1.5, 6, 2), loc=(sx * 30.6, y, BELT_Z - 6),
+                    mat=SATIN, parent=body, bevel=0.4)
+            for y in (14, -9):
+                box(f"Hinge{sx}{y}", (1.2, 2.4, 3.2), loc=(sx * 30.3, y, BELT_Z - 4),
+                    mat=SATIN, parent=body, bevel=0.3)
+        tube(f"MirrorArm{sx}", [(sx * 28.4, COWL_Y - 1, BELT_Z + 3.5),
+                                (sx * 31.6, COWL_Y + 0.6, BELT_Z + 5)], 0.8, SATIN, body)
+        box(f"Mirror{sx}", (2.4, 2.6, 5.4), loc=(sx * 33, COWL_Y + 0.6, BELT_Z + 5.6),
             mat=SATIN, parent=body, bevel=0.7)
-        text_mesh(f"Rubicon{sx}", "RUBICON", 4.6, RED, body,
-                  loc=(sx * (BODY_W / 2 - 1.0), 38, 38),
-                  rot=(math.pi / 2, 0, sx * math.pi / 2))
+        text_mesh(f"Rubicon{sx}", "RUBICON", 4.2, RED, body,
+                  loc=(sx * 29.0, 42, 39), rot=(math.pi / 2, 0, sx * math.pi / 2))
 
     return body
 
@@ -364,33 +425,33 @@ def build_roof(root):
     y0, y1 = TAIL_Y - 2, SCREEN_TOP_Y + 1
 
     for sx in (-1, 1):
-        box(f"RackRail{sx}", (2.6, y1 - y0, 4), loc=(sx * 28, (y0 + y1) / 2, ROOF_TOP + 2),
+        box(f"RackRail{sx}", (2.6, y1 - y0, 3.4), loc=(sx * 26, (y0 + y1) / 2, ROOF_TOP + 1.5),
             mat=SATIN, parent=roof, bevel=0.5)
     for y in (y0, y1):
-        box(f"RackEnd{int(y)}", (59, 2.6, 4), loc=(0, y, ROOF_TOP + 2), mat=SATIN, parent=roof, bevel=0.5)
+        box(f"RackEnd{int(y)}", (54.6, 2.6, 3.4), loc=(0, y, ROOF_TOP + 1.5), mat=SATIN, parent=roof, bevel=0.5)
     for i in range(7):
         y = y0 + 2.5 + (i + 0.5) * ((y1 - y0 - 5) / 7)
-        box(f"RackSlat{i}", (54, 2.8, 1.0), loc=(0, y, ROOF_TOP + 0.9), mat=SATIN, parent=roof, bevel=0.2)
+        box(f"RackSlat{i}", (50, 2.8, 1.0), loc=(0, y, ROOF_TOP + 0.5), mat=SATIN, parent=roof, bevel=0.2)
     if D["micro"]:
         for sx in (-1, 1):
             for y in (y0 + 8, 0, y1 - 8):
-                box(f"RackMount{sx}{int(y)}", (3.2, 2.6, 2.6), loc=(sx * 28, y, ROOF_TOP - 0.4),
+                box(f"RackMount{sx}{int(y)}", (3.2, 2.6, 2.2), loc=(sx * 26, y, ROOF_TOP - 0.2),
                     mat=SATIN, parent=roof, bevel=0.3)
 
-    box("TractionBoard", (38, 22, 1.8), loc=(0, 7, ROOF_TOP + 4.8), mat=ORANGE, parent=roof, bevel=0.5)
+    box("TractionBoard", (38, 22, 1.8), loc=(0, 7, ROOF_TOP + 3.9), mat=ORANGE, parent=roof, bevel=0.5)
     for i in range(4):
         for j in range(3):
-            box(f"TbNub{i}{j}", (4.4, 4.4, 1.0), loc=(-14 + i * 9.3, -1 + j * 6.5, ROOF_TOP + 5.8),
+            box(f"TbNub{i}{j}", (4.4, 4.4, 1.0), loc=(-14 + i * 9.3, -1 + j * 6.5, ROOF_TOP + 4.9),
                 mat=ORANGE, parent=roof, bevel=0.25)
 
     for i, x in enumerate((-13, 13)):
-        box(f"RoofCase{i}", (21, 28, 7), loc=(x, -24, ROOF_TOP + 7.6), mat=BLACK, parent=roof, bevel=0.8)
+        box(f"RoofCase{i}", (21, 28, 7), loc=(x, -24, ROOF_TOP + 6.7), mat=BLACK, parent=roof, bevel=0.8)
         for j in range(3):
-            box(f"RoofCaseRib{i}{j}", (19, 1.6, 0.8), loc=(x, -33 + j * 9, ROOF_TOP + 11.3),
+            box(f"RoofCaseRib{i}{j}", (19, 1.6, 0.8), loc=(x, -33 + j * 9, ROOF_TOP + 10.4),
                 mat=BLACK, parent=roof, bevel=0.2)
 
-    box("ShovelShaft", (2.4, 50, 2.4), loc=(-24, -24, ROOF_TOP + 5.2), mat=ORANGE, parent=roof, bevel=0.5)
-    box("ShovelBlade", (6, 9, 1.6), loc=(-24, -53, ROOF_TOP + 5.2), mat=ORANGE, parent=roof, bevel=0.5)
+    box("ShovelShaft", (2.4, 50, 2.4), loc=(-22, -24, ROOF_TOP + 4.3), mat=ORANGE, parent=roof, bevel=0.5)
+    box("ShovelBlade", (6, 9, 1.6), loc=(-22, -53, ROOF_TOP + 4.3), mat=ORANGE, parent=roof, bevel=0.5)
 
     # Front LED bar: individual housings, as the specification lists.
     bar = empty("LightBar", (0, 0, 0), roof)
