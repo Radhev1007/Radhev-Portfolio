@@ -35,7 +35,7 @@ export function DesignSystem() {
       <div className="flex items-center md:sticky md:top-0 md:min-h-[100svh]">
         <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 gutter py-24 md:grid-cols-12 md:gap-8">
           <div className="md:col-span-5">
-            <SectionHeader index="03" label="Systems thinking" />
+            <SectionHeader index="04" label="Systems thinking" />
             <TextReveal
               as="h2"
               text="Design Beyond the Screen"

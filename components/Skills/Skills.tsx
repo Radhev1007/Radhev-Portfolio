@@ -88,7 +88,7 @@ export function Skills() {
 
   return (
     <section aria-label="Skills" className="relative gutter mx-auto max-w-[1600px] py-28 md:py-40">
-      <SectionHeader index="07" label="Capabilities" />
+      <SectionHeader index="03" label="Capabilities" />
       <div className="mt-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <Parallax speed={45}>
         <Reveal>

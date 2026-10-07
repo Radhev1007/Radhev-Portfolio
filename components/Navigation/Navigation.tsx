@@ -59,8 +59,8 @@ function useActiveSection(enabled: boolean) {
  * Flanking groups either side of a centred wordmark, as on the reference.
  * "Home" is carried by the wordmark itself, so the two groups stay even.
  */
-const leftItems = navItems.filter((n) => n.id === "work" || n.id === "process" || n.id === "experience");
-const rightItems = navItems.filter((n) => n.id === "about" || n.id === "contact");
+const leftItems = navItems.filter((n) => n.id === "about" || n.id === "work");
+const rightItems = navItems.filter((n) => n.id === "process" || n.id === "contact");
 
 export function Navigation() {
   const pathname = usePathname();

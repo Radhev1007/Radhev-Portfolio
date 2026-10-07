@@ -32,10 +32,9 @@ export const site = {
 
 export const navItems = [
   { id: "home", label: "Home" },
+  { id: "about", label: "About" },
   { id: "work", label: "Work" },
   { id: "process", label: "Process" },
-  { id: "experience", label: "Experience" },
-  { id: "about", label: "About" },
   { id: "contact", label: "Contact" },
 ] as const;
 

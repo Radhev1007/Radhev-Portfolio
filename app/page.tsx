@@ -8,7 +8,12 @@ import { Process } from "@/components/Process/Process";
 import { Projects } from "@/components/Projects/Projects";
 import { Skills } from "@/components/Skills/Skills";
 
-/** Each section is its own scene: it arrives over the previous one and recedes as the next arrives. */
+/**
+ * Order follows the reference: a statement, then a short who-I-am, then what
+ * I do, then the work as the largest block, then how I work, then the ask.
+ * Each section is its own scene — it arrives over the previous one and
+ * recedes as the next arrives.
+ */
 export default function Home() {
   return (
     <main id="main">
@@ -16,22 +21,22 @@ export default function Home() {
         <Hero />
       </SectionScene>
       <SectionScene>
-        <Projects />
+        <About />
+      </SectionScene>
+      <SectionScene>
+        <Skills />
       </SectionScene>
       <SectionScene>
         <DesignSystem />
       </SectionScene>
       <SectionScene>
+        <Projects />
+      </SectionScene>
+      <SectionScene>
         <Process />
       </SectionScene>
       <SectionScene>
-        <About />
-      </SectionScene>
-      <SectionScene>
         <Experience />
-      </SectionScene>
-      <SectionScene>
-        <Skills />
       </SectionScene>
       <SectionScene exit={false}>
         <Contact />

@@ -22,7 +22,7 @@ export function About() {
 
   return (
     <section id="about" ref={ref} aria-label="About" className="relative gutter mx-auto max-w-[1600px] py-28 md:py-44">
-      <SectionHeader index="05" label="About" />
+      <SectionHeader index="02" label="About" />
 
       <Parallax speed={50}>
       <h2 className="mt-12 text-headline leading-[0.9] tracking-[-0.05em] md:mt-20">
