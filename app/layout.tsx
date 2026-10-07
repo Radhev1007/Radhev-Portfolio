@@ -7,7 +7,6 @@ import { StatusBar } from "@/components/Chrome/StatusBar";
 import { Cursor } from "@/components/Cursor/Cursor";
 import { Footer } from "@/components/Footer/Footer";
 import { Navigation } from "@/components/Navigation/Navigation";
-import { ProjectTransitionProvider } from "@/components/Providers/ProjectTransition";
 import { SmoothScroll } from "@/components/Providers/SmoothScroll";
 import { site } from "@/lib/content";
 import { THEME_COLOR } from "@/lib/theme-config";
@@ -38,13 +37,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </a>
         <Backdrop />
         <SmoothScroll>
-          <ProjectTransitionProvider>
             <Navigation />
             {children}
             <Footer />
             <StatusBar />
             <Cursor />
-          </ProjectTransitionProvider>
         </SmoothScroll>
       </body>
     </html>
