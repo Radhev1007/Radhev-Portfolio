@@ -40,11 +40,15 @@ export const rcCollection: readonly RcVehicle[] = [
 
 export const heroVehicle = rcCollection[0];
 
-/** Where the inspector pins its labels, in the model's own coordinates. */
+/**
+ * Where the inspector pins its labels, in game units on the vehicle's own
+ * frame. Taken from the model's millimetre coordinates times the scale in
+ * `Scx30.tsx`, not placed by eye.
+ */
 export const inspectPoints = [
-  { label: "Body", at: [0.42, 0.34, 0.12] },
-  { label: "Wheels", at: [-0.5, 0.02, -0.58] },
-  { label: "Suspension", at: [0.38, 0.04, 0.58] },
-  { label: "Roof rack", at: [0, 0.78, 0.22] },
-  { label: "Light bar", at: [0, 0.66, -0.42] },
+  { label: "Body", at: [0.42, 0.45, -0.05] },
+  { label: "Wheels", at: [-0.46, 0.2, -0.49] },
+  { label: "Suspension", at: [0.33, 0.37, 0.49] },
+  { label: "Roof rack", at: [0, 0.98, 0.1] },
+  { label: "Light bar", at: [0, 0.84, -0.3] },
 ] as const;

@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { Car } from "./Car";
 import { ApproachPrompt, CollectionCard, InspectRig } from "./Inspect";
 import { Display, PLINTH_AT, PLINTH_RANGE } from "./Display";
+import { OVERALL_LEN, RC_SCALE } from "./Scx30";
 import { World } from "./World";
 import { useControls } from "./useControls";
 
@@ -138,11 +139,14 @@ function Chase({
     const d = Math.min(delta, 0.05);
     if (car) target.current.copy(car.position);
 
-    const pace = Math.min(getState().speed, 7) / 7;
+    // One and a half vehicle lengths back when crawling, two and a half when
+    // moving, at about roof height: close enough that the modelling is worth
+    // looking at, far enough to see the line you are taking.
+    const pace = Math.min(getState().speed, 6) / 6;
     desired.current.set(
       target.current.x,
-      target.current.y + 2.1 + pace * 1.1,
-      target.current.z + 5.2 + pace * 2.2,
+      target.current.y + 0.95 + pace * 0.55,
+      target.current.z + OVERALL_LEN * (1.8 + pace * 1.1),
     );
     // Snap on the first frame that actually has the truck in it. Lerping in
     // from the default camera position means the scene opens on a distant
@@ -154,7 +158,7 @@ function Chase({
     }
     camera.position.lerp(desired.current, Math.min(1, 2.6 * d));
     look.current.lerp(target.current, Math.min(1, 5 * d));
-    camera.lookAt(look.current);
+    camera.lookAt(look.current.x, look.current.y + 0.42, look.current.z);
 
     // Only tell React when the answer changes.
     const dx = target.current.x - PLINTH_AT[0];
@@ -197,7 +201,10 @@ function Hud({ speed, onExit }: { speed: number; onExit: () => void }) {
           <dd>Reset</dd>
         </dl>
         <p className="text-caption uppercase tracking-[0.16em] tabular-nums text-white/45">
-          <span className="text-white">{Math.round(speed * 8)}</span> km/h
+          {/* Game units to the truck's real speed, then up by the 1/24 scale —
+              "scale km/h" is the figure the hobby quotes, and it is at least a
+              number that means something rather than a flattering multiplier. */}
+          <span className="text-white">{Math.round((speed / RC_SCALE) * 3.6 * 24)}</span> scale km/h
         </p>
       </div>
     </div>

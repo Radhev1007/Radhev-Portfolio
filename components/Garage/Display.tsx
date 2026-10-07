@@ -2,7 +2,7 @@
 
 import { Html } from "@react-three/drei";
 import { heroVehicle } from "@/lib/garage";
-import { Crawler, TYRE_R } from "./Crawler";
+import { Scx30 } from "./Scx30";
 
 /** Where the plinth stands, and where the player has to get to to inspect it. */
 export const PLINTH_AT: [number, number, number] = [0, 0, -24.2];
@@ -37,8 +37,10 @@ export function Display({ near, label = true }: { near: boolean; label?: boolean
         />
       </mesh>
 
-      <group position={[0, top + TYRE_R, 0]} rotation={[0, PLINTH_YAW, 0]}>
-        <Crawler />
+      {/* The model's origin is its own ground plane, so it sits on the plinth
+          top with nothing to work out. */}
+      <group position={[0, top, 0]} rotation={[0, PLINTH_YAW, 0]}>
+        <Scx30 />
       </group>
 
       <spotLight

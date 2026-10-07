@@ -10,14 +10,15 @@ import {
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { Crawler, type CrawlerRig, emptyRig, TYRE_R, WHEEL_ANCHORS } from "./Crawler";
+import { emptyRig, type Rig, Scx30, toModel, TYRE_R, WHEEL_ANCHORS } from "./Scx30";
 import type { Controls } from "./useControls";
 
 // Off to one side of the cone slalom, so the first thing anyone does is drive
-// rather than immediately knock a cone over. The height is the resting height:
-// dropping the truck in means it is falling during the first few frames, and
-// the first few frames of a page that is still loading can be very long ones.
-const SPAWN: [number, number, number] = [4, 0.28, 9];
+// rather than immediately knock a cone over. The model's origin is at its own
+// ground plane, so this is resting height: dropping the truck in means it is
+// falling during the first few frames, and the first few frames of a page that
+// is still loading can be very long ones.
+const SPAWN: [number, number, number] = [4, 0.02, 9];
 
 /**
  * Crawler handling, not racing handling. The brief asks for torque, traction
@@ -36,8 +37,10 @@ const BRAKE = 0.04;
 /** Fraction of sideways speed kept per second. Low, because crawlers grip. */
 const GRIP = 0.008;
 const MAX_STEER = 0.55;
-/** Visual suspension travel, in metres either side of rest. */
-const TRAVEL = 0.07;
+/** Visual suspension travel either side of rest, in game units. */
+const TRAVEL = 0.06;
+/** How far above the body origin the grounding ray starts. */
+const RAY_UP = 0.4;
 
 /**
  * The player's vehicle.
@@ -61,7 +64,7 @@ export function Car({
   onState: (s: { speed: number; airborne: boolean }) => void;
 }) {
   const body = useRef<RapierRigidBody>(null);
-  const rig = useRef<CrawlerRig>(emptyRig());
+  const rig = useRef<Rig>(emptyRig());
   const steer = useRef(0);
   const spin = useRef(0);
   const travel = useRef([0, 0, 0, 0]);
@@ -114,9 +117,9 @@ export function Car({
 
     const o = rb.translation();
     ray.origin.x = o.x;
-    ray.origin.y = o.y;
+    ray.origin.y = o.y + RAY_UP;
     ray.origin.z = o.z;
-    const hit = world.castRayAndGetNormal(ray, 0.5, true, undefined, undefined, undefined, rb);
+    const hit = world.castRayAndGetNormal(ray, RAY_UP + 0.3, true, undefined, undefined, undefined, rb);
     const grounded = hit !== null;
 
     // Drive along the slope rather than through it.
@@ -190,13 +193,16 @@ export function Car({
         : -TRAVEL;
       travel.current[i] += (target - travel.current[i]) * Math.min(1, 12 * d);
 
+      // These nodes live inside the scaled model, so travel comes back down.
       const wheel = rig.current.wheels[i];
       if (wheel) {
-        wheel.position.y = a[1] + travel.current[i];
+        wheel.position.y = toModel(travel.current[i]);
         if (i < 2) wheel.rotation.y = steer.current;
       }
       const shock = rig.current.shocks[i];
-      if (shock) shock.scale.y = Math.max(0.65, Math.min(1.3, 1 - travel.current[i] * 2.4));
+      if (shock) {
+        shock.scale.y = Math.max(0.7, Math.min(1.25, 1 - (travel.current[i] / TRAVEL) * 0.26));
+      }
     }
 
     // Rolling tyres.
@@ -211,9 +217,9 @@ export function Car({
     lastAlong.current = along;
     pitch.current +=
       (Math.max(-0.05, Math.min(0.05, accel * 0.004)) - pitch.current) * Math.min(1, 5 * d);
-    if (rig.current.shell) {
-      rig.current.shell.rotation.z = roll.current;
-      rig.current.shell.rotation.x = pitch.current;
+    if (rig.current.body) {
+      rig.current.body.rotation.z = roll.current;
+      rig.current.body.rotation.x = pitch.current;
     }
 
     onState({ speed, airborne: !grounded });
@@ -230,12 +236,13 @@ export function Car({
       ccd
       name="rc-car"
     >
-      {/* One box for the whole truck, with its underside level with the tyres.
-          The wheels are visual, so giving them colliders would only add ways
-          for the thing to catch on scenery. */}
+      {/* One box for the whole truck, sized off the model: as wide as the
+          flares, as long as bumper to spare, and its underside level with the
+          tyres. The wheels are visual, so giving them colliders would only add
+          ways for the thing to catch on scenery. */}
       <CuboidCollider
-        args={[0.42, 0.33, 0.82]}
-        position={[0, 0.07, 0]}
+        args={[0.4, 0.27, 0.86]}
+        position={[0, 0.27, 0]}
         mass={1.6}
         // With the velocity authored outright above, contact friction is not
         // grip — it is a brake fighting the throttle. Taking the lower of the
@@ -245,7 +252,7 @@ export function Car({
         frictionCombineRule={CoefficientCombineRule.Min}
         restitution={0.05}
       />
-      <Crawler rig={rig} />
+      <Scx30 rig={rig} headlights />
     </RigidBody>
   );
 }
