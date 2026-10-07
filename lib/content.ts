@@ -64,6 +64,8 @@ export type Project = {
 export const projects: Project[] = [
   {
     slug: "technology-landing-page",
+    image: "/projects/technology-landing-page.webp",
+    imageAlt: "Technology landing page shown on desktop and mobile",
     href: "https://www.behance.net/gallery/205427461/Technology-landing-page-Desktop-Mobile-responsive",
     number: "01",
     title: "Technology Landing Page",
@@ -75,6 +77,8 @@ export const projects: Project[] = [
   },
   {
     slug: "university-admin-dashboard",
+    image: "/projects/university-admin-dashboard.webp",
+    imageAlt: "University admin dashboard concept screens",
     href: "https://www.behance.net/gallery/205423733/UIUX-Design-University-Admin-Dashboard-Concept",
     number: "02",
     title: "University Admin Dashboard",
@@ -86,6 +90,8 @@ export const projects: Project[] = [
   },
   {
     slug: "grogauge-kpi-dashboard",
+    image: "/projects/grogauge-kpi-dashboard.webp",
+    imageAlt: "Grogauge KPI dashboard interface",
     href: "https://www.behance.net/gallery/166160121/Grogauge-key-performance-indicators-Dashboard",
     number: "03",
     title: "Grogauge KPI Dashboard",
@@ -97,6 +103,8 @@ export const projects: Project[] = [
   },
   {
     slug: "food-delivery-case-study",
+    image: "/projects/food-delivery-case-study.webp",
+    imageAlt: "Food delivery application UX case study screens",
     href: "https://www.behance.net/gallery/187669415/UX-Case-Study-Food-Delivery-Application",
     number: "04",
     title: "Food Delivery Application",
@@ -108,6 +116,8 @@ export const projects: Project[] = [
   },
   {
     slug: "dashboard-concept",
+    image: "/projects/dashboard-concept.webp",
+    imageAlt: "Dashboard concept interface",
     href: "https://www.behance.net/gallery/164544999/Dashboard-Concept",
     number: "05",
     title: "Dashboard Concept",
@@ -119,6 +129,8 @@ export const projects: Project[] = [
   },
   {
     slug: "thuna-mobile-ui",
+    image: "/projects/thuna-mobile-ui.webp",
+    imageAlt: "Thuna mobile app interface screens",
     href: "https://www.behance.net/gallery/128315087/UI-UX-Design-Thuna-Mobile-UI",
     number: "06",
     title: "Thuna Mobile UI",
