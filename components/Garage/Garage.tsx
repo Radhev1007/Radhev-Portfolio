@@ -53,8 +53,8 @@ export function Garage() {
 
         <Reveal delay={0.2} className="md:col-span-4 md:col-start-9">
           <p className="max-w-sm text-body leading-relaxed text-mute">
-            When I&apos;m not designing digital experiences, I&apos;m building, tuning and driving RC cars. This is a
-            small world of that — drive it.
+            When I&apos;m not designing digital experiences, I&apos;m building, tuning and driving RC crawlers. My
+            Axial SCX30 is parked inside, along with the yard I run it in — drive it.
           </p>
           <div className="mt-8">
             <Button onClick={() => setOpen(true)} cursor="cta" cursorLabel="Drive">

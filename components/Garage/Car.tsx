@@ -2,43 +2,56 @@
 
 import {
   CoefficientCombineRule,
+  CuboidCollider,
   RapierRigidBody,
   RigidBody,
   useRapier,
 } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { Crawler, type CrawlerRig, emptyRig, TYRE_R, WHEEL_ANCHORS } from "./Crawler";
 import type { Controls } from "./useControls";
 
-const SPAWN: [number, number, number] = [0, 1.2, 6];
-
-// Arcade handling constants. Speeds are metres per second; the HUD reads them
-// out multiplied by eight so a scale-model car shows scale-model numbers.
-const ACCEL = 17;
-const REVERSE_ACCEL = 11;
-const TOP = 14;
-const REVERSE_TOP = 6;
-const BOOST = 1.55;
-/** Fraction of forward speed kept per second when coasting / on the handbrake. */
-const COAST = 0.45;
-const HANDBRAKE = 0.12;
-/** Fraction of sideways speed kept per second — low is grip, high is drift. */
-const GRIP = 0.015;
-const DRIFT_GRIP = 0.6;
+// Off to one side of the cone slalom, so the first thing anyone does is drive
+// rather than immediately knock a cone over. The height is the resting height:
+// dropping the truck in means it is falling during the first few frames, and
+// the first few frames of a page that is still loading can be very long ones.
+const SPAWN: [number, number, number] = [4, 0.28, 9];
 
 /**
- * The player's RC car.
+ * Crawler handling, not racing handling. The brief asks for torque, traction
+ * and technical driving, so the numbers are deliberately small: this thing
+ * tops out at a walking pace in world terms and gets there quickly, which is
+ * exactly how a scale crawler behaves.
+ */
+const ACCEL = 10;
+const REVERSE_ACCEL = 7;
+const TOP = 6.2;
+const REVERSE_TOP = 3.6;
+const BOOST = 1.45;
+/** Fraction of forward speed kept per second when coasting / braking. */
+const COAST = 0.3;
+const BRAKE = 0.04;
+/** Fraction of sideways speed kept per second. Low, because crawlers grip. */
+const GRIP = 0.008;
+const MAX_STEER = 0.55;
+/** Visual suspension travel, in metres either side of rest. */
+const TRAVEL = 0.07;
+
+/**
+ * The player's vehicle.
  *
- * Physics and visuals are deliberately separate: a single rigid body carries
- * the mass and collides with the world, and the wheels are visual children
- * that steer and spin. Swapping the shell for a real model later means
- * replacing the meshes in `Body` and nothing else.
+ * Physics and visuals are separate: one cuboid carries the mass and the
+ * collisions, and everything the eye reads as mechanical — wheels steering,
+ * tyres turning, shocks compressing, the shell rolling into a corner — is
+ * driven on top of it from four downward raycasts. A proper raycast vehicle
+ * would simulate all of that for real, and would also feel considerably worse
+ * for the five minutes anyone spends here.
  *
- * The driving model is arcade, not simulation — forces at the chassis rather
- * than per-wheel friction — because the brief asks for lightweight and
- * playful, and a raycast vehicle tuned badly feels far worse than simple
- * forces tuned well.
+ * The one piece of real simulation is the slope: the drive direction is the
+ * nose projected onto the ground's normal, which is what lets the truck climb
+ * a ramp or a rock instead of pushing into it.
  */
 export function Car({
   controls,
@@ -48,22 +61,42 @@ export function Car({
   onState: (s: { speed: number; airborne: boolean }) => void;
 }) {
   const body = useRef<RapierRigidBody>(null);
-  const wheels = useRef<(THREE.Group | null)[]>([]);
+  const rig = useRef<CrawlerRig>(emptyRig());
   const steer = useRef(0);
   const spin = useRef(0);
+  const travel = useRef([0, 0, 0, 0]);
+  const roll = useRef(0);
+  const pitch = useRef(0);
+  const lastAlong = useRef(0);
   const { world, rapier } = useRapier();
 
-  const v = new THREE.Vector3();
-  const forward = new THREE.Vector3();
-  const q = new THREE.Quaternion();
+  const vec = useMemo(
+    () => ({
+      v: new THREE.Vector3(),
+      forward: new THREE.Vector3(),
+      drive: new THREE.Vector3(),
+      normal: new THREE.Vector3(),
+      lateral: new THREE.Vector3(),
+      anchor: new THREE.Vector3(),
+      q: new THREE.Quaternion(),
+    }),
+    [],
+  );
+  const ray = useMemo(
+    () => new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 }),
+    [rapier],
+  );
 
   useFrame((_, delta) => {
     const rb = body.current;
     if (!rb) return;
     const c = controls.current;
     const d = Math.min(delta, 0.05);
+    const { v, forward, drive, normal, lateral, anchor, q } = vec;
 
-    if (c.reset) {
+    // R, or falling out of the world — which should not happen, but a game
+    // that silently drops you into the void is worse than one that admits it.
+    if (c.reset || rb.translation().y < -4) {
       rb.setTranslation({ x: SPAWN[0], y: SPAWN[1], z: SPAWN[2] }, true);
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
       rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -78,63 +111,110 @@ export function Car({
     const lin = rb.linvel();
     v.set(lin.x, lin.y, lin.z);
     const speed = v.length();
-    const travellingForward = v.dot(forward) > 0;
 
-    // Grounded test: a short ray straight down from the chassis, ignoring the
-    // car's own body so it cannot detect itself.
-    const origin = rb.translation();
-    const ray = new rapier.Ray({ x: origin.x, y: origin.y, z: origin.z }, { x: 0, y: -1, z: 0 });
-    const grounded = world.castRay(ray, 0.6, true, undefined, undefined, undefined, rb) !== null;
+    const o = rb.translation();
+    ray.origin.x = o.x;
+    ray.origin.y = o.y;
+    ray.origin.z = o.z;
+    const hit = world.castRayAndGetNormal(ray, 0.5, true, undefined, undefined, undefined, rb);
+    const grounded = hit !== null;
 
+    // Drive along the slope rather than through it.
+    drive.copy(forward);
+    if (hit) {
+      normal.set(hit.normal.x, hit.normal.y, hit.normal.z);
+      drive.addScaledVector(normal, -drive.dot(normal));
+      if (drive.lengthSq() < 1e-6) drive.copy(forward);
+    } else {
+      drive.y = 0;
+    }
+    drive.normalize();
+
+    const along = v.dot(drive);
     const throttle = (c.forward ? 1 : 0) - (c.back ? 1 : 0);
     const boost = c.boost ? BOOST : 1;
 
-    // Velocity is split into the component along the nose and the component
-    // sliding sideways, then both are rewritten. Doing it this way rather than
-    // with impulses means the throttle, the drag and the grip are one decision
-    // instead of three that overwrite each other.
     if (grounded) {
-      const along = lin.x * forward.x + lin.z * forward.z;
-
       let next = along;
       if (throttle > 0) next += ACCEL * boost * d;
       else if (throttle < 0) next -= REVERSE_ACCEL * d;
       else next *= Math.pow(COAST, d);
-      if (c.brake) next *= Math.pow(HANDBRAKE, d);
+      if (c.brake) next *= Math.pow(BRAKE, d);
       next = Math.max(-REVERSE_TOP, Math.min(TOP * boost, next));
 
-      // Whatever is left over is the slide. Killing most of it per second is
-      // what makes the car feel gripped; keeping it is what makes it drift.
-      const keep = Math.pow(c.brake ? DRIFT_GRIP : GRIP, d);
-      const lateralX = lin.x - forward.x * along;
-      const lateralZ = lin.z - forward.z * along;
+      lateral.copy(v).addScaledVector(drive, -along);
+      const keep = Math.pow(GRIP, d);
 
       rb.setLinvel(
         {
-          x: forward.x * next + lateralX * keep,
-          y: lin.y,
-          z: forward.z * next + lateralZ * keep,
+          x: drive.x * next + lateral.x * keep,
+          y: drive.y * next + lateral.y * keep,
+          z: drive.z * next + lateral.z * keep,
         },
         true,
       );
     }
 
-    // Steering authority rises with speed, so it does not spin on the spot.
-    const want = ((c.left ? 1 : 0) - (c.right ? 1 : 0)) * 0.55;
-    steer.current += (want - steer.current) * Math.min(1, 10 * d);
-    if (grounded && speed > 0.4) {
-      const bite = c.brake ? 1.25 : 1;
-      const turn = steer.current * Math.min(speed, 9) * 0.42 * bite * (travellingForward ? 1 : -1);
-      rb.setAngvel({ x: 0, y: turn, z: 0 }, true);
+    // Steering. Only the yaw is written — pitch and roll are left to the
+    // solver, so the truck can still tip and settle on uneven ground.
+    const want = ((c.left ? 1 : 0) - (c.right ? 1 : 0)) * MAX_STEER;
+    steer.current += (want - steer.current) * Math.min(1, 9 * d);
+    if (grounded && Math.abs(along) > 0.2) {
+      const av = rb.angvel();
+      const turn = steer.current * Math.min(Math.abs(along), 5) * 0.74 * (along > 0 ? 1 : -1);
+      rb.setAngvel({ x: av.x, y: turn, z: av.z }, true);
     }
 
-    // Wheels: steer the fronts, spin all four with travel.
-    spin.current += speed * d * (travellingForward ? 6 : -6);
-    wheels.current.forEach((w, i) => {
-      if (!w) return;
-      if (i < 2) w.rotation.y = steer.current * 0.6;
-      w.children[0] && ((w.children[0] as THREE.Mesh).rotation.x = spin.current);
-    });
+    /* ── Everything below here is cosmetic ─────────────────── */
+
+    // Per-wheel suspension: cast down from each corner and let the wheel find
+    // the ground. This is why the truck looks articulated over the rocks even
+    // though the collider is a single box.
+    for (let i = 0; i < 4; i++) {
+      const a = WHEEL_ANCHORS[i];
+      anchor.set(a[0], a[1], a[2]).applyQuaternion(q);
+      ray.origin.x = o.x + anchor.x;
+      ray.origin.y = o.y + anchor.y + 0.2;
+      ray.origin.z = o.z + anchor.z;
+      const wheelHit = world.castRayAndGetNormal(
+        ray,
+        0.2 + TYRE_R + TRAVEL,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        rb,
+      );
+      const target = wheelHit
+        ? Math.max(-TRAVEL, Math.min(TRAVEL, TYRE_R - (wheelHit.timeOfImpact - 0.2)))
+        : -TRAVEL;
+      travel.current[i] += (target - travel.current[i]) * Math.min(1, 12 * d);
+
+      const wheel = rig.current.wheels[i];
+      if (wheel) {
+        wheel.position.y = a[1] + travel.current[i];
+        if (i < 2) wheel.rotation.y = steer.current;
+      }
+      const shock = rig.current.shocks[i];
+      if (shock) shock.scale.y = Math.max(0.65, Math.min(1.3, 1 - travel.current[i] * 2.4));
+    }
+
+    // Rolling tyres.
+    spin.current += (along / TYRE_R) * d;
+    for (const hub of rig.current.hubs) if (hub) hub.rotation.x = -spin.current;
+
+    // Body roll into a corner and squat under power — small numbers, because
+    // the point is that you notice it without being able to name it.
+    const lateralLoad = steer.current * Math.min(Math.abs(along), 6) * (along > 0 ? 1 : -1);
+    roll.current += (lateralLoad * 0.02 - roll.current) * Math.min(1, 6 * d);
+    const accel = (along - lastAlong.current) / d;
+    lastAlong.current = along;
+    pitch.current +=
+      (Math.max(-0.05, Math.min(0.05, accel * 0.004)) - pitch.current) * Math.min(1, 5 * d);
+    if (rig.current.shell) {
+      rig.current.shell.rotation.z = roll.current;
+      rig.current.shell.rotation.x = pitch.current;
+    }
 
     onState({ speed, airborne: !grounded });
   });
@@ -142,68 +222,30 @@ export function Car({
   return (
     <RigidBody
       ref={body}
-      colliders="cuboid"
+      colliders={false}
       position={SPAWN}
-      mass={1.1}
-      linearDamping={0.4}
-      angularDamping={2.2}
-      // The handling model above writes the car's velocity outright, so contact
-      // friction is not grip here — it is a brake fighting the throttle. Taking
-      // the lower of the two coefficients keeps the ground grippy for the props
-      // the car knocks about while leaving the car itself free to drive.
-      friction={0.12}
-      frictionCombineRule={CoefficientCombineRule.Min}
-      restitution={0.1}
+      linearDamping={0.3}
+      angularDamping={2.6}
       canSleep={false}
       ccd
       name="rc-car"
     >
-      <Body wheels={wheels} />
+      {/* One box for the whole truck, with its underside level with the tyres.
+          The wheels are visual, so giving them colliders would only add ways
+          for the thing to catch on scenery. */}
+      <CuboidCollider
+        args={[0.42, 0.33, 0.82]}
+        position={[0, 0.07, 0]}
+        mass={1.6}
+        // With the velocity authored outright above, contact friction is not
+        // grip — it is a brake fighting the throttle. Taking the lower of the
+        // two coefficients keeps the ground grippy for the props the truck
+        // shunts around while leaving the truck itself free to drive.
+        friction={0.12}
+        frictionCombineRule={CoefficientCombineRule.Min}
+        restitution={0.05}
+      />
+      <Crawler rig={rig} />
     </RigidBody>
-  );
-}
-
-/** Visual shell only — replace these meshes to swap in a real RC model. */
-function Body({ wheels }: { wheels: React.RefObject<(THREE.Group | null)[]> }) {
-  const positions: [number, number, number][] = [
-    [-0.42, -0.16, -0.52],
-    [0.42, -0.16, -0.52],
-    [-0.42, -0.16, 0.52],
-    [0.42, -0.16, 0.52],
-  ];
-
-  return (
-    <group>
-      {/* Chassis */}
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[0.86, 0.3, 1.5]} />
-        <meshStandardMaterial color="#1b1b1b" roughness={0.45} metalness={0.3} />
-      </mesh>
-      {/* Shell */}
-      <mesh castShadow position={[0, 0.22, -0.08]}>
-        <boxGeometry args={[0.78, 0.2, 0.95]} />
-        <meshStandardMaterial color="#f43c00" roughness={0.3} metalness={0.15} />
-      </mesh>
-      {/* Wing */}
-      <mesh castShadow position={[0, 0.34, 0.6]}>
-        <boxGeometry args={[0.7, 0.04, 0.22]} />
-        <meshStandardMaterial color="#111" roughness={0.5} />
-      </mesh>
-
-      {positions.map((p, i) => (
-        <group
-          key={i}
-          position={p}
-          ref={(el) => {
-            wheels.current[i] = el;
-          }}
-        >
-          <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.22, 0.22, 0.17, 18]} />
-            <meshStandardMaterial color="#141414" roughness={0.85} />
-          </mesh>
-        </group>
-      ))}
-    </group>
   );
 }

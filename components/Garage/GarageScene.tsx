@@ -6,8 +6,12 @@ import { Physics } from "@react-three/rapier";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Car } from "./Car";
+import { ApproachPrompt, CollectionCard, InspectRig } from "./Inspect";
+import { Display, PLINTH_AT, PLINTH_RANGE } from "./Display";
 import { World } from "./World";
 import { useControls } from "./useControls";
+
+type Mode = "drive" | "inspect";
 
 /**
  * The garage, mounted only once the visitor asks for it.
@@ -17,8 +21,10 @@ import { useControls } from "./useControls";
  * was explicit that the main page has to stay light.
  */
 export function GarageScene({ onExit }: { onExit: () => void }) {
-  const controls = useControls();
+  const [mode, setMode] = useState<Mode>("drive");
+  const controls = useControls(mode === "drive");
   const [speed, setSpeed] = useState(0);
+  const [near, setNear] = useState(false);
   const [tier, setTier] = useState<"high" | "low">("high");
   const state = useRef({ speed: 0, airborne: false });
 
@@ -31,16 +37,26 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
     setTier(coarse || window.innerWidth < 768 || (navigator.hardwareConcurrency ?? 4) <= 4 ? "low" : "high");
   }, []);
 
-  // Escape leaves; the readout ticks a few times a second rather than per frame.
+  // Escape backs out one level at a time — out of the inspector first, then
+  // out of the garage — so it never throws away more than the visitor meant.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onExit();
-    window.addEventListener("keydown", onKey);
-    const id = setInterval(() => setSpeed(state.current.speed), 150);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      clearInterval(id);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (mode === "inspect") setMode("drive");
+        else onExit();
+        return;
+      }
+      if (e.code === "KeyE" && mode === "drive" && near) setMode("inspect");
     };
-  }, [onExit]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mode, near, onExit]);
+
+  // The readout ticks a few times a second rather than once a frame.
+  useEffect(() => {
+    const id = setInterval(() => setSpeed(state.current.speed), 150);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#0b0b0c]">
@@ -69,15 +85,27 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
 
         <Suspense fallback={null}>
           <Environment preset="warehouse" environmentIntensity={0.35} />
-          <Physics gravity={[0, -22, 0]} timeStep="vary">
+          {/* A fixed step, not "vary": a slow first frame under a variable step is a
+              one-second physics tick, and a one-second tick puts the truck through
+              the floor before anyone has touched a key. */}
+          <Physics gravity={[0, -22, 0]} timeStep={1 / 60} paused={mode === "inspect"}>
             <World />
+            <Display near={near} label={mode === "drive"} />
             <Car controls={controls} onState={onState} />
-            <Chase getState={() => state.current} />
+            {mode === "drive" && <Chase getState={() => state.current} onNear={setNear} />}
           </Physics>
+          {mode === "inspect" && <InspectRig />}
         </Suspense>
       </Canvas>
 
-      <Hud speed={speed} onExit={onExit} />
+      {mode === "drive" ? (
+        <>
+          <Hud speed={speed} onExit={onExit} />
+          {near && <ApproachPrompt onExplore={() => setMode("inspect")} />}
+        </>
+      ) : (
+        <CollectionCard onBack={() => setMode("drive")} />
+      )}
     </div>
   );
 }
@@ -85,27 +113,57 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
 /**
  * Third-person chase camera. It trails the car's position rather than its
  * heading, so reversing or spinning does not whip the view around — the lag
- * is the point.
+ * is the point. It also closes in when the truck is crawling and backs off
+ * when it is moving, because the two situations want different framing.
+ *
+ * It does double duty as the proximity test for the display plinth: it is
+ * already holding the car every frame, so nothing else has to look it up.
  */
-function Chase({ getState }: { getState: () => { speed: number; airborne: boolean } }) {
+function Chase({
+  getState,
+  onNear,
+}: {
+  getState: () => { speed: number; airborne: boolean };
+  onNear: (near: boolean) => void;
+}) {
   const { camera, scene } = useThree();
   const target = useRef(new THREE.Vector3(0, 1, 6));
   const look = useRef(new THREE.Vector3(0, 1, 6));
   const desired = useRef(new THREE.Vector3());
+  const wasNear = useRef(false);
+  const settled = useRef(false);
 
   useFrame((_, delta) => {
     const car = scene.getObjectByName("rc-car");
     const d = Math.min(delta, 0.05);
     if (car) target.current.copy(car.position);
 
+    const pace = Math.min(getState().speed, 7) / 7;
     desired.current.set(
       target.current.x,
-      target.current.y + 4.6 + Math.min(getState().speed, 12) * 0.12,
-      target.current.z + 9.5,
+      target.current.y + 2.1 + pace * 1.1,
+      target.current.z + 5.2 + pace * 2.2,
     );
-    camera.position.lerp(desired.current, Math.min(1, 2.4 * d));
+    // Snap on the first frame that actually has the truck in it. Lerping in
+    // from the default camera position means the scene opens on a distant
+    // speck; snapping before the rigid body exists aims at the wrong place.
+    if (!settled.current && car) {
+      settled.current = true;
+      camera.position.copy(desired.current);
+      look.current.copy(target.current);
+    }
+    camera.position.lerp(desired.current, Math.min(1, 2.6 * d));
     look.current.lerp(target.current, Math.min(1, 5 * d));
     camera.lookAt(look.current);
+
+    // Only tell React when the answer changes.
+    const dx = target.current.x - PLINTH_AT[0];
+    const dz = target.current.z - PLINTH_AT[2];
+    const isNear = dx * dx + dz * dz < PLINTH_RANGE * PLINTH_RANGE;
+    if (isNear !== wasNear.current) {
+      wasNear.current = isNear;
+      onNear(isNear);
+    }
   });
   return null;
 }
@@ -130,9 +188,9 @@ function Hud({ speed, onExit }: { speed: number; onExit: () => void }) {
       <div className="absolute inset-x-6 bottom-6 flex items-end justify-between md:inset-x-8 md:bottom-8">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-caption uppercase tracking-[0.16em] text-white/45">
           <dt className="text-white">W A S D</dt>
-          <dd>Drive</dd>
+          <dd>Crawl</dd>
           <dt className="text-white">Space</dt>
-          <dd>Drift</dd>
+          <dd>Brake</dd>
           <dt className="text-white">Shift</dt>
           <dd>Boost</dd>
           <dt className="text-white">R</dt>

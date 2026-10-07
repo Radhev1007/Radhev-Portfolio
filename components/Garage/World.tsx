@@ -1,6 +1,7 @@
 "use client";
 
 import { RigidBody } from "@react-three/rapier";
+import { useMemo } from "react";
 import * as THREE from "three";
 
 /**
@@ -33,6 +34,8 @@ export function World() {
       <Garage />
       <Ramp position={[-9, 0, -2]} rotation={-0.25} />
       <Ramp position={[10, 0, -8]} rotation={2.6} />
+      <RockGarden />
+      <PitArea />
       <Barriers />
       <TyreStacks />
       <Cones />
@@ -62,14 +65,6 @@ function Garage() {
         <mesh castShadow receiveShadow position={[0, 4.9, -1.8]}>
           <boxGeometry args={[16, 0.3, 5]} />
           <meshStandardMaterial color="#2a2a2a" roughness={0.7} metalness={0.2} />
-        </mesh>
-      </RigidBody>
-
-      {/* Display shelf — the collection stands here once there is one */}
-      <RigidBody type="fixed" colliders="cuboid">
-        <mesh castShadow receiveShadow position={[0, 0.9, -3.4]}>
-          <boxGeometry args={[13, 0.25, 1]} />
-          <meshStandardMaterial color="#3a3027" roughness={0.85} />
         </mesh>
       </RigidBody>
 
@@ -185,5 +180,130 @@ function Perimeter() {
         );
       })}
     </>
+  );
+}
+
+/**
+ * A low rock garden. Nothing here is taller than the truck's belly, because
+ * the fun of a crawler is picking a line over an obstacle rather than failing
+ * to climb it — and because the suspension articulating across these is the
+ * clearest signal that this is a crawler and not a buggy.
+ */
+function RockGarden() {
+  const rocks = useMemo(
+    () =>
+      [
+        [-13, 7, 0.32, 1.5, 0.3],
+        [-11.4, 8.6, 0.24, 1.1, 1.9],
+        [-14.6, 9.2, 0.28, 1.3, 0.8],
+        [-12.2, 10.6, 0.2, 1.0, 2.6],
+        [-15.4, 6.4, 0.22, 0.9, 1.2],
+        [-9.8, 6.2, 0.18, 0.8, 0.4],
+      ] as const,
+    [],
+  );
+
+  return (
+    <>
+      {rocks.map(([x, z, h, r, spin], i) => (
+        <RigidBody key={i} type="fixed" colliders="hull" position={[x, h * 0.45, z]} rotation={[0, spin, 0]}>
+          <mesh castShadow receiveShadow scale={[r, h, r * 0.92]}>
+            <icosahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial color="#4a443c" roughness={0.98} flatShading />
+          </mesh>
+        </RigidBody>
+      ))}
+    </>
+  );
+}
+
+/**
+ * The pit bench, and the whole reason the scale reads correctly: a
+ * transmitter, LiPo packs, a charger and a tool tray, all sized against a
+ * truck a foot and a half long. Without props like these the yard could be
+ * a full-size rally stage.
+ */
+function PitArea() {
+  const bench = <meshStandardMaterial color="#2e2a25" roughness={0.85} />;
+
+  return (
+    <group position={[8.5, 0, -20]} rotation={[0, -0.5, 0]}>
+      {/* Trestle table */}
+      <RigidBody type="fixed" colliders="cuboid">
+        <mesh castShadow receiveShadow position={[0, 1.1, 0]}>
+          <boxGeometry args={[4.4, 0.12, 1.8]} />
+          {bench}
+        </mesh>
+      </RigidBody>
+      {[
+        [-2, -0.75],
+        [2, -0.75],
+        [-2, 0.75],
+        [2, 0.75],
+      ].map(([x, z], i) => (
+        <mesh key={i} castShadow position={[x, 0.55, z]}>
+          <boxGeometry args={[0.1, 1.1, 0.1]} />
+          <meshStandardMaterial color="#1d1b19" roughness={0.8} metalness={0.3} />
+        </mesh>
+      ))}
+
+      {/* Transmitter, stood on its grip */}
+      <group position={[-1.5, 1.32, 0.1]} rotation={[0, 0.4, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.44, 0.3, 0.3]} />
+          <meshStandardMaterial color="#17171a" roughness={0.5} />
+        </mesh>
+        <mesh castShadow position={[0.16, 0.06, 0.18]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.13, 0.13, 0.07, 16]} />
+          <meshStandardMaterial color="#f43c00" roughness={0.45} />
+        </mesh>
+        <mesh position={[-0.1, 0.3, 0]}>
+          <boxGeometry args={[0.02, 0.32, 0.02]} />
+          <meshStandardMaterial color="#8a8a8a" roughness={0.3} metalness={0.8} />
+        </mesh>
+      </group>
+
+      {/* LiPo packs */}
+      {[0, 1, 2].map((i) => (
+        <mesh key={i} castShadow position={[-0.2 + i * 0.3, 1.24, -0.45]} rotation={[0, 0.2 * i, 0]}>
+          <boxGeometry args={[0.26, 0.14, 0.5]} />
+          <meshStandardMaterial color={i === 1 ? "#1f3a6b" : "#20201f"} roughness={0.4} />
+        </mesh>
+      ))}
+
+      {/* Charger, with a lit display */}
+      <group position={[1.1, 1.3, 0.2]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.6, 0.26, 0.5]} />
+          <meshStandardMaterial color="#232326" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, 0.02, 0.255]}>
+          <planeGeometry args={[0.34, 0.14]} />
+          <meshStandardMaterial color="#2bd08a" emissive="#2bd08a" emissiveIntensity={1.4} toneMapped={false} />
+        </mesh>
+      </group>
+
+      {/* Tool tray and a few hex drivers */}
+      <mesh castShadow position={[2, 1.2, -0.3]}>
+        <boxGeometry args={[0.9, 0.08, 0.6]} />
+        <meshStandardMaterial color="#3a3a3e" roughness={0.5} metalness={0.4} />
+      </mesh>
+      {[0, 1, 2, 3].map((i) => (
+        <mesh key={i} position={[1.72 + i * 0.18, 1.27, -0.3]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.44, 8]} />
+          <meshStandardMaterial color={i % 2 ? "#f43c00" : "#9a9aa0"} roughness={0.4} metalness={0.5} />
+        </mesh>
+      ))}
+
+      {/* Spare tyres under the bench */}
+      {[0, 1].map((i) => (
+        <mesh key={i} castShadow position={[-1.6, 0.1 + i * 0.16, -0.4]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.2, 0.09, 8, 16]} />
+          <meshStandardMaterial color="#17171a" roughness={0.95} />
+        </mesh>
+      ))}
+
+      <pointLight position={[0, 2.4, 0.6]} intensity={14} distance={8} color="#ffe6c8" />
+    </group>
   );
 }
