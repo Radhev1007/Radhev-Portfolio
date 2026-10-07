@@ -1,67 +1,44 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
-import { Parallax } from "@/components/Animations/Parallax";
 import { Reveal } from "@/components/Animations/Reveal";
 import { TextReveal } from "@/components/Animations/TextReveal";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
-import { about } from "@/lib/content";
-import { LayerStack } from "./LayerStack";
+import { about, site } from "@/lib/content";
 
-const headlineStyles = [
-  "font-medium",
-  "font-accent text-bone tracking-[-0.03em]",
-  "font-medium text-accent",
-];
-
+/**
+ * A single statement, as on the reference: this sits second on the page, so
+ * its job is to say who in one breath and hand over to the work.
+ *
+ * The exploded layer illustration, the secondary paragraph and the
+ * disciplines list have all gone — disciplines are the Capabilities
+ * section's job, and the rest made this the longest block on a page whose
+ * subject is the work. LayerStack is still in the repo if it earns a place
+ * somewhere else.
+ */
 export function About() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const drift = useTransform(scrollYProgress, [0, 1], [60, -60]);
-
   return (
-    <section id="about" ref={ref} aria-label="About" className="relative gutter mx-auto max-w-[1600px] py-28 md:py-44">
+    <section id="about" aria-label="About" className="relative gutter mx-auto max-w-[1600px] py-24 md:py-32">
       <SectionHeader index="02" label="About" />
 
-      <Parallax speed={50}>
-      <h2 className="mt-12 text-headline leading-[0.9] tracking-[-0.05em] md:mt-20">
-        {about.headline.map((line, i) => (
-          <TextReveal key={line} as="span" text={line} delay={i * 0.12} className={`block ${headlineStyles[i]}`} />
-        ))}
-      </h2>
-      </Parallax>
+      <div className="mt-8 grid grid-cols-1 gap-8 md:mt-10 md:grid-cols-12">
+        <h2 className="md:col-span-9">
+          <TextReveal
+            as="span"
+            text={about.intro}
+            className="block text-title font-medium leading-[1.15] tracking-[-0.03em]"
+          />
+        </h2>
 
-      <div className="mt-16 grid grid-cols-1 gap-16 md:mt-28 md:grid-cols-12 md:gap-8">
-        {/* Spatial composition: the layers of an interface, exploded */}
-        <motion.div className="overflow-x-clip md:col-span-6 lg:col-span-7" style={{ y: drift }}>
-          <LayerStack />
-        </motion.div>
-
-        <div className="flex flex-col gap-12 md:col-span-6 lg:col-span-5">
-          <Reveal>
-            <p className="text-lead leading-[1.35] tracking-[-0.015em] text-bone/90">{about.intro}</p>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <p className="max-w-md text-body leading-relaxed text-mute">{about.secondary}</p>
-          </Reveal>
-
-          <div>
-            <p className="label mb-4">Disciplines</p>
-            <ul className="border-t border-line">
-              {about.disciplines.map((d, i) => (
-                <Reveal key={d} delay={i * 0.05}>
-                  <li className="group flex items-center justify-between border-b border-line py-4 transition-colors duration-500 hover:text-accent">
-                    <span className="text-lead tracking-tight transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-2">
-                      {d}
-                    </span>
-                    <span className="label">0{i + 1}</span>
-                  </li>
-                </Reveal>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <Reveal delay={0.2} className="md:col-span-3 md:pt-2">
+          <p className="label">{site.location}</p>
+          <p className="label mt-2">{site.role}</p>
+          {site.available && (
+            <p className="label mt-2 flex items-center gap-2 !text-bone">
+              <span aria-hidden className="size-1 bg-accent" />
+              {site.availabilityLabel}
+            </p>
+          )}
+        </Reveal>
       </div>
     </section>
   );

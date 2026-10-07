@@ -317,11 +317,9 @@ export const processSteps = [
 /* ── About ──────────────────────────────────────────────────── */
 
 export const about = {
-  headline: ["Designer.", "Problem Solver.", "Digital Experience Creator."],
+  /** Carries the whole About section, so it has to work as one statement. */
   intro:
-    "I'm a UI/UX designer with 4+ years of experience transforming user needs and business requirements into intuitive, pixel-perfect digital experiences across web, mobile and desktop. I work in Figma — components, variants, Auto Layout and scalable design systems — and bridge design with front-end development.",
-  secondary:
-    "I've delivered enterprise and SaaS products across Government, Fintech, HRTech, Media, Events and Education, working closely with developers, BA teams and stakeholders. Hands-on with HTML, CSS and JavaScript, so what I hand over is ready to build.",
+    "I'm a UI/UX designer with 4+ years turning complex requirements into products that feel simple — across enterprise SaaS, government, fintech and education, from first wireframe to front-end-ready handoff.",
   disciplines: [
     "UI/UX Design",
     "Product Design",
