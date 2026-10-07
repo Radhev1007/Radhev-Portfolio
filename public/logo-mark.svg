@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Source geometry for the 3D mark: the letterform only. The icon's
+       background plate and accent foot are omitted — the plate would extrude
+       into a slab, and the foot is a flat colour accent, not relief. -->
+  <path d="M26 24h17v56H26z"/>
+  <path d="M36 24h12a28 28 0 0 1 28 28H59a11 11 0 0 0-11-11H36z"/>
+</svg>

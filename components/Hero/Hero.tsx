@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/Animations/Button";
 import { Scramble } from "@/components/Animations/Scramble";
-import { HeroIllustration } from "@/components/Illustrations/HeroIllustration";
+import { LogoScene } from "@/components/LogoScene/LogoScene";
 import { useScrollTo } from "@/components/Providers/SmoothScroll";
 import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
@@ -33,12 +33,14 @@ export function Hero() {
     <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col overflow-hidden">
       <HeroVideo />
       <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-6 gutter pb-8 pt-24 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-24">
-        {/* Illustration leads on narrow screens, right-hand column on wide ones. */}
-        <div className="order-1 w-full [&_svg]:max-h-[24svh] [&_svg]:w-auto md:order-2 md:col-span-5 md:col-start-8 md:[&_svg]:ml-auto md:[&_svg]:max-h-[60svh]">
-          <HeroIllustration delay={intro.objects} />
+        {/* The mark in 3D leads on narrow screens, right-hand column on wide
+            ones. It sits behind the written column's stacking context, so the
+            links and buttons there still take their own clicks. */}
+        <div className="order-1 h-[34svh] w-full md:order-2 md:col-span-5 md:col-start-8 md:h-[58svh]">
+          <LogoScene className="size-full" />
         </div>
 
-        <div className="order-2 md:order-1 md:col-span-6">
+        <div className="relative z-10 order-2 md:order-1 md:col-span-6">
           <motion.ul
             className="label flex flex-wrap items-center gap-x-2 gap-y-2 !text-bone/60"
             aria-label="Disciplines"
