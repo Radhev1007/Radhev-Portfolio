@@ -31,7 +31,7 @@ export function DesignSystem() {
   });
 
   return (
-    <section ref={ref} aria-label="Design beyond the screen" className="relative md:h-[280vh]">
+    <section ref={ref} aria-label="Design beyond the screen" className="surface-invert relative md:h-[280vh]">
       <div className="flex items-center md:sticky md:top-0 md:min-h-[100svh]">
         <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 gutter py-24 md:grid-cols-12 md:gap-8">
           <div className="md:col-span-5">

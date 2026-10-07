@@ -20,7 +20,7 @@ export function Contact() {
     <section
       id="contact"
       aria-label="Contact"
-      className="surface-alt relative gutter mx-auto flex min-h-[100svh] max-w-[1600px] flex-col py-24 md:py-32"
+      className="surface-invert relative gutter mx-auto flex min-h-[100svh] max-w-[1600px] flex-col py-24 md:py-32"
     >
       <SectionHeader index="08" label="Contact" />
 

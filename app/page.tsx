@@ -17,7 +17,7 @@ import { Skills } from "@/components/Skills/Skills";
 export default function Home() {
   return (
     <main id="main">
-      <SectionScene enter={false}>
+      <SectionScene>
         <Hero />
       </SectionScene>
       <SectionScene>

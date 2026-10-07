@@ -13,7 +13,7 @@ export function Projects() {
   const [active, setActive] = useState<Project | null>(null);
 
   return (
-    <section id="work" aria-label="Selected work" className="surface-alt relative py-28 md:py-44">
+    <section id="work" aria-label="Selected work" className="relative py-28 md:py-44">
       {/* A flat colour wash that shifts to the focused project's palette */}
       <motion.div
         aria-hidden

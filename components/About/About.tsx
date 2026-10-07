@@ -17,7 +17,7 @@ import { about, site } from "@/lib/content";
  */
 export function About() {
   return (
-    <section id="about" aria-label="About" className="relative gutter mx-auto max-w-[1600px] py-24 md:py-32">
+    <section id="about" aria-label="About" className="surface-invert relative gutter mx-auto max-w-[1600px] py-24 md:py-32">
       <SectionHeader index="02" label="About" />
 
       <div className="mt-8 grid grid-cols-1 gap-8 md:mt-10 md:grid-cols-12">
