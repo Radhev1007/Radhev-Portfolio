@@ -203,6 +203,70 @@ export const experience: Role[] = [
   },
 ];
 
+
+/* ── Testimonials ───────────────────────────────────────────────── */
+
+export type Testimonial = {
+  quote: string;
+  /** Kept literally as "Client Name" until a real, attributable quote exists. */
+  name: string;
+  role: string;
+  company: string;
+  /** Portrait in /public. Without one, an initial card stands in. */
+  image?: string;
+  imageAlt?: string;
+};
+
+/**
+ * PLACEHOLDER COPY — these are not real client quotes.
+ *
+ * The attribution is deliberately literal: no invented person or company
+ * appears here, so nothing on the page claims a named client said something
+ * they did not. Replace the whole entry — quote, name, role, company — when
+ * a real one arrives, rather than keeping a fabricated quote under a real
+ * name.
+ */
+export const testimonials: Testimonial[] = [
+  {
+    quote:
+      "Radhev brought clarity to a complex product and turned our interface into something that feels intuitive, purposeful and remarkably polished.",
+    name: "Client Name",
+    role: "Product Manager",
+    company: "Company Name",
+  },
+  {
+    quote:
+      "From the initial UX direction to the smallest interaction detail, the process was thoughtful, structured and genuinely refined.",
+    name: "Client Name",
+    role: "Founder",
+    company: "Company Name",
+  },
+  {
+    quote:
+      "Radhev understood the problem behind the brief, not just the visual requirements. The result changed how our users move through the platform.",
+    name: "Client Name",
+    role: "Head of Product",
+    company: "Company Name",
+  },
+  {
+    quote:
+      "The quality of the work and the attention to detail went past what we expected. Every screen feels deliberate.",
+    name: "Client Name",
+    role: "Creative Director",
+    company: "Company Name",
+  },
+  {
+    quote:
+      "A rare combination of visual craft, UX thinking and execution. Radhev lifted the whole digital experience.",
+    name: "Client Name",
+    role: "CEO",
+    company: "Company Name",
+  },
+];
+
+/** Text stands in until real marks are supplied; the strip renders either. */
+export const clients = ["Company One", "Company Two", "Company Three", "Company Four", "Company Five"];
+
 /* ── Process ────────────────────────────────────────────────── */
 
 export const processSteps = [

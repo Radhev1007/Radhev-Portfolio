@@ -7,6 +7,7 @@ import { Hero } from "@/components/Hero/Hero";
 import { Process } from "@/components/Process/Process";
 import { Projects } from "@/components/Projects/Projects";
 import { Skills } from "@/components/Skills/Skills";
+import { Testimonials } from "@/components/Testimonials/Testimonials";
 
 /**
  * Order follows the reference: a statement, then a short who-I-am, then what
@@ -34,6 +35,9 @@ export default function Home() {
       </SectionScene>
       <SectionScene>
         <Process />
+      </SectionScene>
+      <SectionScene>
+        <Testimonials />
       </SectionScene>
       <SectionScene>
         <Experience />
