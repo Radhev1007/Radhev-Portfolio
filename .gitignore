@@ -6,3 +6,7 @@ next-env.d.ts
 
 # Blender comparison renders (regenerate with tools/render_scx30.py)
 .renders/
+
+# Python bytecode from the Blender build scripts
+__pycache__/
+*.pyc

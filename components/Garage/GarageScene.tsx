@@ -91,7 +91,7 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
               the floor before anyone has touched a key. */}
           <Physics gravity={[0, -22, 0]} timeStep={1 / 60} paused={mode === "inspect"}>
             <World />
-            <Display near={near} label={mode === "drive"} />
+            <Display near={near} label={mode === "drive"} detail={mode === "inspect" ? "high" : "game"} />
             <Car controls={controls} onState={onState} />
             {mode === "drive" && <Chase getState={() => state.current} onNear={setNear} />}
           </Physics>
@@ -201,10 +201,10 @@ function Hud({ speed, onExit }: { speed: number; onExit: () => void }) {
           <dd>Reset</dd>
         </dl>
         <p className="text-caption uppercase tracking-[0.16em] tabular-nums text-white/45">
-          {/* Game units to the truck's real speed, then up by the 1/24 scale —
+          {/* Game units to the truck's real speed, then up by its 1/30 scale —
               "scale km/h" is the figure the hobby quotes, and it is at least a
               number that means something rather than a flattering multiplier. */}
-          <span className="text-white">{Math.round((speed / RC_SCALE) * 3.6 * 24)}</span> scale km/h
+          <span className="text-white">{Math.round((speed / RC_SCALE) * 3.6 * 30)}</span> scale km/h
         </p>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { Html } from "@react-three/drei";
 import { heroVehicle } from "@/lib/garage";
-import { Scx30 } from "./Scx30";
+import { type Detail, Scx30 } from "./Scx30";
 
 /** Where the plinth stands, and where the player has to get to to inspect it. */
 export const PLINTH_AT: [number, number, number] = [0, 0, -24.2];
@@ -16,7 +16,15 @@ export const PLINTH_YAW = -0.5;
  * under a spot, lit and labelled. It is the fixed point the whole room is
  * arranged around, so it gets a real light rather than a bright material.
  */
-export function Display({ near, label = true }: { near: boolean; label?: boolean }) {
+export function Display({
+  near,
+  label = true,
+  detail = "game",
+}: {
+  near: boolean;
+  label?: boolean;
+  detail?: Detail;
+}) {
   const top = PLINTH_TOP;
 
   return (
@@ -40,7 +48,7 @@ export function Display({ near, label = true }: { near: boolean; label?: boolean
       {/* The model's origin is its own ground plane, so it sits on the plinth
           top with nothing to work out. */}
       <group position={[0, top, 0]} rotation={[0, PLINTH_YAW, 0]}>
-        <Scx30 />
+        <Scx30 detail={detail} />
       </group>
 
       <spotLight

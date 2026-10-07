@@ -6,7 +6,7 @@
  * else. The first entry is the hero vehicle: the one you drive, the one on
  * the display plinth, and the one the inspector opens.
  *
- * Radhev: SCALE is the SCX24's 1/24. Correct it here if yours differs.
+ * Scale and dimensions are Axial's published figures for AXI-2261.
  */
 export type RcVehicle = {
   id: string;
@@ -29,7 +29,7 @@ export const rcCollection: readonly RcVehicle[] = [
     number: "01",
     name: "Axial SCX30",
     category: "RC Crawler",
-    scale: "1/24",
+    scale: "1/30",
     status: "Favorite",
     description:
       "A compact crawler built for technical trails, obstacles and exploring terrain.",
@@ -46,9 +46,10 @@ export const heroVehicle = rcCollection[0];
  * `Scx30.tsx`, not placed by eye.
  */
 export const inspectPoints = [
-  { label: "Body", at: [0.42, 0.45, -0.05] },
-  { label: "Wheels", at: [-0.46, 0.2, -0.49] },
-  { label: "Suspension", at: [0.33, 0.37, 0.49] },
-  { label: "Roof rack", at: [0, 0.98, 0.1] },
-  { label: "Light bar", at: [0, 0.84, -0.3] },
+  { label: "Body", at: [0.44, 0.44, -0.06] },
+  { label: "Wheels", at: [-0.46, 0.18, -0.53] },
+  { label: "Suspension", at: [0.3, 0.33, 0.53] },
+  { label: "Roof rack", at: [0, 0.86, 0.18] },
+  { label: "Light bar", at: [0, 0.73, -0.26] },
+  { label: "Chassis", at: [-0.3, 0.19, 0.08] },
 ] as const;

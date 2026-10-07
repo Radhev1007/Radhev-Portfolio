@@ -48,15 +48,26 @@ def material(name, colour, roughness=0.5, metallic=0.0, alpha=1.0, emission=None
 
 # ── bmesh primitives ────────────────────────────────────────────
 
-def _finish(bm, name, mat, parent=None, bevel=None, smooth=False, collection=None):
+#: Bevel segments. Raised by the build script for the close-inspection level.
+SEGMENTS = 3
+#: Angle above which an edge stays sharp. Below it, the surface is smooth.
+SHARP = math.radians(38)
+
+
+def _finish(bm, name, mat, parent=None, bevel=None, collection=None):
+    """
+    Every surface is shaded smooth and then split at hard angles, which is what
+    makes a bevelled panel read as moulded plastic instead of a facet count.
+    Flat panels stay flat — the split handles that — but every curve, every
+    bevel and every cylinder comes out smooth.
+    """
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
     bm.free()
     if mat:
         me.materials.append(mat)
-    if smooth:
-        for p in me.polygons:
-            p.use_smooth = True
+    for poly in me.polygons:
+        poly.use_smooth = True
     obj = bpy.data.objects.new(name, me)
     (collection or bpy.context.scene.collection).objects.link(obj)
     if parent:
@@ -64,14 +75,17 @@ def _finish(bm, name, mat, parent=None, bevel=None, smooth=False, collection=Non
     if bevel:
         b = obj.modifiers.new("Bevel", "BEVEL")
         b.width = mm(bevel)
-        b.segments = 2
+        b.segments = SEGMENTS
         b.limit_method = "ANGLE"
         b.angle_limit = math.radians(40)
         b.harden_normals = False
+    es = obj.modifiers.new("Sharpen", "EDGE_SPLIT")
+    es.split_angle = SHARP
+    es.use_edge_sharp = False
     return obj
 
 
-def box(name, size, loc=(0, 0, 0), rot=(0, 0, 0), mat=None, parent=None, bevel=0.6, collection=None):
+def box(name, size, loc=(0, 0, 0), rot=(0, 0, 0), mat=None, parent=None, bevel=0.4, collection=None):
     """size and loc in millimetres; loc is the centre."""
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
@@ -86,8 +100,8 @@ def box(name, size, loc=(0, 0, 0), rot=(0, 0, 0), mat=None, parent=None, bevel=0
     return _finish(bm, name, mat, parent, bevel, collection=collection)
 
 
-def cylinder(name, r, depth, loc=(0, 0, 0), axis="Z", segments=20, mat=None, parent=None,
-             bevel=0.3, r_top=None, collection=None):
+def cylinder(name, r, depth, loc=(0, 0, 0), axis="Z", segments=32, mat=None, parent=None,
+             bevel=0.2, r_top=None, collection=None):
     bm = bmesh.new()
     bmesh.ops.create_cone(
         bm,
@@ -102,7 +116,21 @@ def cylinder(name, r, depth, loc=(0, 0, 0), axis="Z", segments=20, mat=None, par
            "Y": Matrix.Rotation(math.pi / 2, 4, "X")}[axis]
     bmesh.ops.transform(bm, matrix=Matrix.Translation(Vector((mm(loc[0]), mm(loc[1]), mm(loc[2])))) @ rot,
                         verts=bm.verts)
-    return _finish(bm, name, mat, parent, bevel, smooth=True, collection=collection)
+    return _finish(bm, name, mat, parent, bevel, collection=collection)
+
+
+def sphere(name, r, loc=(0, 0, 0), scale=(1, 1, 1), segments=20, mat=None, parent=None,
+           collection=None):
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=segments, v_segments=max(6, segments // 2),
+                              radius=mm(r))
+    bmesh.ops.transform(
+        bm,
+        matrix=Matrix.Translation(Vector((mm(loc[0]), mm(loc[1]), mm(loc[2]))))
+        @ Matrix.Diagonal((scale[0], scale[1], scale[2], 1.0)),
+        verts=bm.verts,
+    )
+    return _finish(bm, name, mat, parent, None, collection=collection)
 
 
 def add_box(bm, size, loc=(0, 0, 0), rot=(0, 0, 0)):
@@ -124,7 +152,7 @@ def add_box(bm, size, loc=(0, 0, 0), rot=(0, 0, 0)):
     bpy.data.meshes.remove(me)
 
 
-def add_cone(bm, r1, r2, depth, loc=(0, 0, 0), axis="Z", segments=20):
+def add_cone(bm, r1, r2, depth, loc=(0, 0, 0), axis="Z", segments=32):
     sub = bmesh.new()
     bmesh.ops.create_cone(sub, cap_ends=True, cap_tris=False, segments=segments,
                           radius1=mm(r1), radius2=mm(r2), depth=mm(depth))
@@ -141,13 +169,13 @@ def add_cone(bm, r1, r2, depth, loc=(0, 0, 0), axis="Z", segments=20):
 
 # ── Curves: wiring, bull bar tubes, shock springs ───────────────
 
-def tube(name, points, radius, mat=None, parent=None, resolution=3, collection=None):
+def tube(name, points, radius, mat=None, parent=None, resolution=5, collection=None):
     """A swept tube through points (millimetres). Wires and roll bars."""
     cu = bpy.data.curves.new(name, "CURVE")
     cu.dimensions = "3D"
     cu.bevel_depth = mm(radius)
     cu.bevel_resolution = resolution
-    cu.resolution_u = 4
+    cu.resolution_u = 8
     sp = cu.splines.new("BEZIER")
     sp.bezier_points.add(len(points) - 1)
     for bp, p in zip(sp.bezier_points, points):
@@ -167,9 +195,9 @@ def spring(name, r, length, turns, wire, loc=(0, 0, 0), mat=None, parent=None, c
     cu = bpy.data.curves.new(name, "CURVE")
     cu.dimensions = "3D"
     cu.bevel_depth = mm(wire)
-    cu.bevel_resolution = 2
-    cu.resolution_u = 3
-    steps = int(turns * 10)
+    cu.bevel_resolution = 4
+    cu.resolution_u = 4
+    steps = int(turns * 16)
     sp = cu.splines.new("POLY")
     sp.points.add(steps)
     for i in range(steps + 1):

@@ -241,8 +241,8 @@ export function Car({
           tyres. The wheels are visual, so giving them colliders would only add
           ways for the thing to catch on scenery. */}
       <CuboidCollider
-        args={[0.4, 0.27, 0.86]}
-        position={[0, 0.27, 0]}
+        args={[0.41, 0.245, 0.89]}
+        position={[0, 0.245, 0]}
         mass={1.6}
         // With the velocity authored outright above, contact friction is not
         // grip — it is a brake fighting the throttle. Taking the lower of the
@@ -252,7 +252,7 @@ export function Car({
         frictionCombineRule={CoefficientCombineRule.Min}
         restitution={0.05}
       />
-      <Scx30 rig={rig} headlights />
+      <Scx30 rig={rig} detail="game" headlights />
     </RigidBody>
   );
 }
