@@ -12,7 +12,7 @@ import bpy
 from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import build_scx30  # noqa: F401,E402  (building is the import's whole purpose)
+import build_scx30  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.abspath(os.path.join(HERE, "..", ".renders"))
@@ -78,6 +78,7 @@ def setup():
 
 
 def main():
+    build_scx30.main(export=False)
     cam = setup()
     os.makedirs(OUT, exist_ok=True)
     target = Vector((0, 0, 0.055))

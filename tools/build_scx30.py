@@ -80,10 +80,20 @@ WIRE_K = material("WireBlack", (0.03, 0.03, 0.03), roughness=0.55)
 WIRE_O = material("WireOrange", (0.85, 0.35, 0.03), roughness=0.55)
 
 
-def clear_scene():
-    for coll in (bpy.data.objects, bpy.data.meshes, bpy.data.curves):
+def clear_scene(keep_rig=True):
+    """Empty the scene. `keep_rig` leaves a camera and a light behind, which is
+    what you want when building into an interactive session rather than a
+    headless one."""
+    keep = set()
+    if keep_rig:
+        keep = {o.name for o in bpy.data.objects if o.type in {"CAMERA", "LIGHT"}}
+    for ob in list(bpy.data.objects):
+        if ob.name not in keep:
+            bpy.data.objects.remove(ob)
+    for coll in (bpy.data.meshes, bpy.data.curves):
         for item in list(coll):
-            coll.remove(item)
+            if item.users == 0:
+                coll.remove(item)
 
 
 # ── Wheel ───────────────────────────────────────────────────────
@@ -457,8 +467,10 @@ def build_axle(root, tag, y, tyre_me, rim_me):
 
 # ── Build ───────────────────────────────────────────────────────
 
-def main():
-    clear_scene()
+def main(export=True, keep_rig=False):
+    """Build the truck. `export` writes the GLB; skip it when building into an
+    open session so the committed asset is not quietly rewritten."""
+    clear_scene(keep_rig=keep_rig)
     tyre_me = tyre_mesh()
     rim_me = rim_mesh()
 
@@ -472,17 +484,18 @@ def main():
 
     bpy.context.view_layer.update()
 
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    bpy.ops.export_scene.gltf(
-        filepath=os.path.abspath(OUT),
-        export_format="GLB",
-        export_apply=True,
-        export_yup=True,
-        export_cameras=False,
-        export_lights=False,
-        export_extras=False,
-        export_draco_mesh_compression_enable=False,
-    )
+    if export:
+        os.makedirs(os.path.dirname(OUT), exist_ok=True)
+        bpy.ops.export_scene.gltf(
+            filepath=os.path.abspath(OUT),
+            export_format="GLB",
+            export_apply=True,
+            export_yup=True,
+            export_cameras=False,
+            export_lights=False,
+            export_extras=False,
+            export_draco_mesh_compression_enable=False,
+        )
 
     tris = 0
     dg = bpy.context.evaluated_depsgraph_get()
@@ -495,7 +508,10 @@ def main():
             me.calc_loop_triangles()
             tris += len(me.loop_triangles)
             bpy.data.meshes.remove(me)
-    print(f"SCX30_BUILD objects={len(bpy.data.objects)} tris={tris} out={os.path.abspath(OUT)}")
+    print(f"SCX30_BUILD objects={len(bpy.data.objects)} tris={tris} "
+          f"out={os.path.abspath(OUT) if export else '(not exported)'}")
+    return {"objects": len(bpy.data.objects), "tris": tris}
 
 
-main()
+if __name__ == "__main__":
+    main()
