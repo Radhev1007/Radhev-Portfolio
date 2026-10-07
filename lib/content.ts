@@ -42,6 +42,8 @@ export type SectionId = (typeof navItems)[number]["id"];
 
 /* ── Projects ───────────────────────────────────────────────── */
 
+export type VisualKind = "dashboard" | "analytics" | "web" | "tablet" | "system";
+
 export type Project = {
   slug: string;
   /** Where the full project lives. External, so the card links out. */
@@ -51,9 +53,12 @@ export type Project = {
   categories: string[];
   description: string;
   role: string;
-  /** Cover pulled from the Behance gallery. */
-  image: string;
-  imageAlt: string;
+  /** Optional real cover image in /public. When omitted, a generated interface composition is shown. */
+  image?: string;
+  imageAlt?: string;
+  visual: VisualKind;
+  /** Two-stop palette used for the project's visual and hover atmosphere. */
+  palette: { from: string; to: string; ink: string };
 };
 
 export const projects: Project[] = [
@@ -67,6 +72,8 @@ export const projects: Project[] = [
     categories: ["Web Design", "Responsive", "Marketing Site"],
     description: "A responsive landing page for a technology product, designed across desktop and mobile breakpoints.",
     role: "UI/UX Designer",
+    visual: "web",
+    palette: { from: "#1B2B4A", to: "#5A7BB8", ink: "#DCE6FF" },
   },
   {
     slug: "university-admin-dashboard",
@@ -78,6 +85,8 @@ export const projects: Project[] = [
     categories: ["UI/UX Design", "Dashboard", "Education"],
     description: "An administrative dashboard concept for a university, organising dense records and daily tasks into a readable interface.",
     role: "UI/UX Designer",
+    visual: "dashboard",
+    palette: { from: "#221A3D", to: "#8E7BFF", ink: "#E9E4FF" },
   },
   {
     slug: "grogauge-kpi-dashboard",
@@ -89,6 +98,8 @@ export const projects: Project[] = [
     categories: ["Data Visualization", "SaaS", "Dashboard"],
     description: "A key-performance-indicator dashboard, turning dense measurement data into something that can be read at a glance.",
     role: "UI/UX Designer",
+    visual: "analytics",
+    palette: { from: "#12302A", to: "#3FB58E", ink: "#D6FFEF" },
   },
   {
     slug: "food-delivery-case-study",
@@ -100,6 +111,8 @@ export const projects: Project[] = [
     categories: ["UX Case Study", "Mobile", "Interaction"],
     description: "A UX case study for a food delivery application, worked end to end from the problem through to the interface.",
     role: "UI/UX Designer",
+    visual: "tablet",
+    palette: { from: "#3A1710", to: "#FF5A36", ink: "#FFE4DC" },
   },
   {
     slug: "dashboard-concept",
@@ -111,6 +124,8 @@ export const projects: Project[] = [
     categories: ["UI Design", "Dashboard", "Concept"],
     description: "A dashboard concept exploring hierarchy, density and the rhythm of a data-heavy screen.",
     role: "UI/UX Designer",
+    visual: "system",
+    palette: { from: "#2E2718", to: "#C9A96A", ink: "#FFF3DA" },
   },
   {
     slug: "thuna-mobile-ui",
@@ -122,10 +137,141 @@ export const projects: Project[] = [
     categories: ["UI/UX Design", "Mobile", "Product"],
     description: "Mobile interface design for Thuna, covering the core screens and the system behind them.",
     role: "UI/UX Designer",
+    visual: "tablet",
+    palette: { from: "#101C33", to: "#4F8BD6", ink: "#DCEAFF" },
   },
 ];
 
 /* ── Case study ─────────────────────────────────────────────── */
+
+export type CaseSectionVisual =
+  | "none"
+  | "insights"
+  | "ia"
+  | "flow"
+  | "wireframes"
+  | "visual"
+  | "tokens"
+  | "prototype"
+  | "outcome";
+
+export type CaseSection = {
+  id: string;
+  label: string;
+  title: string;
+  body: string;
+  points?: string[];
+  visual: CaseSectionVisual;
+};
+
+/**
+ * Placeholder case-study structure shared by every project.
+ * To write a real case study, add an entry to `caseStudyOverrides` keyed by slug.
+ */
+function defaultCaseStudy(p: Project): CaseSection[] {
+  return [
+    {
+      id: "overview",
+      label: "Overview",
+      title: "Overview",
+      body: `${p.description} I worked as ${p.role.split("—")[0].trim()}, covering research, structure, interaction and visual design through to developer handoff.`,
+      visual: "none",
+    },
+    {
+      id: "problem",
+      label: "Problem",
+      title: "What wasn't working",
+      body: "Complex requirements had outgrown the existing interface. People were asked to hold too much in their heads to finish routine tasks, and inconsistencies between screens made the product harder to learn than it needed to be.",
+      points: [
+        "Critical tasks buried under unclear navigation",
+        "Inconsistent patterns repeated across screens",
+        "Dense data presented without hierarchy",
+      ],
+      visual: "none",
+    },
+    {
+      id: "research",
+      label: "Research",
+      title: "Research",
+      body: "I started by understanding the people using the product and the constraints around it, working with stakeholders and BA teams to separate what users needed from what the business required.",
+      points: ["Stakeholder interviews", "Requirement workshops", "Competitive analysis", "Review of existing flows"],
+      visual: "none",
+    },
+    {
+      id: "insights",
+      label: "User insights",
+      title: "User insights",
+      body: "Research consistently pointed the same way: people wanted fewer decisions per screen, predictable placement, and a clear sense of where they were in a longer process.",
+      visual: "insights",
+    },
+    {
+      id: "ia",
+      label: "Information architecture",
+      title: "Information architecture",
+      body: "Content and features were regrouped around the tasks people actually came to do, then named in the language they already used, so the structure could be predicted rather than learned.",
+      visual: "ia",
+    },
+    {
+      id: "flow",
+      label: "User flow",
+      title: "User flow",
+      body: "I mapped the primary journey end to end, then removed the steps that existed for internal reasons rather than user ones, and made the remaining decisions explicit.",
+      visual: "flow",
+    },
+    {
+      id: "wireframes",
+      label: "Wireframes",
+      title: "Wireframes",
+      body: "Low-fidelity explorations were used to settle structure and hierarchy before any visual decisions, which kept the expensive changes early and cheap.",
+      visual: "wireframes",
+    },
+    {
+      id: "visual-design",
+      label: "Visual design",
+      title: "Visual design",
+      body: "The visual language was built for legibility first — a clear type scale, restrained colour, and enough contrast to hold up in real working conditions.",
+      visual: "visual",
+    },
+    {
+      id: "design-system",
+      label: "Design system",
+      title: "Design system",
+      body: "Tokens, components and variants were built in Figma with Auto Layout so the team could extend the product without redrawing it, and so handoff stayed consistent.",
+      visual: "tokens",
+    },
+    {
+      id: "prototype",
+      label: "Prototype",
+      title: "Prototype",
+      body: "Interactive prototypes carried the real interactions, which made it possible to test behaviour with users and align stakeholders on something concrete rather than a description.",
+      visual: "prototype",
+    },
+    {
+      id: "solution",
+      label: "Final solution",
+      title: "Final solution",
+      body: "The shipped experience brings the structure, system and interactions together into screens that stay consistent across web, mobile and tablet.",
+      visual: "visual",
+    },
+    {
+      id: "outcome",
+      label: "Outcome",
+      title: "Outcome",
+      body: "Design specifications were delivered front-end-ready in HTML and CSS, and I worked alongside developers through implementation to keep the built product faithful to the design.",
+      visual: "outcome",
+    },
+  ];
+}
+
+const caseStudyOverrides: Partial<Record<string, CaseSection[]>> = {};
+
+export function getCaseStudy(p: Project): CaseSection[] {
+  return caseStudyOverrides[p.slug] ?? defaultCaseStudy(p);
+}
+
+export function getProject(slug: string) {
+  return projects.find((p) => p.slug === slug);
+}
 
 /* ── Experience ─────────────────────────────────────────────── */
 
