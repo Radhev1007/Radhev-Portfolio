@@ -1,241 +1,89 @@
 @import "tailwindcss";
 
-
-
-/* ── Design tokens ─────────────────────────────────────────────
-   Typography: Cabinet Grotesk (display) + Geist / Geist Mono (UI, meta).
-   All three are self-hosted through next/font — see app/layout.tsx.
-   Palette: near-black ground, cream foreground, one hot accent. */
+/* ── Tokens ───────────────────────────────────────────────────────
+   A paper ground this time, not a dark one. Colour belongs to the
+   work: the covers are the only saturated thing on the page, and the
+   accent appears on interaction rather than as decoration. */
 @theme {
+  --color-paper: #faf9f6;
+  --color-paper-2: #f2f0ea;
   --color-ink: #141414;
-  --color-ink-2: #191919;
-  --color-ink-3: #222222;
-  --color-bone: #f2efe6;
-  --color-mute: #9c9c9c;
-  --color-faint: #5c5c5c;
-  --color-line: rgb(242 239 230 / 0.12);
+  --color-mute: #6b6a66;
+  --color-rule: #e2e0d9;
   --color-accent: #f43c00;
-  /* Accent used on the inverse surface (bg-bone), darkened to hold contrast. */
-  --color-accent-inverse: #c62f00;
-  --color-cool: #9c9c9c;
 
-  /* One family site-wide. Hierarchy comes from size, weight and tracking
-     rather than from switching typeface, so the display, serif and mono
-     tokens all point here and existing utilities keep resolving.
-
-     Host Grotesk is self-hosted through next/font, so there is no external
-     request and no licence to clear. */
   --font-sans: var(--font-host-grotesk), Arial, Helvetica, sans-serif;
-  --font-display: var(--font-sans);
-  --font-serif: var(--font-sans);
-  --font-mono: var(--font-sans);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
-  /* ── Type scale ────────────────────────────────────────────────
-     One step per role. `hero` is bound to svh as well as vw because the
-     hero has to fit the viewport height, so it cannot be a plain clamp. */
-  --text-hero: min(16vw, 12svh);
-  --text-hero-lg: min(7.4vw, 13svh, 8.5rem);
-  --text-display: clamp(3rem, 9vw, 9rem);
-  --text-headline: clamp(2.25rem, 7vw, 8rem);
-  --text-title: clamp(2rem, 5vw, 5rem);
-  --text-subtitle: clamp(1.5rem, 3.2vw, 3.25rem);
-  --text-lead: clamp(1.125rem, 1.6vw, 1.75rem);
+  /* One step per role, all fluid. */
+  --text-mast: clamp(3.25rem, 11vw, 11rem);
+  --text-display: clamp(2.5rem, 6vw, 5.5rem);
+  --text-title: clamp(1.5rem, 2.6vw, 2.5rem);
+  --text-lead: clamp(1.125rem, 1.7vw, 1.625rem);
   --text-body: 1rem;
   --text-small: 0.875rem;
-  --text-caption: 0.6875rem;
-  --text-micro: 0.625rem;
+  --text-label: 0.6875rem;
 }
 
 :root {
-  --gutter: clamp(1rem, 4vw, 3.5rem);
-  color-scheme: dark;
-
-  /* Flat illustration palette (dark theme) */
-  --ill-ink: #141414;
-  --ill-surface: #1a1a1a;
-  --ill-surface2: #222222;
-  --ill-surface3: #2c2c2c;
-  --ill-paper: #f2efe6;
-  --ill-grey: #9c9c9c;
-  --ill-line: rgb(242 239 230 / 0.14);
-  --ill-faint: rgb(242 239 230 / 0.28);
-  --ill-cyan: #f43c00;
-  --ill-cyan-soft: rgb(244 60 0 / 0.1);
+  --gutter: clamp(1.5rem, 5vw, 5rem);
+  color-scheme: light;
 }
 
-/* ── Base ────────────────────────────────────────────────────── */
 @layer base {
   html {
-    background: var(--color-ink);
-    color: var(--color-bone);
+    background: var(--color-paper);
+    color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    overflow-x: clip;
+    scroll-behavior: smooth;
   }
   body {
-    background: var(--color-ink);
     font-family: var(--font-sans);
     overflow-x: clip;
   }
-  /* Headings carry the display voice site-wide; body copy stays Geist. */
-  h1,
-  h2,
-  h3 {
-    font-family: var(--font-display);
-    letter-spacing: -0.035em;
-  }
   ::selection {
     background: var(--color-accent);
-    color: var(--color-ink);
+    color: var(--color-paper);
   }
   :focus-visible {
     outline: 2px solid var(--color-accent);
-    outline-offset: 4px;
-    border-radius: 2px;
+    outline-offset: 3px;
   }
-  a,
-  button {
-    -webkit-tap-highlight-color: transparent;
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
   }
 }
 
-/* Lenis */
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-.lenis.lenis-stopped {
-  overflow: clip;
-}
-
-/* Hide the native cursor only when the custom cursor is active */
-html.has-custom-cursor,
-html.has-custom-cursor * {
-  cursor: none !important;
-}
-
-/* ── Utilities ───────────────────────────────────────────────── */
 @utility gutter {
   padding-inline: var(--gutter);
 }
 
+/* Small caps-ish meta, used for every label on the page. */
 @utility label {
-  font-family: var(--font-sans);
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-mute);
 }
 
-/* Frosted chip for use ON media (project covers are always dark), so it is
-   theme-independent: dark glass + fixed off-white text. */
-@utility glass {
-  background: rgb(0 0 0 / 0.6);
-  color: #f2efe6;
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid rgb(242 239 230 / 0.1);
-}
+/* Entrance: opacity and a short rise, driven by a data attribute the
+   Reveal component flips once the element has been seen. */
+@utility reveal {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition:
+    opacity 0.9s var(--ease-out-expo),
+    transform 0.9s var(--ease-out-expo);
 
-/* Contrasting display voice — Cabinet Grotesk against Geist body copy. */
-@utility font-accent {
-  font-family: var(--font-sans);
-  font-weight: 300;
-  letter-spacing: -0.03em;
-}
-
-/* Display setting: tight tracking and leading, as on the reference sites. */
-@utility font-display-tight {
-  font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.035em;
-  line-height: 0.95;
-}
-
-/* ── Section surfaces ─────────────────────────────────────────────
-   Both utilities re-declare the palette tokens on the section itself,
-   so every descendant using bg-ink / text-bone / border-line follows
-   automatically — no per-child overrides, and light mode still flips. */
-
-/* One subtle step off the page ground. */
-@utility surface-alt {
-  --color-ink: #191919;
-  --color-ink-2: #1f1f1f;
-  --color-ink-3: #292929;
-  --ill-ink: #191919;
-  --ill-surface: #1f1f1f;
-  --ill-surface2: #272727;
-  --ill-surface3: #313131;
-  background-color: var(--color-ink);
-}
-
-/* Full inversion: a cream block between the dark ones. */
-@utility surface-invert {
-  --color-ink: #f2efe6;
-  --color-ink-2: #ebe7dc;
-  --color-ink-3: #e0dbce;
-  --color-bone: #141414;
-  --color-mute: #5f5f5f;
-  --color-faint: #a3a09a;
-  --color-line: rgb(20 20 20 / 0.14);
-  --color-accent: #c62f00;
-  --color-accent-inverse: #f43c00;
-  --color-cool: #5f5f5f;
-
-  --ill-ink: #f2efe6;
-  --ill-surface: #ffffff;
-  --ill-surface2: #ebe7dc;
-  --ill-surface3: #dcd7c9;
-  --ill-paper: #141414;
-  --ill-grey: #6e6e6e;
-  --ill-line: rgb(20 20 20 / 0.16);
-  --ill-faint: rgb(20 20 20 / 0.3);
-  --ill-cyan: #c62f00;
-  --ill-cyan-soft: rgb(198 47 0 / 0.08);
-
-  background-color: var(--color-ink);
-  color: var(--color-bone);
-}
-
-@utility no-scrollbar {
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-@keyframes pulse-ring {
-  0% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(2.6);
-    opacity: 0;
-  }
-}
-
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+  &[data-shown="true"] {
+    opacity: 1;
+    transform: none;
   }
 }
