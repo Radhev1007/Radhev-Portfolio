@@ -3,6 +3,7 @@ import { SectionScene } from "@/components/Animations/SectionScene";
 import { Contact } from "@/components/Contact/Contact";
 import { DesignSystem } from "@/components/DesignSystem/DesignSystem";
 import { Experience } from "@/components/Experience/Experience";
+import { Garage } from "@/components/Garage/Garage";
 import { Hero } from "@/components/Hero/Hero";
 import { Process } from "@/components/Process/Process";
 import { Projects } from "@/components/Projects/Projects";
@@ -41,6 +42,9 @@ export default function Home() {
       </SectionScene>
       <SectionScene>
         <Experience />
+      </SectionScene>
+      <SectionScene>
+        <Garage />
       </SectionScene>
       <SectionScene exit={false}>
         <Contact />
