@@ -1,11 +1,8 @@
 "use client";
 
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Arrow } from "@/components/Animations/Button";
-import { useProjectTransition } from "@/components/Providers/ProjectTransition";
 import type { Project } from "@/lib/content";
 import { useFinePointer, usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, viewportOnce } from "@/lib/motion";
@@ -24,8 +21,6 @@ export function ProjectCard({ project, index, onActive }: Props) {
   const fine = useFinePointer();
   const reduced = usePrefersReducedMotion();
   const interactive = fine && !reduced;
-  const { open } = useProjectTransition();
-  const router = useRouter();
   const [hovered, setHovered] = useState(false);
   // Project accent, chosen to stay legible on the page's dark ground.
   const accent = project.palette.to;
@@ -52,7 +47,6 @@ export function ProjectCard({ project, index, onActive }: Props) {
     py.set((e.clientY - r.top) / r.height - 0.5);
   };
   const enter = () => {
-    router.prefetch(`/work/${project.slug}`);
     setHovered(true);
     onActive(project);
   };
@@ -63,12 +57,9 @@ export function ProjectCard({ project, index, onActive }: Props) {
     py.set(0);
   };
 
-  const href = `/work/${project.slug}`;
-  const onOpen = (e: React.MouseEvent) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || !cover.current) return;
-    e.preventDefault();
-    open(project, cover.current);
-  };
+  // The work itself lives on Behance, so the card leaves the site. The
+  // page-transition animation is for internal routes and does not apply.
+  const external = { href: project.href, target: "_blank", rel: "noreferrer" } as const;
 
   return (
     <motion.article
@@ -79,9 +70,8 @@ export function ProjectCard({ project, index, onActive }: Props) {
     >
       {/* Cover */}
       <div className={`md:col-span-8 ${flip ? "md:order-2 md:col-start-5 md:row-start-1" : ""}`}>
-        <Link
-          href={href}
-          onClick={onOpen}
+        <a
+          {...external}
           onPointerMove={onMove}
           onPointerEnter={enter}
           onPointerLeave={leave}
@@ -120,7 +110,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
               </div>
             </motion.div>
           </motion.div>
-        </Link>
+        </a>
       </div>
 
       {/* Meta */}
@@ -141,9 +131,9 @@ export function ProjectCard({ project, index, onActive }: Props) {
             className="text-subtitle font-medium leading-[1] tracking-[-0.035em]"
             style={{ x: interactive ? titleX : 0 }}
           >
-            <Link href={href} onClick={onOpen} className="focus-visible:outline-offset-8" data-cursor="view">
+            <a {...external} className="focus-visible:outline-offset-8" data-cursor="view">
               {project.title}
-            </Link>
+            </a>
           </motion.h3>
           <p className="text-small text-bone/60">{project.categories.join(" · ")}</p>
 
@@ -176,7 +166,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
             >
               <Arrow />
             </span>
-            View case study
+            View on Behance
           </span>
         </div>
       </div>

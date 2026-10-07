@@ -1,31 +1,6 @@
 @import "tailwindcss";
 
-/* ── Suisse Int'l ──────────────────────────────────────────────────
-   Licensed files are not distributed with this repo. To enable: drop
-   the woff2 files into public/fonts/suisse-intl/ and uncomment.
 
-@font-face {
-  font-family: "Suisse Intl";
-  src: url("/fonts/suisse-intl/SuisseIntl-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Suisse Intl";
-  src: url("/fonts/suisse-intl/SuisseIntl-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Suisse Intl";
-  src: url("/fonts/suisse-intl/SuisseIntl-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-*/
 
 /* ── Design tokens ─────────────────────────────────────────────
    Typography: Cabinet Grotesk (display) + Geist / Geist Mono (UI, meta).
@@ -48,11 +23,9 @@
      rather than from switching typeface, so the display, serif and mono
      tokens all point here and existing utilities keep resolving.
 
-     Suisse Int'l is a commercial face (Swiss Typefaces) and is NOT in this
-     repo — until licensed files are added under public/fonts/suisse-intl/
-     and the @font-face block below is uncommented, the site renders in
-     Arial / Helvetica. That fallback is intentional, not a bug. */
-  --font-sans: "Suisse Intl", Arial, Helvetica, sans-serif;
+     Host Grotesk is self-hosted through next/font, so there is no external
+     request and no licence to clear. */
+  --font-sans: var(--font-host-grotesk), Arial, Helvetica, sans-serif;
   --font-display: var(--font-sans);
   --font-serif: var(--font-sans);
   --font-mono: var(--font-sans);

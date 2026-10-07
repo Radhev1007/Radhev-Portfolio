@@ -46,6 +46,8 @@ export type VisualKind = "dashboard" | "analytics" | "web" | "tablet" | "system"
 
 export type Project = {
   slug: string;
+  /** Where the full project lives. External, so the card links out. */
+  href: string;
   number: string;
   title: string;
   categories: string[];
@@ -61,59 +63,70 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    slug: "governance-risk-compliance",
+    slug: "technology-landing-page",
+    href: "https://www.behance.net/gallery/205427461/Technology-landing-page-Desktop-Mobile-responsive",
     number: "01",
-    title: "Governance, Risk & Compliance Platform",
-    categories: ["Enterprise SaaS", "Design Systems", "Dashboard"],
-    description:
-      "A leading enterprise GRC product designed across web, mobile and tablet, built on a scalable Figma design system that kept every touchpoint consistent.",
-    role: "UI/UX Designer — Beinex Consulting",
-    visual: "dashboard",
+    title: "Technology Landing Page",
+    categories: ["Web Design", "Responsive", "Marketing Site"],
+    description: "A responsive landing page for a technology product, designed across desktop and mobile breakpoints.",
+    role: "UI/UX Designer",
+    visual: "web",
     palette: { from: "#1B2B4A", to: "#5A7BB8", ink: "#DCE6FF" },
   },
   {
-    slug: "government-digital-platform",
+    slug: "university-admin-dashboard",
+    href: "https://www.behance.net/gallery/205423733/UIUX-Design-University-Admin-Dashboard-Concept",
     number: "02",
-    title: "Government Digital Platform",
-    categories: ["UI/UX Design", "Public Sector", "Web"],
-    description:
-      "Complex public-service requirements translated into intuitive flows for GCC-region clients, so citizens and staff can complete critical tasks with confidence.",
-    role: "UI/UX Designer — Appstation",
-    visual: "web",
+    title: "University Admin Dashboard",
+    categories: ["UI/UX Design", "Dashboard", "Education"],
+    description: "An administrative dashboard concept for a university, organising dense records and daily tasks into a readable interface.",
+    role: "UI/UX Designer",
+    visual: "dashboard",
+    palette: { from: "#221A3D", to: "#8E7BFF", ink: "#E9E4FF" },
+  },
+  {
+    slug: "grogauge-kpi-dashboard",
+    href: "https://www.behance.net/gallery/166160121/Grogauge-key-performance-indicators-Dashboard",
+    number: "03",
+    title: "Grogauge KPI Dashboard",
+    categories: ["Data Visualization", "SaaS", "Dashboard"],
+    description: "A key-performance-indicator dashboard, turning dense measurement data into something that can be read at a glance.",
+    role: "UI/UX Designer",
+    visual: "analytics",
     palette: { from: "#12302A", to: "#3FB58E", ink: "#D6FFEF" },
   },
   {
-    slug: "fintech-product-design",
-    number: "03",
-    title: "Fintech Product Design",
-    categories: ["Fintech", "Data Visualization", "SaaS"],
-    description:
-      "Dense financial data shaped into calm, readable interfaces, with front-end-ready specifications handed to developers for pixel-perfect implementation.",
-    role: "UI/UX Designer — Appstation",
-    visual: "analytics",
-    palette: { from: "#2E2718", to: "#C9A96A", ink: "#FFF3DA" },
-  },
-  {
-    slug: "hrtech-events-platform",
+    slug: "food-delivery-case-study",
+    href: "https://www.behance.net/gallery/187669415/UX-Case-Study-Food-Delivery-Application",
     number: "04",
-    title: "HRTech & Events Platforms",
-    categories: ["HRTech", "Media & Events", "Interaction"],
-    description:
-      "Multi-domain product work delivered in fast-paced client environments, using Auto Layout, components and variants to move from wireframe to high fidelity quickly.",
-    role: "UI/UX Designer — Appstation",
+    title: "Food Delivery Application",
+    categories: ["UX Case Study", "Mobile", "Interaction"],
+    description: "A UX case study for a food delivery application, worked end to end from the problem through to the interface.",
+    role: "UI/UX Designer",
     visual: "tablet",
     palette: { from: "#3A1710", to: "#FF5A36", ink: "#FFE4DC" },
   },
   {
-    slug: "education-platform",
+    slug: "dashboard-concept",
+    href: "https://www.behance.net/gallery/164544999/Dashboard-Concept",
     number: "05",
-    title: "Education Platform",
-    categories: ["Education", "Responsive Web", "Prototyping"],
-    description:
-      "End-to-end design for education and technology products — requirement gathering, user flows, wireframes, high-fidelity mockups and interactive prototypes.",
-    role: "UI/UX Designer — OrisysIndia",
+    title: "Dashboard Concept",
+    categories: ["UI Design", "Dashboard", "Concept"],
+    description: "A dashboard concept exploring hierarchy, density and the rhythm of a data-heavy screen.",
+    role: "UI/UX Designer",
     visual: "system",
-    palette: { from: "#221A3D", to: "#8E7BFF", ink: "#E9E4FF" },
+    palette: { from: "#2E2718", to: "#C9A96A", ink: "#FFF3DA" },
+  },
+  {
+    slug: "thuna-mobile-ui",
+    href: "https://www.behance.net/gallery/128315087/UI-UX-Design-Thuna-Mobile-UI",
+    number: "06",
+    title: "Thuna Mobile UI",
+    categories: ["UI/UX Design", "Mobile", "Product"],
+    description: "Mobile interface design for Thuna, covering the core screens and the system behind them.",
+    role: "UI/UX Designer",
+    visual: "tablet",
+    palette: { from: "#101C33", to: "#4F8BD6", ink: "#DCEAFF" },
   },
 ];
 

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Host_Grotesk } from "next/font/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
 import { Backdrop } from "@/components/Chrome/Backdrop";
@@ -12,6 +13,8 @@ import { site } from "@/lib/content";
 import { THEME_COLOR } from "@/lib/theme-config";
 import "@/styles/globals.css";
 
+const sans = Host_Grotesk({ subsets: ["latin"], variable: "--font-host-grotesk", display: "swap" });
+
 
 export const metadata: Metadata = {
   title: { default: `${site.name.first} ${site.name.last} — ${site.role}`, template: `%s — ${site.name.first} ${site.name.last}` },
@@ -23,11 +26,7 @@ export const viewport: Viewport = { themeColor: THEME_COLOR, colorScheme: "dark"
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="en"
-     
-      suppressHydrationWarning
-    >
+    <html lang="en" className={sans.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>
         {/* Open every page on its hero so entrance choreography plays in full. */}
         <Script id="scroll-restoration" strategy="beforeInteractive">{`history.scrollRestoration='manual'`}</Script>
