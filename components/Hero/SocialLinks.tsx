@@ -9,7 +9,7 @@ export function SocialLinks() {
   return (
     <motion.ul
       aria-label="Profiles"
-      className="z-10 mt-6 flex flex-wrap items-center gap-x-6 gap-y-2"
+      className="z-10 mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 md:mt-10"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={transition(intro.nav, 1.2)}

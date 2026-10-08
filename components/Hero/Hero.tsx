@@ -40,21 +40,19 @@ export function Hero() {
         </div>
 
         <div className="relative z-10 order-2 md:order-1 md:col-span-6">
-          <div>
-            <HeroIdentity
-              lines={[site.heroTitle.lead, site.heroTitle.mid, site.heroTitle.tail]}
-              delay={intro.title}
-            />
-          </div>
+          <HeroIdentity
+            lines={[site.heroTitle.lead, site.heroTitle.mid, site.heroTitle.tail]}
+            delay={intro.title}
+          />
 
           <motion.p
-            className="mt-4 max-w-[52ch] font-mono text-caption uppercase leading-[1.7] tracking-[0.1em] text-mute md:mt-6"
+            className="mt-6 max-w-[52ch] font-mono text-caption uppercase leading-[1.7] tracking-[0.1em] text-mute md:mt-8"
             {...appear(intro.supporting)}
           >
             {site.statement}
           </motion.p>
 
-          <motion.div className="mt-4 flex flex-wrap items-center gap-2 md:mt-6" {...appear(intro.cta)}>
+          <motion.div className="mt-8 flex flex-wrap items-center gap-3 md:mt-10" {...appear(intro.cta)}>
             <Button
               onClick={() => scrollTo(site.heroCtas.primary.target)}
               cursor="view"
