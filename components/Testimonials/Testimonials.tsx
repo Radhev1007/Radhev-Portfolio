@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import { Reveal } from "@/components/Animations/Reveal";
-import { clients, testimonials } from "@/lib/content";
+import { testimonials } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease } from "@/lib/motion";
 import { Portrait } from "./Portrait";
@@ -145,21 +145,6 @@ export function Testimonials() {
         </div>
       </div>
 
-      {/* ── Clients ───────────────────────────────────────────── */}
-      <div className="mt-24 md:mt-32">
-        <p className="label">Clients I&apos;ve worked with</p>
-        <ul className="no-scrollbar mt-6 flex gap-10 overflow-x-auto md:flex-wrap md:gap-16 md:overflow-visible">
-          {clients.map((c, i) => (
-            <li key={c} className="shrink-0">
-              <Reveal delay={i * 0.06}>
-                <span className="whitespace-nowrap text-lead tracking-tight text-bone/35 transition-colors duration-500 hover:text-bone/80">
-                  {c}
-                </span>
-              </Reveal>
-            </li>
-          ))}
-        </ul>
-      </div>
     </section>
   );
 }

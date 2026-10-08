@@ -265,8 +265,6 @@ export const testimonials: Testimonial[] = [
 ];
 
 /** Text stands in until real marks are supplied; the strip renders either. */
-export const clients = ["Company One", "Company Two", "Company Three", "Company Four", "Company Five"];
-
 /* ── Process ────────────────────────────────────────────────── */
 
 export const processSteps = [
