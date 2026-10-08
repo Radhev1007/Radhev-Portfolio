@@ -5,7 +5,9 @@ import { heroVehicle } from "@/lib/garage";
 import { type Detail, Scx30 } from "./Scx30";
 
 /** Where the plinth stands, and where the player has to get to to inspect it. */
-export const PLINTH_AT: [number, number, number] = [0, 0, -24.2];
+import { heightAt } from "./heightfield";
+
+export const PLINTH_AT: [number, number, number] = [27, heightAt(27, 29), 29];
 export const PLINTH_RANGE = 5.5;
 export const PLINTH_TOP = 0.42;
 /** The display truck is parked at an angle, and the labels have to match. */

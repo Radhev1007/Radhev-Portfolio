@@ -1,6 +1,5 @@
 "use client";
 
-import { Environment } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -8,6 +7,7 @@ import * as THREE from "three";
 import { Car } from "./Car";
 import { ApproachPrompt, CollectionCard, InspectRig } from "./Inspect";
 import { Display, PLINTH_AT, PLINTH_RANGE } from "./Display";
+import { CHECKPOINTS, CHECKPOINT_RANGE, heightAt } from "./heightfield";
 import { OVERALL_LEN, RC_SCALE } from "./Scx30";
 import { TouchControls } from "./TouchControls";
 import { World } from "./World";
@@ -27,6 +27,28 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
   const controls = useControls(mode === "drive");
   const [speed, setSpeed] = useState(0);
   const [near, setNear] = useState(false);
+  const [reached, setReached] = useState(0);
+  const [banner, setBanner] = useState<(typeof CHECKPOINTS)[number] | null>(null);
+  // Typed explicitly: CHECKPOINTS is `as const`, so inference would pin this
+  // to the literal coordinates of the first one.
+  const respawn = useRef<{ x: number; y: number; z: number }>({
+    x: CHECKPOINTS[0].x,
+    y: heightAt(CHECKPOINTS[0].x, CHECKPOINTS[0].z) + 0.05,
+    z: CHECKPOINTS[0].z,
+  });
+
+  const onCheckpoint = useCallback((i: number) => {
+    const cp = CHECKPOINTS[i];
+    respawn.current = { x: cp.x, y: heightAt(cp.x, cp.z) + 0.05, z: cp.z };
+    setReached((r) => Math.max(r, i));
+    setBanner(cp);
+  }, []);
+
+  useEffect(() => {
+    if (!banner) return;
+    const id = setTimeout(() => setBanner(null), 2600);
+    return () => clearTimeout(id);
+  }, [banner]);
   const [tier, setTier] = useState<"high" | "low">("high");
   const [touch, setTouch] = useState(false);
   const state = useRef({ speed: 0, airborne: false });
@@ -70,33 +92,41 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
         gl={{ antialias: tier === "high", powerPreference: "high-performance" }}
         camera={{ position: [0, 6, 14], fov: 42 }}
       >
-        <color attach="background" args={["#0b0b0c"]} />
-        <fog attach="fog" args={["#0b0b0c", 30, 85]} />
+        {/* Late afternoon. The sun is low and warm, the sky fills the shadows
+            cool, and the fog is far enough back to let you see the summit from
+            the trailhead — which is the point of having a summit. */}
+        <color attach="background" args={["#2e2318"]} />
+        <fog attach="fog" args={["#3a2c1e", 55, 165]} />
 
-        <ambientLight intensity={0.5} />
+        <hemisphereLight args={["#ffd7a3", "#2a2016", 0.75]} />
+        <ambientLight intensity={0.18} />
         <directionalLight
-          position={[14, 20, 8]}
-          intensity={2.2}
-          color="#fff2e4"
+          position={[46, 19, 34]}
+          intensity={3.4}
+          color="#ffb765"
           castShadow={tier === "high"}
-          shadow-mapSize={[1024, 1024]}
-          shadow-camera-left={-40}
-          shadow-camera-right={40}
-          shadow-camera-top={40}
-          shadow-camera-bottom={-40}
+          shadow-mapSize={tier === "high" ? [2048, 2048] : [1024, 1024]}
+          shadow-bias={-0.0006}
+          shadow-camera-left={-56}
+          shadow-camera-right={56}
+          shadow-camera-top={56}
+          shadow-camera-bottom={-56}
+          shadow-camera-far={180}
         />
-        <directionalLight position={[-12, 8, -14]} intensity={0.7} color="#9fb6ff" />
+        <directionalLight position={[-34, 14, -30]} intensity={0.55} color="#8fa8d8" />
 
         <Suspense fallback={null}>
-          <Environment preset="warehouse" environmentIntensity={0.35} />
           {/* A fixed step, not "vary": a slow first frame under a variable step is a
               one-second physics tick, and a one-second tick puts the truck through
               the floor before anyone has touched a key. */}
           <Physics gravity={[0, -22, 0]} timeStep={1 / 60} paused={mode === "inspect"}>
             <World />
+            <CheckpointFlags reached={reached} />
             <Display near={near} label={mode === "drive"} detail={mode === "inspect" ? "high" : "game"} />
-            <Car controls={controls} onState={onState} />
-            {mode === "drive" && <Chase getState={() => state.current} onNear={setNear} />}
+            <Car controls={controls} onState={onState} respawn={respawn} />
+            {mode === "drive" && (
+              <Chase getState={() => state.current} onNear={setNear} onCheckpoint={onCheckpoint} />
+            )}
           </Physics>
           {mode === "inspect" && <InspectRig />}
         </Suspense>
@@ -106,6 +136,16 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
         <>
           <Hud speed={speed} onExit={onExit} touch={touch} />
           {touch && <TouchControls controls={controls} />}
+          {banner && (
+            <div className="pointer-events-none absolute inset-x-0 top-1/3 text-center">
+              <p className="text-caption uppercase tracking-[0.22em] text-white/50">
+                Checkpoint {banner.id}
+              </p>
+              <p className="mt-2 text-subtitle font-medium tracking-[-0.02em] text-white">
+                {banner.name}
+              </p>
+            </div>
+          )}
           {near && <ApproachPrompt onExplore={() => setMode("inspect")} touch={touch} />}
         </>
       ) : (
@@ -124,12 +164,43 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
  * It does double duty as the proximity test for the display plinth: it is
  * already holding the car every frame, so nothing else has to look it up.
  */
+function CheckpointFlags({ reached }: { reached: number }) {
+  return (
+    <>
+      {CHECKPOINTS.map((cp, i) => {
+        const y = heightAt(cp.x, cp.z);
+        const done = i <= reached;
+        return (
+          <group key={cp.id} position={[cp.x, y, cp.z]}>
+            <mesh castShadow position={[0, 0.45, 0]}>
+              <cylinderGeometry args={[0.03, 0.03, 0.9, 6]} />
+              <meshStandardMaterial color="#6d5637" roughness={0.9} />
+            </mesh>
+            <mesh position={[0.17, 0.78, 0]}>
+              <planeGeometry args={[0.32, 0.2]} />
+              <meshStandardMaterial
+                color={done ? "#f43c00" : "#cfc6b4"}
+                emissive={done ? "#f43c00" : "#000000"}
+                emissiveIntensity={done ? 0.55 : 0}
+                roughness={0.8}
+                side={2}
+              />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
 function Chase({
   getState,
   onNear,
+  onCheckpoint,
 }: {
   getState: () => { speed: number; airborne: boolean };
   onNear: (near: boolean) => void;
+  onCheckpoint: (index: number) => void;
 }) {
   const { camera, scene } = useThree();
   const target = useRef(new THREE.Vector3(0, 1, 6));
@@ -137,6 +208,7 @@ function Chase({
   const desired = useRef(new THREE.Vector3());
   const wasNear = useRef(false);
   const settled = useRef(false);
+  const hit = useRef(new Set<number>());
 
   useFrame((_, delta) => {
     const car = scene.getObjectByName("rc-car");
@@ -166,6 +238,12 @@ function Chase({
       camera.position.copy(desired.current);
       look.current.copy(target.current);
     }
+    // Keep the camera above the ground. Trailing a truck into a stream bed
+    // or a canyon otherwise buries the view in the bank behind it.
+    desired.current.y = Math.max(
+      desired.current.y,
+      heightAt(desired.current.x, desired.current.z) + 0.8,
+    );
     camera.position.lerp(desired.current, Math.min(1, 2.6 * d));
     look.current.lerp(target.current, Math.min(1, 5 * d));
     camera.lookAt(look.current.x, look.current.y + 0.42, look.current.z);
@@ -177,6 +255,19 @@ function Chase({
     if (isNear !== wasNear.current) {
       wasNear.current = isNear;
       onNear(isNear);
+    }
+
+    // Checkpoints, tested here for the same reason proximity is: this loop
+    // already has the truck every frame.
+    for (let i = 0; i < CHECKPOINTS.length; i++) {
+      if (hit.current.has(i)) continue;
+      const cp = CHECKPOINTS[i];
+      const ex = target.current.x - cp.x;
+      const ez = target.current.z - cp.z;
+      if (ex * ex + ez * ez < CHECKPOINT_RANGE * CHECKPOINT_RANGE) {
+        hit.current.add(i);
+        onCheckpoint(i);
+      }
     }
   });
   return null;

@@ -10,15 +10,15 @@ import {
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { heightAt } from "./heightfield";
 import { emptyRig, type Rig, Scx30, toModel, TYRE_R, WHEEL_ANCHORS } from "./Scx30";
 import type { Controls } from "./useControls";
 
-// Off to one side of the cone slalom, so the first thing anyone does is drive
-// rather than immediately knock a cone over. The model's origin is at its own
-// ground plane, so this is resting height: dropping the truck in means it is
-// falling during the first few frames, and the first few frames of a page that
-// is still loading can be very long ones.
-const SPAWN: [number, number, number] = [4, 0.02, 9];
+// The graded trailhead. The model's origin is at its own ground plane, so
+// this is resting height plus a hair: dropping the truck in means it is
+// falling during the first few frames, and the first few frames of a page
+// that is still loading can be very long ones.
+const SPAWN: [number, number, number] = [2, heightAt(2, 34) + 0.05, 34];
 
 /**
  * Crawler handling, not racing handling. The brief asks for torque, traction
@@ -61,9 +61,12 @@ const RAY_UP = 0.4;
 export function Car({
   controls,
   onState,
+  respawn,
 }: {
   controls: React.RefObject<Controls>;
   onState: (s: { speed: number; airborne: boolean }) => void;
+  /** Where R and a fall put the truck back — the last checkpoint reached. */
+  respawn?: React.RefObject<{ x: number; y: number; z: number }>;
 }) {
   const body = useRef<RapierRigidBody>(null);
   const rig = useRef<Rig>(emptyRig());
@@ -101,8 +104,9 @@ export function Car({
 
     // R, or falling out of the world — which should not happen, but a game
     // that silently drops you into the void is worse than one that admits it.
-    if (c.reset || rb.translation().y < -4) {
-      rb.setTranslation({ x: SPAWN[0], y: SPAWN[1], z: SPAWN[2] }, true);
+    if (c.reset || rb.translation().y < -6) {
+      const to = respawn?.current ?? { x: SPAWN[0], y: SPAWN[1], z: SPAWN[2] };
+      rb.setTranslation({ x: to.x, y: to.y, z: to.z }, true);
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
       rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
       rb.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
