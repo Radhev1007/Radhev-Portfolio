@@ -21,12 +21,6 @@ export function Specialisms() {
     >
       <SectionHeader index="03" label="What I specialise in" countNoun="areas" />
 
-      <Reveal>
-        <h2 className="mt-10 max-w-[18ch] text-headline font-medium leading-[0.9] tracking-[-0.045em] md:mt-16">
-          Five things, done properly.
-        </h2>
-      </Reveal>
-
       <ul className="mt-14 md:mt-20">
         {specialisms.map((s, i) => (
           <li key={s.id}>

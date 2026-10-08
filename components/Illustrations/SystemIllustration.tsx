@@ -138,8 +138,15 @@ export function SystemIllustration({ step }: { step: number }) {
   const reduced = usePrefersReducedMotion();
   return (
     <svg viewBox="0 0 606 580" className="h-auto w-full" role="img" aria-label={`Design system illustration: ${["tokens", "components", "patterns", "products"][step]}`}>
-      <rect x="0.5" y="0.5" width="605" height="579" rx="18" fill={ill.surface} stroke={ill.line} />
-      <text x="40" y="36" fill={ill.grey} fontSize="11" letterSpacing="1.5">{`0${step + 1} / 04`}</text>
+      {/* No card. The artwork sits open on the section, headed by a rule and
+          a counter — the same hairline-and-label treatment the rest of the
+          page uses, rather than a panel floating on a background it barely
+          contrasts with. */}
+      <line x1="40" y1="46" x2="566" y2="46" stroke={ill.line} strokeWidth="1" />
+      <text x="40" y="34" fill={ill.grey} fontSize="11" letterSpacing="1.5">{`0${step + 1} / 04`}</text>
+      <text x="566" y="34" fill={ill.grey} fontSize="11" letterSpacing="1.5" textAnchor="end">
+        {["TOKENS", "COMPONENTS", "PATTERNS", "PRODUCTS"][step]}
+      </text>
       <AnimatePresence mode="wait">
         <motion.g
           key={step}
