@@ -35,16 +35,22 @@
 
   /* ── Type scale ────────────────────────────────────────────────
      One step per role. `hero` is bound to svh as well as vw because the
-     hero has to fit the viewport height, so it cannot be a plain clamp. */
-  --text-hero: min(16vw, 12svh);
-  --text-hero-lg: min(7.4vw, 13svh, 8.5rem);
-  --text-display: clamp(3rem, 9vw, 9rem);
-  --text-headline: clamp(2.25rem, 7vw, 8rem);
-  --text-title: clamp(2rem, 5vw, 5rem);
-  --text-subtitle: clamp(1.5rem, 3.2vw, 3.25rem);
-  --text-lead: clamp(1.125rem, 1.6vw, 1.75rem);
-  --text-body: 1rem;
-  --text-small: 0.875rem;
+     hero has to fit the viewport height, so it cannot be a plain clamp.
+
+     The scale is compressed hardest at the top, where it was loudest: at
+     1440px the display step was 130px and the headline 101px. The bottom
+     steps move little and the smallest two not at all — captions at 11px
+     and labels at 10px were never the problem, and shrinking them further
+     would cost legibility to fix something else. */
+  --text-hero: min(12.5vw, 9.5svh);
+  --text-hero-lg: max(1.625rem, min(5.9vw, 10.5svh, 6.75rem));
+  --text-display: clamp(2.5rem, 6.4vw, 6.5rem);
+  --text-headline: clamp(1.875rem, 5vw, 5rem);
+  --text-title: clamp(1.5rem, 3.6vw, 3.75rem);
+  --text-subtitle: clamp(1.25rem, 2.35vw, 2.5rem);
+  --text-lead: clamp(1.0625rem, 1.35vw, 1.5rem);
+  --text-body: 0.9375rem;
+  --text-small: 0.8125rem;
   --text-caption: 0.6875rem;
   --text-micro: 0.625rem;
 }
