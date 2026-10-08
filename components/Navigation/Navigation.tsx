@@ -9,6 +9,7 @@ import { useLenis, useScrollTo } from "@/components/Providers/SmoothScroll";
 import { navItems, site, type SectionId } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, intro } from "@/lib/motion";
+import { GarageLauncher } from "@/components/Garage/Garage";
 import { Logo } from "@/components/Chrome/Logo";
 import { StatusBadge } from "./StatusBadge";
 
@@ -154,7 +155,10 @@ export function Navigation() {
               ))}
             </ul>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-5">
+              {/* A toggle rather than a nav item: there is nothing to scroll
+                  to and nothing to deep-link. */}
+              <GarageLauncher className="opacity-60" />
               <button
                 type="button"
                 className="relative grid size-5 place-items-center"
