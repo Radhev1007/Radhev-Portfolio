@@ -19,9 +19,12 @@ export function InspectRig() {
   const { camera } = useThree();
 
   // Start from a three-quarter front view, which is the angle the truck reads
-  // best from, rather than wherever the chase camera happened to be.
+  // best from, rather than wherever the chase camera happened to be. Pulled
+  // back on a portrait screen for the same reason the chase camera is.
   useEffect(() => {
-    camera.position.set(CENTRE.x + 2.5, CENTRE.y + 0.8, CENTRE.z + 3.1);
+    const aspect = (camera as THREE.PerspectiveCamera).aspect || 1;
+    const k = Math.min(2.0, Math.max(1, 0.8 / aspect));
+    camera.position.set(CENTRE.x + 2.5 * k, CENTRE.y + 0.8 * k, CENTRE.z + 3.1 * k);
     camera.lookAt(CENTRE);
   }, [camera]);
 
@@ -33,7 +36,7 @@ export function InspectRig() {
         enableDamping
         dampingFactor={0.08}
         minDistance={2.1}
-        maxDistance={8}
+        maxDistance={12}
         minPolarAngle={0.25}
         maxPolarAngle={Math.PI / 2 - 0.04}
         rotateSpeed={0.7}
@@ -90,10 +93,17 @@ export function InspectRig() {
 
 /* ── Overlays ───────────────────────────────────────────────── */
 
-/** Shown when the truck is parked within reach of the plinth. */
-export function ApproachPrompt({ onExplore }: { onExplore: () => void }) {
+/**
+ * Shown when the truck is parked within reach of the plinth. On touch it sits
+ * at the top, because the bottom of the screen is thumb pads.
+ */
+export function ApproachPrompt({ onExplore, touch = false }: { onExplore: () => void; touch?: boolean }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-28 flex justify-center">
+    <div
+      className={`pointer-events-none absolute inset-x-0 flex justify-center px-5 ${
+        touch ? "top-28" : "bottom-28"
+      }`}
+    >
       <div className="pointer-events-auto border border-white/15 bg-black/55 px-6 py-4 text-center backdrop-blur-sm">
         <p className="text-caption font-medium uppercase tracking-[0.18em] text-white">
           {heroVehicle.name}
@@ -104,9 +114,9 @@ export function ApproachPrompt({ onExplore }: { onExplore: () => void }) {
         <button
           type="button"
           onClick={onExplore}
-          className="mt-4 border border-white/25 px-4 py-2 text-caption uppercase tracking-[0.18em] text-white transition-colors hover:bg-white/10"
+          className="mt-4 border border-white/25 px-5 py-3 text-caption uppercase tracking-[0.18em] text-white transition-colors hover:bg-white/10 md:py-2"
         >
-          E — Explore
+          {touch ? "Explore" : "E — Explore"}
         </button>
       </div>
     </div>
@@ -114,7 +124,7 @@ export function ApproachPrompt({ onExplore }: { onExplore: () => void }) {
 }
 
 /** The collection card, which is the whole of the inspection interface. */
-export function CollectionCard({ onBack }: { onBack: () => void }) {
+export function CollectionCard({ onBack, touch = false }: { onBack: () => void; touch?: boolean }) {
   const v = heroVehicle;
   const rows: [string, string][] = [
     ["Category", v.category],
@@ -123,14 +133,15 @@ export function CollectionCard({ onBack }: { onBack: () => void }) {
   ];
 
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-end p-6 md:p-8">
-      <div className="pointer-events-auto flex max-w-[17rem] flex-col border border-white/15 bg-black/65 p-5 backdrop-blur-sm">
+    <div className="pointer-events-none absolute inset-0 flex flex-col justify-end p-5 md:p-8">
+      {/* A bottom sheet on a phone, a corner card on a desktop. */}
+      <div className="pointer-events-auto flex w-full flex-col border border-white/15 bg-black/70 p-5 backdrop-blur-sm md:max-w-[17rem] md:bg-black/65">
         <p className="text-caption uppercase tracking-[0.22em] text-white/40">{v.number}</p>
         <h3 className="mt-1 text-subtitle font-medium leading-[1.05] tracking-[-0.02em] text-white">
           {v.name}
         </h3>
 
-        <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 text-caption uppercase tracking-[0.16em]">
+        <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 text-caption uppercase tracking-[0.16em] max-md:grid-cols-[auto_1fr_auto_1fr]">
           {rows.map(([k, val]) => (
             <div key={k} className="contents">
               <dt className="text-white/40">{k}</dt>
@@ -144,14 +155,14 @@ export function CollectionCard({ onBack }: { onBack: () => void }) {
         <button
           type="button"
           onClick={onBack}
-          className="mt-5 self-start border border-white/25 px-4 py-2 text-caption uppercase tracking-[0.18em] text-white transition-colors hover:bg-white/10"
+          className="mt-5 self-start border border-white/25 px-5 py-3 text-caption uppercase tracking-[0.18em] text-white transition-colors hover:bg-white/10 md:py-2"
         >
-          Esc — Back to driving
+          {touch ? "Back to driving" : "Esc — Back to driving"}
         </button>
       </div>
 
       <p className="pointer-events-none absolute inset-x-0 top-6 text-center text-caption uppercase tracking-[0.18em] text-white/35 md:top-8">
-        Drag to rotate · Scroll to zoom
+        Drag to rotate · {touch ? "Pinch" : "Scroll"} to zoom
       </p>
     </div>
   );

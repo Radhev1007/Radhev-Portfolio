@@ -9,6 +9,7 @@ import { Car } from "./Car";
 import { ApproachPrompt, CollectionCard, InspectRig } from "./Inspect";
 import { Display, PLINTH_AT, PLINTH_RANGE } from "./Display";
 import { OVERALL_LEN, RC_SCALE } from "./Scx30";
+import { TouchControls } from "./TouchControls";
 import { World } from "./World";
 import { useControls } from "./useControls";
 
@@ -27,6 +28,7 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
   const [speed, setSpeed] = useState(0);
   const [near, setNear] = useState(false);
   const [tier, setTier] = useState<"high" | "low">("high");
+  const [touch, setTouch] = useState(false);
   const state = useRef({ speed: 0, airborne: false });
 
   const onState = useCallback((s: { speed: number; airborne: boolean }) => {
@@ -35,6 +37,7 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     const coarse = window.matchMedia("(pointer: coarse)").matches;
+    setTouch(coarse);
     setTier(coarse || window.innerWidth < 768 || (navigator.hardwareConcurrency ?? 4) <= 4 ? "low" : "high");
   }, []);
 
@@ -101,11 +104,12 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
 
       {mode === "drive" ? (
         <>
-          <Hud speed={speed} onExit={onExit} />
-          {near && <ApproachPrompt onExplore={() => setMode("inspect")} />}
+          <Hud speed={speed} onExit={onExit} touch={touch} />
+          {touch && <TouchControls controls={controls} />}
+          {near && <ApproachPrompt onExplore={() => setMode("inspect")} touch={touch} />}
         </>
       ) : (
-        <CollectionCard onBack={() => setMode("drive")} />
+        <CollectionCard onBack={() => setMode("drive")} touch={touch} />
       )}
     </div>
   );
@@ -139,14 +143,20 @@ function Chase({
     const d = Math.min(delta, 0.05);
     if (car) target.current.copy(car.position);
 
-    // One and a half vehicle lengths back when crawling, two and a half when
-    // moving, at about roof height: close enough that the modelling is worth
-    // looking at, far enough to see the line you are taking.
+    // Roughly two vehicle lengths back when crawling, three when moving, at
+    // about roof height: close enough that the modelling is worth looking at,
+    // far enough to see the line you are taking.
+    //
+    // The field of view is vertical, so a portrait phone sees a much narrower
+    // slice horizontally and the truck fills the width. Backing off in
+    // proportion keeps the framing the same on both.
+    const aspect = (camera as THREE.PerspectiveCamera).aspect || 1;
+    const portrait = Math.min(2.2, Math.max(1, 0.8 / aspect));
     const pace = Math.min(getState().speed, 6) / 6;
     desired.current.set(
       target.current.x,
-      target.current.y + 0.95 + pace * 0.55,
-      target.current.z + OVERALL_LEN * (1.8 + pace * 1.1),
+      target.current.y + (0.95 + pace * 0.55) * portrait,
+      target.current.z + OVERALL_LEN * (1.8 + pace * 1.1) * portrait,
     );
     // Snap on the first frame that actually has the truck in it. Lerping in
     // from the default camera position means the scene opens on a distant
@@ -172,23 +182,31 @@ function Chase({
   return null;
 }
 
-function Hud({ speed, onExit }: { speed: number; onExit: () => void }) {
+function Hud({ speed, onExit, touch }: { speed: number; onExit: () => void; touch: boolean }) {
   return (
-    <div className="pointer-events-none absolute inset-0 p-6 font-sans text-white md:p-8">
-      <div className="flex items-start justify-between">
+    <div className="pointer-events-none absolute inset-0 p-5 font-sans text-white md:p-8">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-caption font-medium uppercase tracking-[0.16em]">Radhev R</p>
           <p className="mt-2 text-caption uppercase tracking-[0.16em] text-white/45">My Garage</p>
+          {/* On touch the readout moves up here: the bottom corners belong to
+              the thumb pads. */}
+          {touch && (
+            <p className="mt-3 text-caption uppercase tracking-[0.16em] tabular-nums text-white/45">
+              <span className="text-white">{Math.round((speed / RC_SCALE) * 3.6 * 30)}</span> scale km/h
+            </p>
+          )}
         </div>
         <button
           type="button"
           onClick={onExit}
-          className="pointer-events-auto border border-white/20 px-4 py-2 text-caption uppercase tracking-[0.16em] transition-colors hover:bg-white/10"
+          className="pointer-events-auto shrink-0 border border-white/20 px-4 py-3 text-caption uppercase tracking-[0.16em] transition-colors hover:bg-white/10 md:py-2"
         >
-          Esc — Exit
+          {touch ? "Exit" : "Esc — Exit"}
         </button>
       </div>
 
+      {touch ? null : (
       <div className="absolute inset-x-6 bottom-6 flex items-end justify-between md:inset-x-8 md:bottom-8">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-caption uppercase tracking-[0.16em] text-white/45">
           <dt className="text-white">W A S D</dt>
@@ -207,6 +225,7 @@ function Hud({ speed, onExit }: { speed: number; onExit: () => void }) {
           <span className="text-white">{Math.round((speed / RC_SCALE) * 3.6 * 30)}</span> scale km/h
         </p>
       </div>
+      )}
     </div>
   );
 }

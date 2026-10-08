@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/Animations/Button";
 import { Reveal } from "@/components/Animations/Reveal";
 import { TextReveal } from "@/components/Animations/TextReveal";
@@ -21,13 +22,6 @@ const GarageScene = dynamic(() => import("./GarageScene").then((m) => m.GarageSc
 
 export function Garage() {
   const [open, setOpen] = useState(false);
-  // Driving is keyboard-only for now, so a touch visitor is told before they
-  // commit to the download rather than after it.
-  const [keyboard, setKeyboard] = useState(true);
-
-  useEffect(() => {
-    setKeyboard(!window.matchMedia("(pointer: coarse)").matches);
-  }, []);
 
   // The page must not scroll underneath the scene.
   useEffect(() => {
@@ -60,16 +54,16 @@ export function Garage() {
             <Button onClick={() => setOpen(true)} cursor="cta" cursorLabel="Drive">
               Enter the garage
             </Button>
-            {!keyboard && (
-              <p className="mt-4 text-caption uppercase tracking-[0.16em] text-mute">
-                Needs a keyboard to drive
-              </p>
-            )}
           </div>
         </Reveal>
       </div>
 
-      {open && <GarageScene onExit={() => setOpen(false)} />}
+      {/* Portalled to the body on purpose. The scene is `fixed inset-0`, and a
+          fixed element is positioned against its nearest transformed ancestor
+          rather than the viewport — SectionScene animates a transform, so
+          inside it the garage covered only part of the screen. */}
+      {open &&
+        createPortal(<GarageScene onExit={() => setOpen(false)} />, document.body)}
     </section>
   );
 }

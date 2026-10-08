@@ -11,9 +11,20 @@ export type Controls = {
   boost: boolean;
   reset: boolean;
   interact: boolean;
+  /**
+   * Analog overrides, -1 to 1, written by the touch controls. Zero means
+   * nothing is touching them and the keys decide. Keeping both is what lets a
+   * phone steer a crawler finely while a keyboard still works the way it did.
+   */
+  steerAxis: number;
+  throttleAxis: number;
 };
 
-const MAP: Record<string, keyof Controls> = {
+type Button = {
+  [K in keyof Controls]: Controls[K] extends boolean ? K : never;
+}[keyof Controls];
+
+const MAP: Record<string, Button> = {
   KeyW: "forward",
   ArrowUp: "forward",
   KeyS: "back",
@@ -38,6 +49,8 @@ const IDLE: Controls = {
   boost: false,
   reset: false,
   interact: false,
+  steerAxis: 0,
+  throttleAxis: 0,
 };
 
 /**

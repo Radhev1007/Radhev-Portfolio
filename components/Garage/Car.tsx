@@ -37,6 +37,8 @@ const BRAKE = 0.04;
 /** Fraction of sideways speed kept per second. Low, because crawlers grip. */
 const GRIP = 0.008;
 const MAX_STEER = 0.55;
+/** Below this a thumb resting on the pad counts as centred. */
+const DEADZONE = 0.12;
 /** Visual suspension travel either side of rest, in game units. */
 const TRAVEL = 0.06;
 /** How far above the body origin the grounding ray starts. */
@@ -134,13 +136,18 @@ export function Car({
     drive.normalize();
 
     const along = v.dot(drive);
-    const throttle = (c.forward ? 1 : 0) - (c.back ? 1 : 0);
+    // Touch writes analog axes, the keys are full deflection, and either can
+    // drive. A crawler wants fine steering more than anything else, which is
+    // the whole reason the axes exist.
+    const axis = (v: number) => (Math.abs(v) < DEADZONE ? 0 : v);
+    const throttle = axis(c.throttleAxis) || (c.forward ? 1 : 0) - (c.back ? 1 : 0);
+    const steerInput = -axis(c.steerAxis) || (c.left ? 1 : 0) - (c.right ? 1 : 0);
     const boost = c.boost ? BOOST : 1;
 
     if (grounded) {
       let next = along;
-      if (throttle > 0) next += ACCEL * boost * d;
-      else if (throttle < 0) next -= REVERSE_ACCEL * d;
+      if (throttle > 0) next += ACCEL * boost * throttle * d;
+      else if (throttle < 0) next += REVERSE_ACCEL * throttle * d;
       else next *= Math.pow(COAST, d);
       if (c.brake) next *= Math.pow(BRAKE, d);
       next = Math.max(-REVERSE_TOP, Math.min(TOP * boost, next));
@@ -160,7 +167,7 @@ export function Car({
 
     // Steering. Only the yaw is written — pitch and roll are left to the
     // solver, so the truck can still tip and settle on uneven ground.
-    const want = ((c.left ? 1 : 0) - (c.right ? 1 : 0)) * MAX_STEER;
+    const want = steerInput * MAX_STEER;
     steer.current += (want - steer.current) * Math.min(1, 9 * d);
     if (grounded && Math.abs(along) > 0.2) {
       const av = rb.angvel();
