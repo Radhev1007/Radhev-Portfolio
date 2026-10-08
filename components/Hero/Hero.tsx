@@ -36,7 +36,7 @@ export function Hero() {
         {/* The portrait leads on narrow screens, right-hand column on wide
             ones. It sits behind the written column's stacking context, so the
             links and buttons there still take their own clicks. */}
-        <div className="order-1 h-[30svh] w-full md:order-2 md:col-span-5 md:col-start-8 md:h-[58svh]">
+        <div className="order-1 h-[31svh] w-full md:order-2 md:col-span-5 md:col-start-8 md:h-[62svh]">
           <HeroPortrait />
         </div>
 
