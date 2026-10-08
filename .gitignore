@@ -10,3 +10,6 @@ next-env.d.ts
 # Python bytecode from the Blender build scripts
 __pycache__/
 *.pyc
+
+# Static export output (npm run build:static)
+out/
