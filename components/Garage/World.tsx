@@ -1,7 +1,9 @@
 "use client";
 
 import { RigidBody } from "@react-three/rapier";
+import { Cave, Collectibles, Splash } from "./Effects";
 import { LogBridge, Ramp, RockCrawl, RopeBridge, Scatter, Stream, TyreObstacles } from "./Obstacles";
+import { ROPE_BRIDGE } from "./progress";
 import { Terrain } from "./Terrain";
 import { heightAt, PLACES } from "./heightfield";
 
@@ -19,7 +21,7 @@ import { heightAt, PLACES } from "./heightfield";
  * the log bridge or the long way, and the canyon or the rope crossing above
  * it.
  */
-export function World() {
+export function World({ found, onFind }: { found: Set<string>; onFind: (id: string) => void }) {
   return (
     <>
       <Terrain />
@@ -33,7 +35,7 @@ export function World() {
 
       {/* Two ways over the water in the west, and a way across the canyon. */}
       <LogBridge at={[-26, 19]} span={10} />
-      <RopeBridge from={[9, -7]} to={[25, -7]} />
+      <RopeBridge from={ROPE_BRIDGE.from} to={ROPE_BRIDGE.to} />
 
       {/* Timber, graded small to large as you work north. */}
       <Ramp at={[9, 30]} size="s" rotation={0.1} />
@@ -41,8 +43,11 @@ export function World() {
       <Ramp at={[-13, 30]} size="l" rotation={-0.35} />
 
       <TyreObstacles at={[14, 31]} />
+      <Cave />
       <TrailMarkers />
       <Scatter />
+      <Collectibles found={found} onFind={onFind} />
+      <Splash />
     </>
   );
 }

@@ -8,6 +8,14 @@ import { Car } from "./Car";
 import { ApproachPrompt, CollectionCard, InspectRig } from "./Inspect";
 import { Display, PLINTH_AT, PLINTH_RANGE } from "./Display";
 import { CHECKPOINTS, CHECKPOINT_RANGE, heightAt } from "./heightfield";
+import { garageAudio } from "./audio";
+import {
+  ACHIEVEMENTS,
+  PARTS,
+  ROPE_BRIDGE,
+  type Zone,
+  zoneAt,
+} from "./progress";
 import { OVERALL_LEN, RC_SCALE } from "./Scx30";
 import { TouchControls } from "./TouchControls";
 import { World } from "./World";
@@ -28,7 +36,15 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
   const [speed, setSpeed] = useState(0);
   const [near, setNear] = useState(false);
   const [reached, setReached] = useState(0);
-  const [banner, setBanner] = useState<(typeof CHECKPOINTS)[number] | null>(null);
+  const [found, setFound] = useState<Set<string>>(() => new Set());
+  const [earned, setEarned] = useState<Set<string>>(() => new Set());
+  const [zone, setZone] = useState<Zone | null>(null);
+  const [atSummit, setAtSummit] = useState(false);
+  const [muted, setMuted] = useState(false);
+  /** One toast for checkpoints, zones, parts and achievements. */
+  const [toast, setToast] = useState<{ kind: string; title: string; sub?: string } | null>(null);
+  /** Ramps 0 → 1 → 0 to widen the camera when a zone first opens up. */
+  const flourish = useRef(0);
   // Typed explicitly: CHECKPOINTS is `as const`, so inference would pin this
   // to the literal coordinates of the first one.
   const respawn = useRef<{ x: number; y: number; z: number }>({
@@ -41,19 +57,76 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
     const cp = CHECKPOINTS[i];
     respawn.current = { x: cp.x, y: heightAt(cp.x, cp.z) + 0.05, z: cp.z };
     setReached((r) => Math.max(r, i));
-    setBanner(cp);
+    setToast({ kind: `Checkpoint ${cp.id}`, title: cp.name });
+  }, []);
+
+  // Both of these are called from the frame loop, every frame, for as long
+  // as the condition holds. The guard lives in a ref rather than inside a
+  // state updater: an updater must be pure, and React is free to run it
+  // twice — which would fire the toast twice for one achievement.
+  const earnedRef = useRef<Set<string>>(new Set());
+  const foundRef = useRef<Set<string>>(new Set());
+
+  const award = useCallback((id: string) => {
+    if (earnedRef.current.has(id)) return;
+    earnedRef.current.add(id);
+    const a = ACHIEVEMENTS.find((x) => x.id === id);
+    if (a) setToast({ kind: "Achievement", title: a.name, sub: a.how });
+    setEarned(new Set(earnedRef.current));
+  }, []);
+
+  const onFind = useCallback(
+    (id: string) => {
+      if (foundRef.current.has(id)) return;
+      foundRef.current.add(id);
+      const part = PARTS.find((p) => p.id === id);
+      setToast({ kind: `Part ${foundRef.current.size} of ${PARTS.length}`, title: part?.name ?? "Part" });
+      setFound(new Set(foundRef.current));
+      if (foundRef.current.size === PARTS.length) award("collector");
+    },
+    [award],
+  );
+
+  const onZone = useCallback(
+    (z: Zone | null) => {
+      setZone(z);
+      if (!z) return;
+      flourish.current = 1;
+      setAtSummit(z.id === "05");
+      if (z.id !== "01") award("roll");
+      if (z.id === "03") award("line");
+      if (z.id === "05") award("summit");
+    },
+    [award],
+  );
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 2800);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  // Audio starts here because the CTA click that mounted this scene is the
+  // gesture browsers require. It is torn down with the scene.
+  useEffect(() => {
+    void garageAudio.start();
+    return () => garageAudio.dispose();
   }, []);
 
   useEffect(() => {
-    if (!banner) return;
-    const id = setTimeout(() => setBanner(null), 2600);
-    return () => clearTimeout(id);
-  }, [banner]);
+    garageAudio.setMuted(muted || mode === "inspect");
+  }, [muted, mode]);
   const [tier, setTier] = useState<"high" | "low">("high");
   const [touch, setTouch] = useState(false);
-  const state = useRef({ speed: 0, airborne: false });
+  const state = useRef({
+    speed: 0,
+    airborne: false,
+    throttle: 0,
+    surface: "dirt" as "dirt" | "rock" | "water",
+    inWater: false,
+  });
 
-  const onState = useCallback((s: { speed: number; airborne: boolean }) => {
+  const onState = useCallback((s: typeof state.current) => {
     state.current = s;
   }, []);
 
@@ -120,12 +193,19 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
               one-second physics tick, and a one-second tick puts the truck through
               the floor before anyone has touched a key. */}
           <Physics gravity={[0, -22, 0]} timeStep={1 / 60} paused={mode === "inspect"}>
-            <World />
+            <World found={found} onFind={onFind} />
             <CheckpointFlags reached={reached} />
             <Display near={near} label={mode === "drive"} detail={mode === "inspect" ? "high" : "game"} />
             <Car controls={controls} onState={onState} respawn={respawn} />
             {mode === "drive" && (
-              <Chase getState={() => state.current} onNear={setNear} onCheckpoint={onCheckpoint} />
+              <Chase
+                getState={() => state.current}
+                onNear={setNear}
+                onCheckpoint={onCheckpoint}
+                onZone={onZone}
+                onAward={award}
+                flourish={flourish}
+              />
             )}
           </Physics>
           {mode === "inspect" && <InspectRig />}
@@ -134,15 +214,31 @@ export function GarageScene({ onExit }: { onExit: () => void }) {
 
       {mode === "drive" ? (
         <>
-          <Hud speed={speed} onExit={onExit} touch={touch} />
+          <Hud
+            speed={speed}
+            onExit={onExit}
+            touch={touch}
+            zone={zone}
+            parts={found.size}
+            muted={muted}
+            onMute={() => setMuted((m) => !m)}
+          />
           {touch && <TouchControls controls={controls} />}
-          {banner && (
-            <div className="pointer-events-none absolute inset-x-0 top-1/3 text-center">
-              <p className="text-caption uppercase tracking-[0.22em] text-white/50">
-                Checkpoint {banner.id}
-              </p>
+          {toast && (
+            <div className="pointer-events-none absolute inset-x-0 top-[28%] px-6 text-center">
+              <p className="text-caption uppercase tracking-[0.22em] text-white/50">{toast.kind}</p>
               <p className="mt-2 text-subtitle font-medium tracking-[-0.02em] text-white">
-                {banner.name}
+                {toast.title}
+              </p>
+              {toast.sub && (
+                <p className="mt-1 text-caption uppercase tracking-[0.16em] text-white/40">{toast.sub}</p>
+              )}
+            </div>
+          )}
+          {atSummit && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-[22%] px-8 text-center">
+              <p className="mx-auto max-w-[34ch] text-small leading-relaxed text-white/70">
+                Some roads are designed. Some are built. Some are meant to be crawled.
               </p>
             </div>
           )}
@@ -193,14 +289,28 @@ function CheckpointFlags({ reached }: { reached: number }) {
   );
 }
 
+type DriveState = {
+  speed: number;
+  airborne: boolean;
+  throttle: number;
+  surface: "dirt" | "rock" | "water";
+  inWater: boolean;
+};
+
 function Chase({
   getState,
   onNear,
   onCheckpoint,
+  onZone,
+  onAward,
+  flourish,
 }: {
-  getState: () => { speed: number; airborne: boolean };
+  getState: () => DriveState;
   onNear: (near: boolean) => void;
   onCheckpoint: (index: number) => void;
+  onZone: (zone: Zone | null) => void;
+  onAward: (id: string) => void;
+  flourish: React.RefObject<number>;
 }) {
   const { camera, scene } = useThree();
   const target = useRef(new THREE.Vector3(0, 1, 6));
@@ -209,6 +319,8 @@ function Chase({
   const wasNear = useRef(false);
   const settled = useRef(false);
   const hit = useRef(new Set<number>());
+  const zoneId = useRef<string | null>(null);
+  const wasWet = useRef(false);
 
   useFrame((_, delta) => {
     const car = scene.getObjectByName("rc-car");
@@ -224,11 +336,18 @@ function Chase({
     // proportion keeps the framing the same on both.
     const aspect = (camera as THREE.PerspectiveCamera).aspect || 1;
     const portrait = Math.min(2.2, Math.max(1, 0.8 / aspect));
-    const pace = Math.min(getState().speed, 6) / 6;
+    const st = getState();
+    const pace = Math.min(st.speed, 6) / 6;
+
+    // A short widening when a new zone opens up, then straight back. The
+    // camera moves; control never leaves the player.
+    flourish.current = Math.max(0, flourish.current - d * 0.5);
+    const reveal = Math.sin(Math.min(1, flourish.current) * Math.PI) * 0.6;
+
     desired.current.set(
       target.current.x,
-      target.current.y + (0.95 + pace * 0.55) * portrait,
-      target.current.z + OVERALL_LEN * (1.8 + pace * 1.1) * portrait,
+      target.current.y + (0.95 + pace * 0.55 + reveal * 1.6) * portrait,
+      target.current.z + OVERALL_LEN * (1.8 + pace * 1.1 + reveal * 1.3) * portrait,
     );
     // Snap on the first frame that actually has the truck in it. Lerping in
     // from the default camera position means the scene opens on a distant
@@ -257,6 +376,30 @@ function Chase({
       onNear(isNear);
     }
 
+    garageAudio.update({ ...st, grounded: !st.airborne });
+    if (st.inWater && !wasWet.current) garageAudio.splash();
+    wasWet.current = st.inWater;
+
+    // Zones are read from position rather than gated.
+    const z = zoneAt(target.current.x, target.current.z);
+    if ((z?.id ?? null) !== zoneId.current) {
+      zoneId.current = z?.id ?? null;
+      onZone(z);
+    }
+
+    // Crossing the canyon on the deck, rather than driving round the end.
+    const bx = (ROPE_BRIDGE.from[0] + ROPE_BRIDGE.to[0]) / 2;
+    const bz = (ROPE_BRIDGE.from[1] + ROPE_BRIDGE.to[1]) / 2;
+    const span = Math.hypot(ROPE_BRIDGE.to[0] - ROPE_BRIDGE.from[0], ROPE_BRIDGE.to[1] - ROPE_BRIDGE.from[1]);
+    if (
+      Math.abs(target.current.x - bx) < span / 2 &&
+      Math.abs(target.current.z - bz) < 1.7 &&
+      target.current.y > heightAt(target.current.x, target.current.z) + 0.9
+    ) {
+      onAward("wire");
+    }
+    if (st.inWater) onAward("water");
+
     // Checkpoints, tested here for the same reason proximity is: this loop
     // already has the truck every frame.
     for (let i = 0; i < CHECKPOINTS.length; i++) {
@@ -273,13 +416,34 @@ function Chase({
   return null;
 }
 
-function Hud({ speed, onExit, touch }: { speed: number; onExit: () => void; touch: boolean }) {
+function Hud({
+  speed,
+  onExit,
+  touch,
+  zone,
+  parts,
+  muted,
+  onMute,
+}: {
+  speed: number;
+  onExit: () => void;
+  touch: boolean;
+  zone: Zone | null;
+  parts: number;
+  muted: boolean;
+  onMute: () => void;
+}) {
   return (
     <div className="pointer-events-none absolute inset-0 p-5 font-sans text-white md:p-8">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-caption font-medium uppercase tracking-[0.16em]">Radhev R</p>
-          <p className="mt-2 text-caption uppercase tracking-[0.16em] text-white/45">My Garage</p>
+          <p className="mt-2 text-caption uppercase tracking-[0.16em] text-white/45">
+            {zone ? `${zone.id} · ${zone.name}` : "My Garage"}
+          </p>
+          {zone && (
+            <p className="mt-1 text-caption uppercase tracking-[0.16em] text-white/25">{zone.blurb}</p>
+          )}
           {/* On touch the readout moves up here: the bottom corners belong to
               the thumb pads. */}
           {touch && (
@@ -288,13 +452,26 @@ function Hud({ speed, onExit, touch }: { speed: number; onExit: () => void; touc
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onExit}
-          className="pointer-events-auto shrink-0 border border-white/20 px-4 py-3 text-caption uppercase tracking-[0.16em] transition-colors hover:bg-white/10 md:py-2"
-        >
-          {touch ? "Exit" : "Esc — Exit"}
-        </button>
+        <div className="flex shrink-0 items-start gap-2">
+          <p className="hidden border border-white/15 px-3 py-3 text-caption uppercase tracking-[0.16em] text-white/50 md:block md:py-2">
+            Parts <span className="text-white">{parts}</span>/{PARTS.length}
+          </p>
+          <button
+            type="button"
+            onClick={onMute}
+            aria-pressed={muted}
+            className="pointer-events-auto border border-white/20 px-3 py-3 text-caption uppercase tracking-[0.16em] transition-colors hover:bg-white/10 md:py-2"
+          >
+            {muted ? "Sound off" : "Sound on"}
+          </button>
+          <button
+            type="button"
+            onClick={onExit}
+            className="pointer-events-auto border border-white/20 px-4 py-3 text-caption uppercase tracking-[0.16em] transition-colors hover:bg-white/10 md:py-2"
+          >
+            {touch ? "Exit" : "Esc — Exit"}
+          </button>
+        </div>
       </div>
 
       {touch ? null : (

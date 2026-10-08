@@ -70,10 +70,12 @@ export type Rig = {
   shocks: (THREE.Object3D | null)[];
   /** The shell, for roll and pitch. */
   body: THREE.Object3D | null;
+  /** Tyre materials, cloned per instance so only the driven truck gets wet. */
+  tyres: THREE.MeshStandardMaterial[];
 };
 
 export function emptyRig(): Rig {
-  return { wheels: [], hubs: [], shocks: [], body: null };
+  return { wheels: [], hubs: [], shocks: [], body: null, tyres: [] };
 }
 
 /**
@@ -131,6 +133,18 @@ export function Scx30({
       }
     });
     if (!rig) return;
+    // Materials are shared across clones, so the driven truck needs its own
+    // copy of the rubber before anything tints it wet.
+    const tyres: THREE.MeshStandardMaterial[] = [];
+    root.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.name.includes("Tyre")) return;
+      const m = mesh.material as THREE.MeshStandardMaterial;
+      const copy = m.clone();
+      mesh.material = copy;
+      tyres.push(copy);
+    });
+    rig.current.tyres = tyres;
     rig.current.wheels = ORDER.map((k) => root.getObjectByName(`Wheel${k}`) ?? null);
     rig.current.hubs = ORDER.map((k) => root.getObjectByName(`Hub${k}`) ?? null);
     rig.current.shocks = ORDER.map((k) => root.getObjectByName(`Shock${k}`) ?? null);

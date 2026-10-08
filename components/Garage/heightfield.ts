@@ -102,6 +102,22 @@ function pad(h: number, x: number, z: number, cx: number, cz: number, r: number,
   return lerp(h, to, k);
 }
 
+/**
+ * Distance from the stream's centreline. Water and mud are regions, not a
+ * height test: the canyon floor sits below the water line too, and driving
+ * through it should not sound like a ford.
+ */
+export function streamDist(x: number, z: number) {
+  return distToSegment(x, z, PLACES.stream.from.x, PLACES.stream.from.z, PLACES.stream.to.x, PLACES.stream.to.z);
+}
+
+export const STREAM_HALF_WIDTH = 3.6;
+/** How churned the ground is, 0 to 1 — the banks either side of the water. */
+export function mudAt(x: number, z: number) {
+  const d = streamDist(x, z);
+  return 1 - smoothstep(STREAM_HALF_WIDTH, STREAM_HALF_WIDTH + 3.2, d);
+}
+
 export function heightAt(x: number, z: number): number {
   let h = 0;
 

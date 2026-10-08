@@ -10,7 +10,8 @@ import {
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { heightAt } from "./heightfield";
+import { heightAt, mudAt } from "./heightfield";
+import { inWater } from "./Effects";
 import { emptyRig, type Rig, Scx30, toModel, TYRE_R, WHEEL_ANCHORS } from "./Scx30";
 import type { Controls } from "./useControls";
 
@@ -64,7 +65,13 @@ export function Car({
   respawn,
 }: {
   controls: React.RefObject<Controls>;
-  onState: (s: { speed: number; airborne: boolean }) => void;
+  onState: (s: {
+    speed: number;
+    airborne: boolean;
+    throttle: number;
+    surface: "dirt" | "rock" | "water";
+    inWater: boolean;
+  }) => void;
   /** Where R and a fall put the truck back — the last checkpoint reached. */
   respawn?: React.RefObject<{ x: number; y: number; z: number }>;
 }) {
@@ -76,6 +83,7 @@ export function Car({
   const roll = useRef(0);
   const pitch = useRef(0);
   const lastAlong = useRef(0);
+  const wet = useRef(0);
   const { world, rapier } = useRapier();
 
   const vec = useMemo(
@@ -145,19 +153,22 @@ export function Car({
     // the whole reason the axes exist.
     const axis = (v: number) => (Math.abs(v) < DEADZONE ? 0 : v);
     const throttle = axis(c.throttleAxis) || (c.forward ? 1 : 0) - (c.back ? 1 : 0);
+    const mud = mudAt(o.x, o.z);
     const steerInput = -axis(c.steerAxis) || (c.left ? 1 : 0) - (c.right ? 1 : 0);
     const boost = c.boost ? BOOST : 1;
 
     if (grounded) {
       let next = along;
-      if (throttle > 0) next += ACCEL * boost * throttle * d;
-      else if (throttle < 0) next += REVERSE_ACCEL * throttle * d;
+      const traction = 1 - mud * 0.42;
+      if (throttle > 0) next += ACCEL * boost * throttle * traction * d;
+      else if (throttle < 0) next += REVERSE_ACCEL * throttle * traction * d;
       else next *= Math.pow(COAST, d);
       if (c.brake) next *= Math.pow(BRAKE, d);
       next = Math.max(-REVERSE_TOP, Math.min(TOP * boost, next));
 
       lateral.copy(v).addScaledVector(drive, -along);
-      const keep = Math.pow(GRIP, d);
+      // Churned ground either side of the stream: less bite, less drive.
+      const keep = Math.pow(GRIP + mud * 0.5, d);
 
       rb.setLinvel(
         {
@@ -233,7 +244,23 @@ export function Car({
       rig.current.body.rotation.x = pitch.current;
     }
 
-    onState({ speed, airborne: !grounded });
+    // Wet rubber takes a few seconds to dry, and shines while it is wet.
+    const wading = inWater(o.x, o.y, o.z);
+    wet.current = wading ? 1 : Math.max(0, wet.current - d * 0.14);
+    for (const m of rig.current.tyres) {
+      m.roughness = 0.94 - wet.current * 0.5;
+      const k = 1 - wet.current * 0.45;
+      m.color.setRGB(0.028 * k, 0.028 * k, 0.03 * k);
+    }
+
+    const steep = hit ? 1 - hit.normal.y : 0;
+    onState({
+      speed,
+      airborne: !grounded,
+      throttle,
+      surface: wading ? "water" : steep > 0.22 || mud < 0.05 ? "rock" : "dirt",
+      inWater: wading,
+    });
   });
 
   return (

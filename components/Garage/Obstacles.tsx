@@ -1,9 +1,10 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
-import { RigidBody } from "@react-three/rapier";
+import { useFrame, useThree } from "@react-three/fiber";
+import { RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { garageAudio } from "./audio";
 import { heightAt, normalAt } from "./heightfield";
 
 /**
@@ -282,40 +283,97 @@ export function RopeBridge({
   const drop = (t: number) => -sag * (1 - Math.pow(2 * t - 1, 2));
   const r = useMemo(() => rand(3322), []);
 
+  const planks = useRef<(RapierRigidBody | null)[]>([]);
+  const { scene } = useThree();
+  const live = useRef(0);
+  const creakAt = useRef(0);
+
+  // Planks are kinematic, not fixed: the deck has to carry the truck, so the
+  // collider must move with the sag rather than the mesh sliding off it.
+  //
+  // The deflection is driven by where the truck is, not simulated. A jointed
+  // plank chain is a pile of constraints that goes unstable the first time a
+  // wheel catches an edge, and a bridge that flings the truck into the canyon
+  // is worse than one that does not flex at all.
+  useFrame((state, delta) => {
+    const car = scene.getObjectByName("rc-car");
+    if (!car) return;
+    const dx = car.position.x - mid[0];
+    const dz = car.position.z - mid[1];
+    // Distance along the span, and how far off it the truck is.
+    const along = dx * Math.cos(angle) + dz * Math.sin(angle);
+    const off = Math.abs(-dx * Math.sin(angle) + dz * Math.cos(angle));
+    const onDeck = Math.abs(along) < len / 2 + 0.6 && off < 1.6 && Math.abs(car.position.y - deck) < 1.9;
+
+    live.current += ((onDeck ? 1 : 0) - live.current) * Math.min(1, delta * 6);
+
+    for (let i = 0; i < planks.current.length; i++) {
+      const body = planks.current[i];
+      if (!body) continue;
+      const t = (i + 0.5) / n;
+      const px = -len / 2 + t * len;
+      const d = (px - along) / 2.6;
+      const bend = Math.exp(-d * d) * 0.3 * live.current;
+      const localY = drop(t) - bend;
+      body.setNextKinematicTranslation({
+        x: mid[0] + Math.cos(angle) * px,
+        y: deck + localY,
+        z: mid[1] + Math.sin(angle) * px,
+      });
+    }
+
+    // Timber complains when it takes weight, not continuously.
+    if (onDeck && state.clock.elapsedTime - creakAt.current > 0.55) {
+      creakAt.current = state.clock.elapsedTime;
+      garageAudio.creak();
+    }
+  });
+
   return (
-    <group position={[mid[0], deck, mid[1]]} rotation={[0, -angle, 0]}>
+    <group>
       {Array.from({ length: n }).map((_, i) => {
         const t = (i + 0.5) / n;
         const px = -len / 2 + t * len;
         return (
-          <RigidBody key={i} type="fixed" colliders="cuboid" position={[px, drop(t), 0]}>
+          <RigidBody
+            key={i}
+            type="kinematicPosition"
+            colliders="cuboid"
+            ref={(b) => {
+              planks.current[i] = b;
+            }}
+            position={[mid[0] + Math.cos(angle) * px, deck + drop(t), mid[1] + Math.sin(angle) * px]}
+            rotation={[0, -angle, 0]}
+          >
             <mesh castShadow receiveShadow rotation={[0, 0, (r() - 0.5) * 0.04]} material={i % 4 === 0 ? WOOD_PALE : WOOD}>
               <boxGeometry args={[len / n - 0.08, 0.1, 2.5]} />
             </mesh>
           </RigidBody>
         );
       })}
-      {/* Hand ropes and the cables the deck hangs from. */}
-      {[-1, 1].map((s) =>
-        [0, 1].map((tier) => {
-          const pts = Array.from({ length: 24 }, (_, i) => {
-            const t = i / 23;
-            return new THREE.Vector3(-len / 2 + t * len, drop(t) + (tier ? 1.15 : 0.02), s * 1.25);
-          });
-          return (
-            <mesh key={`${s}-${tier}`} material={ROPE}>
-              <tubeGeometry args={[new THREE.CatmullRomCurve3(pts), 28, 0.035, 5, false]} />
+
+      <group position={[mid[0], deck, mid[1]]} rotation={[0, -angle, 0]}>
+        {[-1, 1].map((s) =>
+          [0, 1].map((tier) => {
+            const pts = Array.from({ length: 24 }, (_, i) => {
+              const t = i / 23;
+              return new THREE.Vector3(-len / 2 + t * len, drop(t) + (tier ? 1.15 : 0.02), s * 1.25);
+            });
+            return (
+              <mesh key={`${s}-${tier}`} material={ROPE}>
+                <tubeGeometry args={[new THREE.CatmullRomCurve3(pts), 28, 0.035, 5, false]} />
+              </mesh>
+            );
+          }),
+        )}
+        {[-1, 1].map((s) =>
+          [-1, 1].map((e) => (
+            <mesh key={`${s}-${e}`} castShadow position={[(e * len) / 2, 0.5, s * 1.25]} material={WOOD}>
+              <boxGeometry args={[0.26, 1.9, 0.26]} />
             </mesh>
-          );
-        }),
-      )}
-      {[-1, 1].map((s) =>
-        [-1, 1].map((e) => (
-          <mesh key={`${s}-${e}`} castShadow position={[(e * len) / 2, 0.5, s * 1.25]} material={WOOD}>
-            <boxGeometry args={[0.26, 1.9, 0.26]} />
-          </mesh>
-        )),
-      )}
+          )),
+        )}
+      </group>
     </group>
   );
 }
