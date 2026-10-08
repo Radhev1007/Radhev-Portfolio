@@ -89,7 +89,7 @@ function Pad({
       }}
     >
       <span
-        className={`absolute text-[9px] uppercase tracking-[0.2em] text-white/30 ${
+        className={`absolute text-micro uppercase tracking-[0.2em] text-white/30 ${
           axis === "x" ? "-top-5" : "-top-5"
         }`}
       >
@@ -116,7 +116,7 @@ function Hold({
     <button
       type="button"
       aria-label={label}
-      className={`pointer-events-auto touch-none rounded-full border border-white/20 bg-white/5 px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-white/70 backdrop-blur-sm active:bg-white/20 ${className ?? ""}`}
+      className={`pointer-events-auto touch-none rounded-full border border-white/20 bg-white/5 px-4 py-3 text-micro uppercase tracking-[0.18em] text-white/70 backdrop-blur-sm active:bg-white/20 ${className ?? ""}`}
       onPointerDown={(e) => {
         capture(e.currentTarget, e.pointerId);
         onChange(true);

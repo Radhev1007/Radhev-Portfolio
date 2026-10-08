@@ -27,7 +27,6 @@
      request and no licence to clear. */
   --font-sans: var(--font-host-grotesk), Arial, Helvetica, sans-serif;
   --font-display: var(--font-sans);
-  --font-serif: var(--font-sans);
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -87,7 +86,7 @@
     font-family: var(--font-sans);
     overflow-x: clip;
   }
-  /* Headings carry the display voice site-wide; body copy stays Geist. */
+  /* Headings carry the display voice site-wide. */
   h1,
   h2,
   h3 {
@@ -134,7 +133,7 @@ html.has-custom-cursor * {
 
 @utility label {
   font-family: var(--font-sans);
-  font-size: 0.6875rem;
+  font-size: var(--text-caption);
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
