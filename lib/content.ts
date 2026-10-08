@@ -22,7 +22,6 @@ export const site = {
   },
   brand: "Radhev R",
   role: "UI/UX Designer",
-  disciplines: ["Enterprise SaaS", "Government", "Fintech", "Dashboards", "Design Systems"],
   available: true,
   availabilityLabel: "Available for selected projects",
   email: "radhev1999@gmail.com",

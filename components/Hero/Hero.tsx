@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/Animations/Button";
-import { Scramble } from "@/components/Animations/Scramble";
 import { useScrollTo } from "@/components/Providers/SmoothScroll";
 import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
@@ -41,33 +40,7 @@ export function Hero() {
         </div>
 
         <div className="relative z-10 order-2 md:order-1 md:col-span-6">
-          {site.available && (
-            <motion.p
-              className="label mb-4 inline-flex items-center gap-2 !text-bone/55"
-              {...appear(intro.label)}
-            >
-              <span aria-hidden className="relative grid size-2 place-items-center">
-                <span className="absolute size-2 animate-ping rounded-full bg-accent/60" />
-                <span className="size-1.5 rounded-full bg-accent" />
-              </span>
-              {site.availabilityLabel}
-            </motion.p>
-          )}
-
-          <motion.ul
-            className="label flex flex-wrap items-center gap-x-2 gap-y-2 !text-bone/60"
-            aria-label="Disciplines"
-            {...appear(intro.label)}
-          >
-            {site.disciplines.map((d, i) => (
-              <li key={d} className="flex items-center gap-2">
-                {i > 0 && <span aria-hidden className="size-1 bg-accent" />}
-                <Scramble text={d} delay={intro.label + 0.1 + i * 0.12} />
-              </li>
-            ))}
-          </motion.ul>
-
-          <div className="mt-4 md:mt-4">
+          <div>
             <HeroIdentity
               lines={[site.heroTitle.lead, site.heroTitle.mid, site.heroTitle.tail]}
               delay={intro.title}
