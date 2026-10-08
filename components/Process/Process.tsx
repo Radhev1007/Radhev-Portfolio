@@ -62,7 +62,7 @@ function HorizontalProcess() {
   });
 
   return (
-    <section id="process" ref={section} aria-label="How I design" className="surface-invert relative" style={{ height: `calc(100svh + ${distance}px)` }}>
+    <section id="process" ref={section} aria-label="How I design" className="relative" style={{ height: `calc(100svh + ${distance}px)` }}>
       <div className="sticky top-0 flex h-[100svh] flex-col justify-center overflow-hidden">
         <motion.div ref={track} className="flex w-max items-stretch gap-6 pl-[var(--gutter)] pr-[12vw]" style={{ x }}>
           <div className="flex w-[34vw] shrink-0 flex-col justify-center pr-12">
@@ -136,7 +136,7 @@ function StackedProcess() {
   const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <section id="process" aria-label="How I design" className="surface-invert relative gutter py-28">
+    <section id="process" aria-label="How I design" className="relative gutter py-28">
       <Intro />
       <ol ref={ref} className="relative mt-16 flex flex-col gap-14 pl-10">
         <span aria-hidden className="absolute bottom-0 left-[7px] top-0 w-px bg-bone/20" />

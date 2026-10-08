@@ -10,20 +10,33 @@
 export const site = {
   /** Hero identity. `first` is set in the display medium, `last` in the lighter voice. */
   name: { first: "Radhev", last: "R" },
-  /** The hero's display line — `first` in Medium, `last` in Light. */
-  heroTitle: { first: "UI/UX", last: "Designer" },
+  /**
+   * The hero's positioning statement. Long enough that it sets at the display
+   * step across three lines rather than the hero step across two — the hero
+   * step is bound to viewport height and only fits a word or two.
+   */
+  heroTitle: {
+    lead: "I design complex",
+    mid: "digital products into",
+    tail: "clear experiences.",
+  },
   brand: "Radhev R",
   role: "UI/UX Designer",
-  disciplines: ["UI/UX Design", "Product Design", "Design Systems"],
+  disciplines: ["Enterprise SaaS", "Government", "Fintech", "Dashboards", "Design Systems"],
   available: true,
-  availabilityLabel: "Available for work",
+  availabilityLabel: "Available for selected projects",
   email: "radhev1999@gmail.com",
   phone: "+91 808 982 1700",
   /** Hosted on Drive, so the CV can be updated without a deploy. */
   resume: "https://drive.google.com/file/d/1U4r89GXL9FD2KHwjFMjn_3RWmzFUPZU9/view?usp=sharing",
   location: "Kollam, Kerala",
   statement:
-    "UI/UX designer with 4+ years turning user needs and business requirements into intuitive, pixel-perfect experiences across web, mobile and desktop.",
+    "Product / UI/UX Designer specializing in enterprise SaaS, government platforms, dashboards, fintech products and scalable design systems.",
+  /** The hero's two actions, in priority order. */
+  heroCtas: {
+    primary: { label: "View Selected Work", target: "work" },
+    secondary: { label: "About Me", target: "about" },
+  },
   socials: [
     { label: "LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a" },
     { label: "Behance", href: "https://www.behance.net/radhev1999707d" },
@@ -31,14 +44,17 @@ export const site = {
 } as const;
 
 export const navItems = [
-  { id: "home", label: "Home" },
-  { id: "about", label: "About" },
   { id: "work", label: "Work" },
-  { id: "process", label: "Process" },
+  { id: "about", label: "About" },
+  { id: "experience", label: "Experience" },
   { id: "contact", label: "Contact" },
 ] as const;
 
-export type SectionId = (typeof navItems)[number]["id"];
+/**
+ * Every scrollable target, not only the ones the nav lists. "home" is reachable
+ * from the wordmark and the footer without being a nav item.
+ */
+export type SectionId = (typeof navItems)[number]["id"] | "home";
 
 /* ── Projects ───────────────────────────────────────────────── */
 
@@ -204,67 +220,56 @@ export const experience: Role[] = [
 ];
 
 
-/* ── Testimonials ───────────────────────────────────────────────── */
 
-export type Testimonial = {
-  quote: string;
-  /** Kept literally as "Client Name" until a real, attributable quote exists. */
-  name: string;
-  role: string;
-  company: string;
-  /** Portrait in /public. Without one, an initial card stands in. */
-  image?: string;
-  imageAlt?: string;
-};
 
-/**
- * PLACEHOLDER COPY — these are not real client quotes.
- *
- * The attribution is deliberately literal: no invented person or company
- * appears here, so nothing on the page claims a named client said something
- * they did not. Replace the whole entry — quote, name, role, company — when
- * a real one arrives, rather than keeping a fabricated quote under a real
- * name.
- */
-export const testimonials: Testimonial[] = [
+/** Text stands in until real marks are supplied; the strip renders either. */
+/* ── Specialisms ───────────────────────────────────────────── */
+
+export type Specialism = { id: string; title: string; blurb: string };
+
+/** Five, in the order they matter for the work I want. */
+export const specialisms: Specialism[] = [
   {
-    quote:
-      "Radhev brought clarity to a complex product and turned our interface into something that feels intuitive, purposeful and remarkably polished.",
-    name: "Client Name",
-    role: "Product Manager",
-    company: "Company Name",
+    id: "product",
+    title: "Product design",
+    blurb: "Complex workflows, SaaS products, dashboards and enterprise platforms.",
   },
   {
-    quote:
-      "From the initial UX direction to the smallest interaction detail, the process was thoughtful, structured and genuinely refined.",
-    name: "Client Name",
-    role: "Founder",
-    company: "Company Name",
+    id: "systems",
+    title: "Design systems",
+    blurb: "Tokens, components, variants, patterns and scalable UI libraries.",
   },
   {
-    quote:
-      "Radhev understood the problem behind the brief, not just the visual requirements. The result changed how our users move through the platform.",
-    name: "Client Name",
-    role: "Head of Product",
-    company: "Company Name",
+    id: "strategy",
+    title: "UX strategy",
+    blurb: "Research, information architecture, user flows and usability.",
   },
   {
-    quote:
-      "The quality of the work and the attention to detail went past what we expected. Every screen feels deliberate.",
-    name: "Client Name",
-    role: "Creative Director",
-    company: "Company Name",
+    id: "visual",
+    title: "Visual design",
+    blurb: "Typography, hierarchy, responsive UI and interaction design.",
   },
   {
-    quote:
-      "A rare combination of visual craft, UX thinking and execution. Radhev lifted the whole digital experience.",
-    name: "Client Name",
-    role: "CEO",
-    company: "Company Name",
+    id: "handoff",
+    title: "Design → development",
+    blurb:
+      "Developer handoff, HTML/CSS understanding and collaboration with engineering teams.",
   },
 ];
 
-/** Text stands in until real marks are supplied; the strip renders either. */
+/* ── Design impact ─────────────────────────────────────────────
+   Qualitative on purpose. The only number here is the one that can be
+   checked against the roles below it; inventing conversion lifts and
+   satisfaction scores for products under NDA is how a portfolio stops
+   being believable. */
+
+export const impact = [
+  { figure: "4+", label: "Years designing products" },
+  { figure: "Enterprise", label: "GRC, governance and workflow platforms" },
+  { figure: "Multiple", label: "Industries — government, fintech, HRTech, education" },
+  { figure: "Systems", label: "Scalable foundations, not one-off screens" },
+];
+
 /* ── Process ────────────────────────────────────────────────── */
 
 export const processSteps = [
@@ -279,30 +284,13 @@ export const processSteps = [
 /* ── About ──────────────────────────────────────────────────── */
 
 export const about = {
-  /** Carries the whole About section, so it has to work as one statement. */
+  /** The line that does the work. Specific, and nobody else's. */
+  headline: "I like complicated products.",
   intro:
-    "I'm a UI/UX designer with 4+ years turning complex requirements into products that feel simple — across enterprise SaaS, government, fintech and education, from first wireframe to front-end-ready handoff.",
-  disciplines: [
-    "UI/UX Design",
-    "Product Design",
-    "Design Systems",
-    "Usability Testing",
-    "Prototyping",
-    "Responsive & Accessible Design",
-  ],
+    "The kind with too many screens, too many stakeholders and too much information. My job is to turn that complexity into experiences people can actually understand and use.",
+  /** Where that has actually been — taken from the roles, not invented. */
+  body: "Four years of it so far: enterprise GRC platforms at Beinex, government, fintech and HRTech products at Appstation, and education, web and mobile work before that. Mostly dashboards, workflows and the design systems that hold them together.",
+  sectors: ["Enterprise SaaS", "Government", "Fintech", "HRTech", "Education", "Dashboards", "Design Systems"],
 };
 
-/* ── Skills ─────────────────────────────────────────────────── */
 
-export const skills = [
-  { label: "Figma", note: "Components, variants, Auto Layout" },
-  { label: "Design Systems", note: "Style guides & scalable libraries" },
-  { label: "Wireframing & Prototyping", note: "Low fidelity through interactive" },
-  { label: "Usability Testing", note: "Sessions, findings & iteration" },
-  { label: "User Research", note: "Personas, flows & competitive analysis" },
-  { label: "Responsive & Accessible Design", note: "Intentional at every width" },
-  { label: "HTML & CSS", note: "Front-end-ready specifications" },
-  { label: "JavaScript & React", note: "Component-based architecture" },
-  { label: "Adobe CC, Miro & Hotjar", note: "XD, Photoshop, Illustrator" },
-  { label: "Stakeholder Communication", note: "Cross-functional collaboration" },
-] as const;

@@ -41,6 +41,19 @@ export function Hero() {
         </div>
 
         <div className="relative z-10 order-2 md:order-1 md:col-span-6">
+          {site.available && (
+            <motion.p
+              className="label mb-4 inline-flex items-center gap-2 !text-bone/55"
+              {...appear(intro.label)}
+            >
+              <span aria-hidden className="relative grid size-2 place-items-center">
+                <span className="absolute size-2 animate-ping rounded-full bg-accent/60" />
+                <span className="size-1.5 rounded-full bg-accent" />
+              </span>
+              {site.availabilityLabel}
+            </motion.p>
+          )}
+
           <motion.ul
             className="label flex flex-wrap items-center gap-x-2 gap-y-2 !text-bone/60"
             aria-label="Disciplines"
@@ -55,7 +68,10 @@ export function Hero() {
           </motion.ul>
 
           <div className="mt-4 md:mt-4">
-            <HeroIdentity first={site.heroTitle.first} last={site.heroTitle.last} delay={intro.title} />
+            <HeroIdentity
+              lines={[site.heroTitle.lead, site.heroTitle.mid, site.heroTitle.tail]}
+              delay={intro.title}
+            />
           </div>
 
           <motion.p
@@ -66,11 +82,20 @@ export function Hero() {
           </motion.p>
 
           <motion.div className="mt-4 flex flex-wrap items-center gap-2 md:mt-6" {...appear(intro.cta)}>
-            <Button href={site.resume} external cursor="view" cursorLabel="Open">
-              View My Resume
+            <Button
+              onClick={() => scrollTo(site.heroCtas.primary.target)}
+              cursor="view"
+              cursorLabel="View"
+            >
+              {site.heroCtas.primary.label}
             </Button>
-            <Button variant="ghost" onClick={() => scrollTo("contact")} cursor="view" cursorLabel="Open">
-              Let&apos;s Connect
+            <Button
+              variant="ghost"
+              onClick={() => scrollTo(site.heroCtas.secondary.target)}
+              cursor="view"
+              cursorLabel="Read"
+            >
+              {site.heroCtas.secondary.label}
             </Button>
           </motion.div>
 

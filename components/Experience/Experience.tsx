@@ -22,7 +22,7 @@ export function Experience() {
   return (
     <section id="experience" aria-label="Experience" className="surface-invert relative py-24 md:py-40">
       <div className="gutter mx-auto max-w-[1600px]">
-        <SectionHeader index="08" label="Experience" count={experience.length} countNoun="Roles" />
+        <SectionHeader index="07" label="Experience" count={experience.length} countNoun="Roles" />
 
         <div className="mt-8 flex flex-col justify-between gap-6 md:mt-10 md:flex-row md:items-end">
           <Reveal>

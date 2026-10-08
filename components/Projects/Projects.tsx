@@ -22,8 +22,8 @@ export function Projects() {
         transition={{ duration: 0.9 }}
       />
 
-      <div className="relative gutter mx-auto max-w-[1600px]">
-        <SectionHeader index="05" label="Selected Work" count={projects.length} />
+      <div className="surface-invert relative gutter mx-auto max-w-[1600px]">
+        <SectionHeader index="01" label="Selected Work" count={projects.length} />
 
         <div className="mt-10 grid grid-cols-1 gap-10 md:mt-16 md:grid-cols-12 md:items-end">
           <Parallax speed={60} className="md:col-span-7">
@@ -34,8 +34,8 @@ export function Projects() {
           </Parallax>
           <Reveal className="md:col-span-4 md:col-start-9" delay={0.2}>
             <p className="max-w-md text-body leading-relaxed text-bone/65">
-              A selection of digital products, platforms, and experiences designed around people, business goals, and
-              meaningful interactions.
+              A selection of complex digital products, enterprise platforms and interfaces I&apos;ve
+              designed.
             </p>
           </Reveal>
         </div>

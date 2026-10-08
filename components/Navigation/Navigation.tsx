@@ -26,7 +26,7 @@ function NavLink({
   return (
     <Magnetic strength={0.4}>
       <Link
-        href={"href" in item && item.href ? item.href : item.id === "home" ? "/" : `/#${item.id}`}
+        href={"href" in item && item.href ? item.href : `/#${item.id}`}
         onClick={"href" in item && item.href ? undefined : onClick}
         aria-current={active ? "true" : undefined}
         className={`block text-small tracking-[-0.01em] transition-colors duration-300 ${
@@ -60,8 +60,8 @@ function useActiveSection(enabled: boolean) {
  * Flanking groups either side of a centred wordmark, as on the reference.
  * "Home" is carried by the wordmark itself, so the two groups stay even.
  */
-const leftItems = navItems.filter((n) => n.id === "about" || n.id === "work");
-const rightItems = navItems.filter((n) => n.id === "process" || n.id === "contact");
+/** All four sit together on the right; the wordmark takes the left. */
+const items = navItems;
 
 export function Navigation() {
   const pathname = usePathname();
@@ -120,40 +120,47 @@ export function Navigation() {
         >
         <nav
           aria-label="Primary"
-          className="mx-auto grid h-[88px] max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gutter"
+          className="mx-auto flex h-[88px] max-w-[1600px] items-center justify-between gutter"
         >
-          <ul className="hidden items-center gap-12 md:flex">
-            {leftItems.map((item) => (
-              <li key={item.id}>
-                <NavLink item={item} active={isHome && active === item.id} onClick={go(item.id)} />
-              </li>
-            ))}
-          </ul>
+          {/* The wordmark leads, as a masthead rather than a centred emblem. */}
+          <Magnetic strength={0.3}>
+            <Link
+              href="/"
+              onClick={go("home")}
+              className="flex items-center gap-3 text-bone"
+              aria-label={`${site.name.first} ${site.name.last} — home`}
+            >
+              <Logo className="h-6 w-auto" />
+              <span className="text-small font-medium uppercase tracking-[0.18em]">
+                {site.name.first}
+              </span>
+            </Link>
+          </Magnetic>
 
-          {/* Placement sits on the grid child itself: the link groups are
-              display:none below md, which drops them out of auto-placement and
-              would otherwise pull the mark into the first column. */}
-          <div className="col-start-2 justify-self-center">
-            <Magnetic strength={0.3}>
-              <Link
-                href="/"
-                onClick={go("home")}
-                className="block text-bone"
-                aria-label={`${site.name.first} ${site.name.last} — home`}
-              >
-                <Logo className="h-7 w-auto" />
-              </Link>
-            </Magnetic>
-          </div>
-
-          <div className="col-start-3 flex items-center justify-end gap-12">
-            <ul className="hidden items-center gap-12 md:flex">
-              {rightItems.map((item) => (
+          <div className="flex items-center gap-8 md:gap-10">
+            <ul className="hidden items-center gap-10 md:flex">
+              {items.map((item) => (
                 <li key={item.id}>
                   <NavLink item={item} active={isHome && active === item.id} onClick={go(item.id)} />
                 </li>
               ))}
             </ul>
+
+            {/* The one action the nav is for. */}
+            <button
+              type="button"
+              onClick={go("contact")}
+              data-cursor="cta"
+              className="group hidden items-center gap-2 border border-line px-4 py-2 text-small tracking-[-0.01em] text-bone transition-colors duration-300 hover:border-bone/45 hover:bg-bone/5 md:inline-flex"
+            >
+              Let&apos;s talk
+              <span
+                aria-hidden
+                className="transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </button>
 
             <div className="flex items-center gap-5">
               {/* A toggle rather than a nav item: there is nothing to scroll
@@ -200,7 +207,7 @@ export function Navigation() {
                     transition={{ duration: 0.8, ease: ease.outExpo, delay: 0.15 + i * 0.05 }}
                   >
                     <Link
-                      href={"href" in item && item.href ? item.href : item.id === "home" ? "/" : `/#${item.id}`}
+                      href={"href" in item && item.href ? item.href : `/#${item.id}`}
                       onClick={(e) => {
                         setMenuOpen(false);
                         if (!("href" in item && item.href)) go(item.id)(e);
