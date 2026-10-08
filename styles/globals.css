@@ -28,7 +28,7 @@
   --font-sans: var(--font-host-grotesk), Arial, Helvetica, sans-serif;
   --font-display: var(--font-sans);
   --font-serif: var(--font-sans);
-  --font-mono: var(--font-sans);
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
