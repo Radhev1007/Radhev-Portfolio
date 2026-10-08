@@ -37,7 +37,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
 
   // Scroll-linked inner parallax
   const { scrollYProgress } = useScroll({ target: root, offset: ["start end", "end start"] });
-  const innerScale = useTransform(scrollYProgress, [0, 0.5, 1], reduced ? [1, 1, 1] : [1.18, 1.04, 1.1]);
+  const innerScale = useTransform(scrollYProgress, [0, 0.5, 1], reduced ? [1, 1, 1] : [1.06, 1, 1.04]);
   const titleX = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : flip ? [-40, 40] : [40, -40]);
 
   const onMove = (e: React.PointerEvent) => {
@@ -86,7 +86,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
           >
             <motion.div
               ref={cover}
-              className="relative aspect-[5/4] overflow-hidden rounded-[20px] bg-ink-3 sm:aspect-[16/10] md:rounded-[28px]"
+              className="relative aspect-[101/79] overflow-hidden rounded-[20px] bg-ink-3 md:rounded-[28px]"
               initial={{ clipPath: reduced ? "inset(0% 0% 0% 0% round 28px)" : "inset(12% 8% 12% 8% round 28px)" }}
               whileInView={{ clipPath: "inset(0% 0% 0% 0% round 28px)" }}
               viewport={viewportOnce}
