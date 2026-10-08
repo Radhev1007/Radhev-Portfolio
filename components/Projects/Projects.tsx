@@ -13,7 +13,7 @@ export function Projects() {
   const [active, setActive] = useState<Project | null>(null);
 
   return (
-    <section id="work" aria-label="Selected work" className="relative py-28 md:py-44">
+    <section id="work" aria-label="Selected work" className="relative">
       {/* A flat colour wash that shifts to the focused project's palette */}
       <motion.div
         aria-hidden
@@ -22,7 +22,10 @@ export function Projects() {
         transition={{ duration: 0.9 }}
       />
 
-      <div className="surface-invert relative gutter mx-auto max-w-[1600px]">
+      {/* The padding lives here, not on the section: `surface-invert` paints
+          this element, so padding on the parent sits outside the white and
+          leaves the header flush against its top edge. */}
+      <div className="surface-invert relative gutter mx-auto max-w-[1600px] py-28 md:py-44">
         <SectionHeader index="01" label="Selected Work" count={projects.length} />
 
         <div className="mt-10 grid grid-cols-1 gap-10 md:mt-16 md:grid-cols-12 md:items-end">

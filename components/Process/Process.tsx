@@ -18,7 +18,7 @@ export function Process() {
 function Intro() {
   return (
     <div className="flex flex-col gap-8">
-      <SectionHeader index="06" label="Process" />
+      <SectionHeader index="05" label="Process" />
       <TextReveal as="h2" text="How I Design" className="text-headline font-medium leading-[0.9] tracking-[-0.05em]" />
       <Reveal delay={0.15}>
         <p className="max-w-sm text-body leading-relaxed text-bone/80">

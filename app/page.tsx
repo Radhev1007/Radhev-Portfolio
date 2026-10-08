@@ -6,7 +6,6 @@ import { Experience } from "@/components/Experience/Experience";
 import { Hero } from "@/components/Hero/Hero";
 import { Process } from "@/components/Process/Process";
 import { Projects } from "@/components/Projects/Projects";
-import { Impact } from "@/components/Impact/Impact";
 import { Specialisms } from "@/components/Specialisms/Specialisms";
 
 /**
@@ -32,9 +31,6 @@ export default function Home() {
       </SectionScene>
       <SectionScene>
         <Specialisms />
-      </SectionScene>
-      <SectionScene>
-        <Impact />
       </SectionScene>
       <SectionScene>
         <About />

@@ -18,9 +18,9 @@ export function About() {
     <section
       id="about"
       aria-label="About"
-      className="surface-invert relative gutter mx-auto max-w-[1600px] py-24 md:py-32"
+      className="relative gutter mx-auto max-w-[1600px] py-24 md:py-32"
     >
-      <SectionHeader index="05" label="About" countNoun="years" />
+      <SectionHeader index="04" label="About" countNoun="years" />
 
       <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 md:mt-16 md:grid-cols-12">
         <h2 className="md:col-span-7">

@@ -217,18 +217,7 @@ export const specialisms: Specialism[] = [
   },
 ];
 
-/* ── Design impact ─────────────────────────────────────────────
-   Qualitative on purpose. The only number here is the one that can be
-   checked against the roles below it; inventing conversion lifts and
-   satisfaction scores for products under NDA is how a portfolio stops
-   being believable. */
 
-export const impact = [
-  { figure: "4+", label: "Years designing products" },
-  { figure: "Enterprise", label: "GRC, governance and workflow platforms" },
-  { figure: "Multiple", label: "Industries — government, fintech, HRTech, education" },
-  { figure: "Systems", label: "Scalable foundations, not one-off screens" },
-];
 
 /* ── Process ────────────────────────────────────────────────── */
 

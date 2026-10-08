@@ -22,7 +22,7 @@ export function Contact() {
       aria-label="Contact"
       className="relative gutter mx-auto flex min-h-[100svh] max-w-[1600px] flex-col py-24 md:py-32"
     >
-      <SectionHeader index="08" label="Contact" />
+      <SectionHeader index="07" label="Contact" />
 
       <div className="flex flex-1 flex-col justify-center py-16">
         <h2 className="max-w-[16ch] text-headline font-medium leading-[0.92] tracking-[-0.045em]">
