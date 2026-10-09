@@ -1,4 +1,3 @@
-import { About } from "@/components/About/About";
 import { SectionScene } from "@/components/Animations/SectionScene";
 import { Contact } from "@/components/Contact/Contact";
 import { DesignSystem } from "@/components/DesignSystem/DesignSystem";
@@ -31,9 +30,6 @@ export default function Home() {
       </SectionScene>
       <SectionScene>
         <Specialisms />
-      </SectionScene>
-      <SectionScene>
-        <About />
       </SectionScene>
       <SectionScene>
         <Process />

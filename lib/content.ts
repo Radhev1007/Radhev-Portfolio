@@ -31,10 +31,12 @@ export const site = {
   location: "Kollam, Kerala",
   statement:
     "Product / UI/UX Designer specializing in enterprise SaaS, government platforms, dashboards, fintech products and scalable design systems.",
-  /** The hero's two actions, in priority order. */
+  /**
+   * The hero's two actions. The CV is the primary — it is what a recruiter
+   * opens first — and the work is the secondary, in the page.
+   */
   heroCtas: {
-    primary: { label: "View Selected Work", target: "work" },
-    secondary: { label: "About Me", target: "about" },
+    secondary: { label: "View Selected Work", target: "work" },
   },
   socials: [
     { label: "LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a" },
@@ -44,7 +46,6 @@ export const site = {
 
 export const navItems = [
   { id: "work", label: "Work" },
-  { id: "about", label: "About" },
   { id: "experience", label: "Experience" },
   { id: "contact", label: "Contact" },
 ] as const;
@@ -230,16 +231,6 @@ export const processSteps = [
   { n: "06", title: "Refine", body: "Iterate based on feedback, testing, and product requirements." },
 ] as const;
 
-/* ── About ──────────────────────────────────────────────────── */
 
-export const about = {
-  /** The line that does the work. Specific, and nobody else's. */
-  headline: "I like complicated products.",
-  intro:
-    "The kind with too many screens, too many stakeholders and too much information. My job is to turn that complexity into experiences people can actually understand and use.",
-  /** Where that has actually been — taken from the roles, not invented. */
-  body: "Four years of it so far: enterprise GRC platforms at Beinex, government, fintech and HRTech products at Appstation, and education, web and mobile work before that. Mostly dashboards, workflows and the design systems that hold them together.",
-  sectors: ["Enterprise SaaS", "Government", "Fintech", "HRTech", "Education", "Dashboards", "Design Systems"],
-};
 
 

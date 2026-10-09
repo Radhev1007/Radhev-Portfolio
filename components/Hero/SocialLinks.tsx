@@ -14,7 +14,7 @@ export function SocialLinks() {
       animate={{ opacity: 1 }}
       transition={transition(intro.nav, 1.2)}
     >
-      {[...site.socials, { label: "Résumé", href: site.resume }].map((s) => (
+      {site.socials.map((s) => (
         <li key={s.label}>
           <a
             href={s.href}

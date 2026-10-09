@@ -53,12 +53,8 @@ export function Hero() {
           </motion.p>
 
           <motion.div className="mt-8 flex flex-wrap items-center gap-3 md:mt-10" {...appear(intro.cta)}>
-            <Button
-              onClick={() => scrollTo(site.heroCtas.primary.target)}
-              cursor="view"
-              cursorLabel="View"
-            >
-              {site.heroCtas.primary.label}
+            <Button href={site.resume} external cursor="view" cursorLabel="Open">
+              View Resume
             </Button>
             <Button
               variant="ghost"
