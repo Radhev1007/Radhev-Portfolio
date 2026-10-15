@@ -9,7 +9,7 @@ import { intro, transition } from "@/lib/motion";
 import { HeroIdentity } from "./HeroIdentity";
 import { HeroVideo } from "./HeroVideo";
 import { ScrollCue } from "./ScrollCue";
-import { SocialLinks } from "./SocialLinks";
+import { SocialLinks, SocialRail } from "./SocialLinks";
 
 /**
  * Two columns rather than two stacked rows: the left carries the whole
@@ -33,7 +33,7 @@ export function Hero() {
         {/* The illustration leads on narrow screens, right-hand column on wide
             ones. It sits behind the written column's stacking context, so the
             links and buttons there still take their own clicks. */}
-        <div className="order-1 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px]">
+        <div className="order-1 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px] md:pr-14">
           <HeroIllustration delay={intro.objects} />
         </div>
 
@@ -70,6 +70,7 @@ export function Hero() {
         </div>
       </div>
 
+      <SocialRail />
       <ScrollCue />
     </section>
   );
