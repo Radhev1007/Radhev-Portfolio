@@ -44,7 +44,7 @@ export function Specialisms() {
             className={i === 0 ? "sm:col-span-2" : i === specialisms.length - 1 ? "sm:col-span-2 lg:col-span-1" : ""}
           >
             <Reveal delay={i * 0.06} className="h-full">
-              <div className="group flex h-full min-h-[260px] flex-col justify-between gap-10 bg-ink-2 p-6 transition-colors duration-500 hover:bg-bone md:min-h-[300px] md:p-8">
+              <div className="group flex h-full min-h-[260px] flex-col justify-between gap-10 rounded-card bg-ink-2 p-6 transition-colors duration-500 hover:bg-bone md:min-h-[300px] md:p-8">
                 <div className="flex items-start justify-between gap-6">
                   <span className="label tabular-nums transition-colors duration-500 group-hover:!text-ink/60">
                     {String(i + 1).padStart(2, "0")}

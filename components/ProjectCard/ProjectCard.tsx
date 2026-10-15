@@ -87,7 +87,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
           >
             <motion.div
               ref={cover}
-              className="relative aspect-[101/79] overflow-hidden rounded-[20px] bg-ink-3 md:rounded-[28px]"
+              className="relative aspect-[101/79] overflow-hidden rounded-card bg-ink-3"
               initial={{ clipPath: reduced ? "inset(0% 0% 0% 0% round 28px)" : "inset(12% 8% 12% 8% round 28px)" }}
               whileInView={{ clipPath: "inset(0% 0% 0% 0% round 28px)" }}
               viewport={viewportOnce}
@@ -104,7 +104,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
               </motion.div>
               <div className="absolute left-4 top-4 flex gap-2 md:left-6 md:top-6">
                 {project.categories.slice(0, 2).map((c) => (
-                  <span key={c} className="glass rounded-full px-2 py-2 text-caption font-medium tracking-wide">
+                  <span key={c} className="glass rounded-control px-3 py-2 text-caption font-medium tracking-wide">
                     {c}
                   </span>
                 ))}

@@ -103,7 +103,7 @@ function StepPanel({ step, index, progress, active }: { step: Step; index: numbe
   return (
     <article
       aria-current={active ? "step" : undefined}
-      className={`relative flex h-[68vh] w-[min(38vw,560px)] shrink-0 flex-col justify-between overflow-hidden rounded-[28px] border p-10 transition-colors duration-500 ${
+      className={`relative flex h-[68vh] w-[min(38vw,560px)] shrink-0 flex-col justify-between overflow-hidden rounded-card border p-10 transition-colors duration-500 ${
         active ? "border-bone bg-bone text-ink" : "border-bone/15 bg-ink-3 text-bone"
       }`}
     >

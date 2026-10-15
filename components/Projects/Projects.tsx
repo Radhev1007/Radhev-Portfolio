@@ -44,7 +44,7 @@ export function Projects() {
             </h2>
             <ul className="mt-12 flex flex-wrap gap-2 md:mt-16">
               {focusAreas.map((area) => (
-                <li key={area} className="label border border-line px-3 py-2 !text-bone">
+                <li key={area} className="label rounded-control border border-line px-3 py-2 !text-bone">
                   {area}
                 </li>
               ))}

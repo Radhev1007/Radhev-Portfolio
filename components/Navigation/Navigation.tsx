@@ -151,7 +151,7 @@ export function Navigation() {
               type="button"
               onClick={go("contact")}
               data-cursor="cta"
-              className="group hidden items-center gap-2 border border-line px-4 py-2 text-small tracking-[-0.01em] text-bone transition-colors duration-300 hover:border-bone/45 hover:bg-bone/5 md:inline-flex"
+              className="group hidden items-center gap-2 rounded-control border border-line px-4 py-2 text-small tracking-[-0.01em] text-bone transition-colors duration-300 hover:border-bone/45 hover:bg-bone/5 md:inline-flex"
             >
               Let&apos;s talk
               <span

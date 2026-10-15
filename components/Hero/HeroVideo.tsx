@@ -87,7 +87,7 @@ export function HeroVideo({
           type="button"
           onClick={toggle}
           aria-label={playing ? "Pause background video" : "Play background video"}
-          className="pointer-events-auto absolute bottom-6 right-[var(--gutter)] z-10 grid size-9 place-items-center border border-line text-bone transition-colors duration-300 hover:border-bone/40"
+          className="pointer-events-auto absolute bottom-6 right-[var(--gutter)] z-10 grid size-9 place-items-center rounded-control border border-line text-bone transition-colors duration-300 hover:border-bone/40"
         >
           {playing ? (
             <svg viewBox="0 0 24 24" className="size-[14px]" fill="currentColor" aria-hidden>

@@ -81,7 +81,7 @@ export function Experience() {
 
             {/* Proportional timeline: one segment per role, gaps left empty. */}
             <div className="border-t border-line pt-6">
-              <div className="relative h-2 bg-ink-3" aria-hidden>
+              <div className="relative h-2 overflow-hidden rounded-full bg-ink-3" aria-hidden>
                 {experience.map((role, i) => {
                   const left = ((toMonth(role.from) - start) / span) * 100;
                   const width = ((toMonth(role.to) + (role.to === "Present" ? 1 : 0) - toMonth(role.from)) / span) * 100;
@@ -144,7 +144,7 @@ export function Experience() {
                           {role.company}
                         </span>
                         {current && (
-                          <span className="label inline-flex items-center gap-2 border border-line px-2 py-1 !text-bone">
+                          <span className="label inline-flex items-center gap-2 rounded-control border border-line px-2 py-1 !text-bone">
                             <motion.span
                               aria-hidden
                               className="size-1.5 rounded-full bg-accent"
@@ -170,7 +170,7 @@ export function Experience() {
                       </span>
                       <span
                         aria-hidden
-                        className="relative mt-1 grid size-8 shrink-0 place-items-center border border-line transition-colors duration-300 group-hover:border-bone"
+                        className="relative mt-1 grid size-8 shrink-0 place-items-center rounded-control border border-line transition-colors duration-300 group-hover:border-bone"
                       >
                         <span className="absolute h-px w-3 bg-bone" />
                         <motion.span

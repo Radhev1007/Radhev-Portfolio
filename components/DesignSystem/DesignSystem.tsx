@@ -78,7 +78,7 @@ export function DesignSystem() {
 
           <div className="md:col-span-6 md:col-start-7">
             {/* One photograph per layer, crossfaded inside a fixed frame. */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-ink-3">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-card bg-ink-3">
               <AnimatePresence initial={false}>
                 <motion.div
                   key={step}
@@ -124,7 +124,7 @@ function LayerImage({ src, alt, label }: { src: string; alt: string; label: stri
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <div className="absolute inset-6 flex flex-col gap-4 md:inset-10">
-              <div className="h-1/2 w-3/5 rounded-xl bg-bone/5" />
+              <div className="h-1/2 w-3/5 rounded-inner bg-bone/5" />
               <div className="h-3 w-2/5 rounded-full bg-bone/5" />
               <div className="h-3 w-1/4 rounded-full bg-bone/5" />
             </div>

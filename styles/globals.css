@@ -29,6 +29,17 @@
   --font-display: var(--font-sans);
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* ── Corner radius ───────────────────────────────────────────
+     One scale site-wide. Surfaces (cards, image frames) take `card`;
+     anything set inside a surface takes `inner`; buttons, tags and
+     badges take `control`; and anything inside a control takes `nested`.
+     Each step is roughly its parent minus the padding between them, so
+     nested corners stay concentric. True circles keep rounded-full. */
+  --radius-card: 1.5rem;
+  --radius-inner: 0.75rem;
+  --radius-control: 0.625rem;
+  --radius-nested: 0.375rem;
+
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
