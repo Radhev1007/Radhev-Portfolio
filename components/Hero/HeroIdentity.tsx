@@ -34,7 +34,7 @@ export function HeroIdentity({ lines, delay = 0 }: Props) {
             key={text}
             aria-hidden
             className={`-mb-[0.04em] block overflow-hidden whitespace-nowrap pb-[0.1em] ${
-              last ? "font-accent text-bone/70" : "font-medium tracking-[-0.045em]"
+              last ? "font-accent text-bone/70" : "font-normal tracking-[-0.04em]"
             }`}
           >
             {text.split("").map((c) => {
