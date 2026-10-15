@@ -35,8 +35,19 @@ export const PHYS = {
   beta: 0.2,            // fraction of penetration recovered per substep (split impulse, adds no velocity)
 };
 
-// chassis outline in body space, used against tree trunks (matches the body shell)
-const BODY_X = 0.44, BODY_ZF = 0.86, BODY_ZR = -0.93, BODY_YMID = 0.15;
+// Collision boxes in body space, measured from the rendered model (wheels excluded), against upright
+// posts: tree trunks, marker stakes, gate and sign posts. [half width, y0, y1, z0, z1, part]
+const BOXES = [
+  [0.38, 0.05, 0.29, 0.24, 0.74, 'body'],     // hood and front fenders
+  [0.38, 0.05, 0.44, -0.80, 0.24, 'body'],    // cab and tub
+  [0.35, 0.44, 0.56, -0.80, 0.21, 'roof'],    // roof rack (only where the rack actually is)
+  [0.34, -0.14, 0.05, -0.40, 0.32, 'skid'],   // frame rails and skid plate between the axles
+  [0.24, -0.10, 0.06, 0.66, 0.82, 'bumper'],  // front bumper
+  [0.29, -0.10, 0.05, -0.86, -0.70, 'bumper'],// rear bumper
+  [0.10, 0.00, 0.41, -0.94, -0.80, 'body'],   // spare tyre on the tailgate
+];
+// footprint corners for buoyancy
+const BODY_X = 0.38, BODY_ZF = 0.82, BODY_ZR = -0.86;
 
 // wheel mounts (local), order FL, FR, RL, RR. +X = left, +Z = forward
 const MOUNTS = [[0.34, 0.56], [-0.34, 0.56], [0.34, -0.56], [-0.34, -0.56]];
@@ -106,6 +117,8 @@ export class CrawlerPhysics {
     this.accum = 0;
     this.dt = 1 / 360;
     this.contacts = [];
+    this.posts = [];         // marker stakes, gate and sign posts: [{x,z,r,y0,top,mat,kind,id,enabled}]
+    this.touched = new Set();// posts in contact during the last update (challenge rules read this)
     this.vPs = V(); this.wPs = V();                          // split-impulse pseudo velocities
     this.prevPos = V(); this.prevQ = new THREE.Quaternion();  // previous substep, for render interpolation
   }
@@ -181,6 +194,7 @@ export class CrawlerPhysics {
     this.accum += Math.min(dt, 0.05);
     let steps = 0;
     this.stats.impact = 0; this.stats.scrape = 0;
+    this.touched.clear();
     while (this.accum >= this.dt && steps < 14) {
       this.prevPos.copy(this.pos); this.prevQ.copy(this.q);
       this._step(this.dt); this.accum -= this.dt; steps++;
@@ -261,6 +275,7 @@ export class CrawlerPhysics {
       // wheel axes
       const fwd = _v2.copy(fwdC).applyAxisAngle(up, st).clone();
       const axle = new THREE.Vector3().crossVectors(up, fwd); // points left
+      w.dirF = fwd; w.dirA = axle;
       // hub at full droop
       const Hd = new THREE.Vector3(w.mx, PHYS.hubMin, w.mz).applyQuaternion(q).add(this.pos);
       w.hub.copy(Hd);
@@ -427,40 +442,16 @@ export class CrawlerPhysics {
       }
     }
 
-    // ---- tree trunks (vertical cylinders) against the whole body outline and every wheel. The old
-    // test only checked the probe points, 0.62 m apart along the sides, so a trunk could sit between two
-    // of them inside the doors; the wheels weren't tested at all.
-    if (this.trunks.length) {
-      _q.copy(q).invert();
-      for (const t of this.trunks) {
-        const dx0 = t.x - this.pos.x, dz0 = t.z - this.pos.z;
-        if (dx0 * dx0 + dz0 * dz0 > 9) continue;
-        // body: closest point of the chassis outline (in body space) to the trunk axis
-        const L = _v3.set(t.x, this.pos.y + up.y * BODY_YMID, t.z).sub(this.pos).applyQuaternion(_q);
-        let cx = THREE.MathUtils.clamp(L.x, -BODY_X, BODY_X), cz = THREE.MathUtils.clamp(L.z, BODY_ZR, BODY_ZF);
-        let nlx = cx - L.x, nlz = cz - L.z, d = Math.hypot(nlx, nlz), pen = 0;
-        if (d < 1e-6) {
-          // axis inside the outline (deep overlap): leave by the nearest side
-          const sides = [[BODY_X - L.x, 1, 0], [L.x + BODY_X, -1, 0], [BODY_ZF - L.z, 0, 1], [L.z - BODY_ZR, 0, -1]];
-          sides.sort((a, b) => a[0] - b[0]);
-          const [dist, sx, sz] = sides[0];
-          nlx = sx; nlz = sz; cx = L.x + sx * dist; cz = L.z + sz * dist; pen = t.r + dist;
-        } else if (d < t.r) { nlx /= d; nlz /= d; pen = t.r - d; }
-        if (pen > 0) {
-          const P = new THREE.Vector3(cx, BODY_YMID, cz).applyQuaternion(q).add(this.pos);
-          const n = new THREE.Vector3(nlx, 0, nlz).applyQuaternion(q); n.y = 0;
-          if (P.y < t.top && n.lengthSq() > 1e-6) this.contacts.push({ p: P, n: n.normalize(), e: pen, mu: 0.35, part: 'body', mat: 'wood' });
-        }
-        // wheels: tyre (radius R) around each hub against the trunk
-        for (const w of this.wheels) {
-          const Hc = _v4.copy(w.hub).addScaledVector(up, Math.max(0, w.c));
-          const hx = Hc.x - t.x, hz = Hc.z - t.z, hd = Math.hypot(hx, hz);
-          if (hd < t.r + R && hd > 1e-6 && Hc.y < t.top) {
-            const n = new THREE.Vector3(hx / hd, 0, hz / hd);
-            this.contacts.push({ p: Hc.clone().addScaledVector(n, -R), n, e: t.r + R - hd, mu: 0.3, part: 'tyre', mat: 'wood' });
-          }
-        }
-      }
+    // ---- upright posts (tree trunks, marker stakes, gate and sign posts) against the body boxes and the
+    // four tyres. Each post is tested along its height, so a part only collides with what is level with
+    // it: a stake shorter than the rack never touches the rack, the spare only where the spare is.
+    _q.copy(q).invert();
+    this._prevInvQ = (this._prevInvQ || new THREE.Quaternion()).copy(this.prevQ).invert();
+    for (const list of [this.trunks, this.posts]) for (const t of list) {
+      if (t.enabled === false) continue;
+      const dx0 = t.x - this.pos.x, dz0 = t.z - this.pos.z;
+      if (dx0 * dx0 + dz0 * dz0 > (1.4 + t.r) * (1.4 + t.r)) continue;
+      this._postContacts(t, q, up, R, HW);
     }
 
     this._solveContacts(dt);
@@ -520,6 +511,74 @@ export class CrawlerPhysics {
     // safety: never fall through the world
     const gh = hf.heightAt(this.pos.x, this.pos.z);
     if (this.pos.y < gh - 0.6) { this.pos.y = gh + 0.5; this.vel.set(0, 0, 0); }
+  }
+
+  // One upright post against the body boxes and the tyres. Samples the post every 4 cm up its height; per
+  // box (and per tyre) keeps the deepest overlap as one contact with a horizontal normal.
+  _postContacts(t, q, up, R, HW) {
+    const mat = t.mat || 'wood';
+    const y0 = Math.max(t.y0 ?? -1e9, this.pos.y - 0.7), y1 = Math.min(t.top, this.pos.y + 0.8);
+    if (y1 <= y0) return;
+    const P = _v3, L = _v4, Lp = _v5;
+    let hit = false;
+    for (const b of BOXES) {
+      const [hx, by0, by1, bz0, bz1, part] = b;
+      let best = null;
+      for (let y = y0; y <= y1 + 1e-6; y += 0.04) {
+        P.set(t.x, y, t.z);
+        L.copy(P).sub(this.pos).applyQuaternion(_q);
+        if (L.y < by0 || L.y > by1) continue;
+        const cx = THREE.MathUtils.clamp(L.x, -hx, hx), cz = THREE.MathUtils.clamp(L.z, bz0, bz1);
+        let nx = cx - L.x, nz = cz - L.z, d = Math.hypot(nx, nz), pen, px = cx, pz = cz;
+        if (d > 1e-6) {
+          if (d >= t.r) continue;
+          nx /= d; nz /= d; pen = t.r - d;
+        } else {
+          // the post's axis is inside this box. Push it back out through the face it came in by (from
+          // the previous substep's pose), never through the far side: this is what stops a thin stake
+          // tunnelling through the truck at speed.
+          Lp.copy(P).sub(this.prevPos).applyQuaternion(this._prevInvQ);
+          const faces = [[hx - L.x, -1, 0, Lp.x > hx], [L.x + hx, 1, 0, Lp.x < -hx], [bz1 - L.z, 0, -1, Lp.z > bz1], [L.z - bz0, 0, 1, Lp.z < bz0]];
+          let f = faces.filter((fc) => fc[3]).sort((a, c) => a[0] - c[0])[0];
+          if (!f) f = faces.sort((a, c) => a[0] - c[0])[0];
+          nx = f[1]; nz = f[2]; pen = t.r + f[0];
+          px = L.x - nx * f[0]; pz = L.z - nz * f[0];
+        }
+        if (!best || pen > best.pen) best = { pen, nx, nz, px, py: L.y, pz };
+      }
+      if (best) {
+        const n = new THREE.Vector3(best.nx, 0, best.nz).applyQuaternion(q); n.y = 0;
+        if (n.lengthSq() < 1e-6) continue;
+        const cp = new THREE.Vector3(best.px, best.py, best.pz).applyQuaternion(q).add(this.pos);
+        this.contacts.push({ p: cp, n: n.normalize(), e: best.pen, mu: 0.35, part, mat, post: t });
+        hit = true;
+      }
+    }
+    // tyres: a cylinder of radius R and half-width HW around each hub's axle
+    for (const w of this.wheels) {
+      if (!w.dirF) continue;
+      const hub = _r.copy(w.hub).addScaledVector(up, Math.max(0, w.c));
+      let best = null;
+      for (let y = Math.max(y0, hub.y - R - t.r); y <= Math.min(y1, hub.y + R + t.r) + 1e-6; y += 0.04) {
+        const dx = t.x - hub.x, dy = y - hub.y, dz = t.z - hub.z;
+        const a = dx * w.dirA.x + dy * w.dirA.y + dz * w.dirA.z;
+        if (Math.abs(a) >= HW + t.r) continue;
+        const f = dx * w.dirF.x + dy * w.dirF.y + dz * w.dirF.z;
+        const u = dx * up.x + dy * up.y + dz * up.z;
+        const rad = Math.hypot(f, u);
+        if (rad >= R + t.r) continue;
+        const penR = R + t.r - rad, penA = HW + t.r - Math.abs(a);
+        let n;
+        if (penR <= penA) n = new THREE.Vector3().addScaledVector(w.dirF, -f).addScaledVector(up, -u);   // tread
+        else n = w.dirA.clone().multiplyScalar(-Math.sign(a));                                          // sidewall
+        n.y = 0;
+        if (n.lengthSq() < 1e-8) continue;
+        const pen = Math.min(penR, penA);
+        if (!best || pen > best.pen) best = { pen, n: n.normalize(), p: new THREE.Vector3(t.x, y, t.z) };
+      }
+      if (best) { this.contacts.push({ p: best.p, n: best.n, e: best.pen, mu: 0.3, part: 'tyre', mat, post: t }); hit = true; }
+    }
+    if (hit) this.touched.add(t);
   }
 
   // Sequential-impulse contact solver. Normal impulses cancel closing speed (with a little restitution

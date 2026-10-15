@@ -398,7 +398,7 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
 
   onProgress(1, 'Ready');
   return {
-    def, hf, group, ctx, trunks,
+    def, hf, group, ctx, trunks, posts: ctx.posts || [],
     spawn: layout.spawn, intro: layout.intro || layout.spawn,
     challenges: layout.challenges || [],
     markers: ctx.markers,
@@ -529,9 +529,12 @@ function buildBackdrop(ctx, terrainMat) {
 }
 
 // ---------------------------------------------------------------- Markers (lane signs, gates, stakes)
+// Every marker is also registered as a solid physics post (vertical cylinder) with the same position,
+// radius and height as its mesh: lane signs and gate posts are steel, stakes are the red-and-white poles.
 function buildMarkers(ctx) {
   const group = new THREE.Group();
   const hf = ctx.hf;
+  const posts = (ctx.posts = []);
   const postGeo = new THREE.CylinderGeometry(0.025, 0.03, 0.9, 6); postGeo.translate(0, 0.45, 0);
   const postMat = new THREE.MeshStandardMaterial({ color: 0x3a3632, roughness: 0.6, metalness: 0.4 });
   const signGeo = new THREE.BoxGeometry(0.22, 0.22, 0.02);
@@ -556,6 +559,7 @@ function buildMarkers(ctx) {
       g.add(sym, sym2);
       g.position.set(m.x, y, m.z); g.rotation.y = m.yaw;
       group.add(g);
+      posts.push({ x: m.x, z: m.z, r: 0.03, y0: y, top: y + 0.9, mat: 'metal', kind: 'sign' });
     } else if (m.type === 'gate' || m.type === 'finish' || m.type === 'start') {
       for (const sgn of [-1, 1]) {
         const g = new THREE.Group();
@@ -567,6 +571,8 @@ function buildMarkers(ctx) {
         g.rotation.y = m.yaw + Math.PI / 2;
         g.userData.markerId = m.id;
         group.add(g);
+        // gate posts only exist while their challenge's markers are shown (see setChallengeMarkers)
+        posts.push({ x: px, z: pz, r: 0.03, y0: g.position.y, top: g.position.y + 0.9 * 1.4, mat: 'metal', kind: 'gate', markerId: m.id, enabled: false });
       }
     } else if (m.type === 'stake') {
       const g = new THREE.Group();
@@ -574,6 +580,7 @@ function buildMarkers(ctx) {
       g.children.forEach((c) => (c.castShadow = true));
       g.position.set(m.x, y, m.z);
       group.add(g);
+      posts.push({ x: m.x, z: m.z, r: 0.024, y0: y, top: y + 0.6, mat: 'pole', kind: 'stake', id: m.id });
     }
   }
   return group;

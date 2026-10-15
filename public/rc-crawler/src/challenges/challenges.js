@@ -63,12 +63,8 @@ export class ChallengeManager {
       if (this.stopT > 1.2) return this.fail('Stopped in the creek');
     }
     if (c.rules.noTouch) {
-      const pts = phys.cornerPoints();
-      for (const s of this.stakes) {
-        if (s.id !== c.id) continue;
-        if (Math.abs(s.x - cur.x) > 2 || Math.abs(s.z - cur.z) > 2) continue;
-        for (const p of pts) if (Math.hypot(p.x - s.x, p.z - s.z) < 0.09) return this.fail('Touched a marker');
-      }
+      // stakes are solid now: a touch is a real physics contact with one of this course's stakes
+      for (const t of phys.touched) if (t.kind === 'stake' && t.id === c.id) return this.fail('Touched a marker');
     }
     const g = gates[this.next];
     if (g && this._crossed(g, prev, cur)) {

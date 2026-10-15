@@ -40,6 +40,8 @@ const MAT = {
   sand:   { knock: [800, 1500], kq: 0.8, body: [60, 100], debris: 'sand', dull: true },
   snow:   { knock: [700, 1300], kq: 0.8, body: [60, 95], debris: 'sand', dull: true },
   mud:    { knock: [280, 560], kq: 2, body: [55, 90], debris: 'mud', dull: true },
+  pole:   { knock: [900, 1500], kq: 6, body: [260, 420], debris: null, hollow: true },     // marker stake: hollow fibreglass tock
+  metal:  { knock: [2600, 3800], kq: 9, body: [520, 760], debris: null, hollow: true },    // steel gate/sign post: short ring
 };
 
 // ---------------------------------------------------------------- ambience
@@ -1158,6 +1160,7 @@ export class AudioEngine {
 
   // what a hard hit throws about: pebbles skittering, dirt pattering, bark cracking, sand hiss, mud
   _debris(t, k, kind, dest) {
+    if (!kind) return;
     const n = Math.round(2 + 6 * k);
     for (let i = 0; i < n; i++) {
       const tt = t + rand(0.01, 0.12 + 0.3 * k);

@@ -102,6 +102,7 @@ async function loadLevel(id, { keepState = false } = {}) {
   scene.add(level.group);
   phys = new CrawlerPhysics(level.hf);
   phys.trunks = level.trunks;
+  phys.posts = level.posts;
   applyDrivetrain();
   placeAtSpawn();
   rig.setHeightfield(level.hf);
@@ -165,6 +166,7 @@ function updateTouchVisibility() {
 function setChallengeMarkers(id) {
   if (!level) return;
   level.group.traverse((o) => { if (o.userData.markerId !== undefined) o.visible = o.userData.markerId === id; });
+  for (const p of level.posts) if (p.markerId !== undefined) p.enabled = p.markerId === id;   // colliders follow visibility
 }
 function onChallengeEvent(type, c, a, b) {
   if (type === 'select') { setChallengeMarkers(c ? c.id : null); ui.setChallenge(c, c ? 'Drive through the start gate' : ''); }
