@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Magnetic } from "@/components/Animations/Magnetic";
+import { Logo } from "@/components/Chrome/Logo";
 import { useScrollTo } from "@/components/Providers/SmoothScroll";
 import { navItems, site } from "@/lib/content";
 
@@ -31,10 +32,21 @@ export function Footer() {
 
       <div className="gutter mx-auto grid max-w-[1600px] grid-cols-2 gap-10 py-14 md:grid-cols-12">
         <div className="col-span-2 md:col-span-5">
-          <p className="text-subtitle font-medium tracking-[-0.03em]">
-            {site.name.first} <span className="font-accent ">{site.name.last}</span>
-          </p>
-          <p className="text-bone/60">{site.role}</p>
+          {/* Same lockup as the nav, set larger: the footer signs off with the mark. */}
+          <Link
+            href="/"
+            onClick={(e) => {
+              if (!isHome) return;
+              e.preventDefault();
+              scrollTo("home");
+            }}
+            className="inline-flex items-center gap-4 text-bone"
+            aria-label={`${site.name.first} ${site.name.last} — back to top`}
+          >
+            <Logo className="h-10 w-auto md:h-12" />
+            <span className="text-lead font-medium uppercase tracking-[0.18em]">{site.name.first}</span>
+          </Link>
+          <p className="mt-4 text-bone/60">{site.role}</p>
           <a href={`mailto:${site.email}`} className="mt-6 inline-block text-bone/80 underline decoration-bone/20 underline-offset-8 transition-colors hover:decoration-accent">
             {site.email}
           </a>
