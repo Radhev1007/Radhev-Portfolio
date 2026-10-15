@@ -55,7 +55,7 @@ export function Specialisms() {
                 </div>
 
                 <div>
-                  <h3 className="text-subtitle font-medium leading-[1.05] tracking-[-0.035em] transition-colors duration-500 group-hover:text-ink">
+                  <h3 className="text-subtitle font-normal leading-[1.05] tracking-[-0.03em] transition-colors duration-500 group-hover:text-ink">
                     {s.title}
                   </h3>
                   <p className="mt-3 max-w-[40ch] text-body leading-relaxed text-mute transition-colors duration-500 group-hover:text-ink/70">
