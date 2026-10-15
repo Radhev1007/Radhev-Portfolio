@@ -342,9 +342,8 @@ function tick(dt, forced) {
   const inp = forced || (state === 'play' ? input.state : { throttle: 0, steer: 0, handbrake: true });
   phys.update(dt, inp);
 
-  // drive the visual model
-  model.group.position.copy(phys.pos);
-  model.group.quaternion.copy(phys.q);
+  // drive the visual model from the interpolated pose (smooth between physics substeps)
+  phys.renderPose(model.group.position, model.group.quaternion);
   model.update({ hubY: [0, 1, 2, 3].map((i) => phys.hubLocalY(i)), steer: phys.steer, spin: phys.wheels.map((w) => w.spin), dt });
   model.setBrake(inp.handbrake || (phys.omega > 0.5 && inp.throttle < -0.1) || (phys.omega < -0.5 && inp.throttle > 0.1) ? 1 : 0.12);
 

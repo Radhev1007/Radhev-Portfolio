@@ -1,11 +1,14 @@
 // RC crawler rigid-body physics: one sprung chassis body, 4 swept-cylinder wheels against the heightfield,
 // soft suspension springs, impulse-based tyre friction coupled to a single locked-diff drivetrain,
-// brushed-motor torque curve with ESC drag brake, penalty contacts for chassis/bumpers/roof and tree trunks.
+// brushed-motor torque curve with ESC drag brake. Hard contacts (chassis vs ground, body and wheels vs tree
+// trunks, tyre faces vs walls, suspension bump stops) go through a sequential-impulse solver with low
+// restitution and split-impulse penetration recovery, so crashes stop the truck instead of bouncing it.
 import * as THREE from 'three';
 import { SURF, SURF_PROPS, SURF_NAMES } from '../terrain/heightfield.js';
 
 const V = () => new THREE.Vector3();
 const _v1 = V(), _v2 = V(), _v3 = V(), _v4 = V(), _v5 = V(), _n = V(), _p = V(), _r = V();
+const _tdir = V(); // contact solver's friction direction: _effMass overwrites _v4/_v5
 const _q = new THREE.Quaternion();
 const _m3 = new THREE.Matrix3();
 
@@ -25,7 +28,15 @@ export const PHYS = {
   driveInertia: 0.06,
   transInertia: 0.04,   // motor + transmission (reflected to wheel speed)
   wheelInertia: 0.005,  // each wheel + axle shaft
+  // contact solver
+  restitution: 0.1,     // a steel-and-plastic truck hitting rock or wood barely rebounds
+  restMinV: 0.8,        // below this closing speed, contacts are fully inelastic (no micro-bounce)
+  slop: 0.004,          // allowed penetration before position recovery kicks in
+  beta: 0.2,            // fraction of penetration recovered per substep (split impulse, adds no velocity)
 };
+
+// chassis outline in body space, used against tree trunks (matches the body shell)
+const BODY_X = 0.44, BODY_ZF = 0.86, BODY_ZR = -0.93, BODY_YMID = 0.15;
 
 // wheel mounts (local), order FL, FR, RL, RR. +X = left, +Z = forward
 const MOUNTS = [[0.34, 0.56], [-0.34, 0.56], [0.34, -0.56], [-0.34, -0.56]];
@@ -86,6 +97,9 @@ export class CrawlerPhysics {
     this.upsideTimer = 0;
     this.accum = 0;
     this.dt = 1 / 360;
+    this.contacts = [];
+    this.vPs = V(); this.wPs = V();                          // split-impulse pseudo velocities
+    this.prevPos = V(); this.prevQ = new THREE.Quaternion();  // previous substep, for render interpolation
   }
 
   reset(pos, yaw) {
@@ -93,8 +107,19 @@ export class CrawlerPhysics {
     this.q.setFromAxisAngle(_v1.set(0, 1, 0), yaw);
     this.vel.set(0, 0, 0); this.ang.set(0, 0, 0); this.omega = 0; this.throttle = 0;
     for (const w of this.wheels) w.om = 0;
-    for (const w of this.wheels) { w.c = w.cPrev = w.cVis = PHYS.hubRestY - PHYS.hubMin; w.contact = false; }
+    for (const w of this.wheels) { w.c = w.cPrev = w.cVis = PHYS.hubRestY - PHYS.hubMin; w.contact = false; w.bumpF = 0; }
     this.upsideTimer = 0;
+    this.vPs.set(0, 0, 0); this.wPs.set(0, 0, 0);
+    this.prevPos.copy(this.pos); this.prevQ.copy(this.q);
+    this.accum = 0;
+  }
+
+  // pose for drawing: blends the last two substeps by the leftover accumulator, so the model moves
+  // smoothly instead of snapping to whichever substep a frame happened to land on
+  renderPose(outPos, outQ) {
+    const a = THREE.MathUtils.clamp(this.accum / this.dt, 0, 1);
+    outPos.copy(this.prevPos).lerp(this.pos, a);
+    outQ.copy(this.prevQ).slerp(this.q, a);
   }
 
   // place upright at x,z with given yaw, resting just above the ground
@@ -148,7 +173,13 @@ export class CrawlerPhysics {
     this.accum += Math.min(dt, 0.05);
     let steps = 0;
     this.stats.impact = 0; this.stats.scrape = 0;
-    while (this.accum >= this.dt && steps < 14) { this._step(this.dt); this.accum -= this.dt; steps++; }
+    while (this.accum >= this.dt && steps < 14) {
+      this.prevPos.copy(this.pos); this.prevQ.copy(this.q);
+      this._step(this.dt); this.accum -= this.dt; steps++;
+    }
+    // A slow frame can't be caught up in one go; carrying the backlog forward made the truck run in
+    // slow motion and then lurch ahead. Drop it instead.
+    if (this.accum > this.dt) this.accum = this.dt;
 
     // derived stats
     const fwd = _v1.set(0, 0, 1).applyQuaternion(this.q);
@@ -185,6 +216,8 @@ export class CrawlerPhysics {
     const fwdC = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
     const leftC = new THREE.Vector3(1, 0, 0).applyQuaternion(q);
     const R = PHYS.wheelRadius, HW = PHYS.wheelHalfWidth;
+
+    this.contacts.length = 0;
 
     // ---- gravity
     this.vel.y -= PHYS.gravity * dt;
@@ -267,21 +300,26 @@ export class CrawlerPhysics {
         w.cp = (w.cp || new THREE.Vector3()).copy(Hc).addScaledVector(n, -R);
         w.axle = (w.axle || new THREE.Vector3()).copy(axle);
         // spring + damper along chassis up
-        const cv = THREE.MathUtils.clamp((cc - w.cPrev) / dt, -1.2, 1.2);
+        // shock velocity: the old ±1.2 m/s clamp left hard landings under-damped, which is what
+        // launched the truck back up after a drop. Rebound is damped harder than compression, as on a
+        // real shock, so the body settles instead of pogoing.
+        const cv = THREE.MathUtils.clamp((cc - w.cPrev) / dt, -4, 4);
         w.cPrev = cc; w.c = cc;
-        let Fs = PHYS.spring * (cc + PHYS.preload) + PHYS.damp * cv;
+        let Fs = PHYS.spring * (cc + PHYS.preload) + PHYS.damp * cv * (cv < 0 ? 1.6 : 1);
         if (Fs < 0) Fs = 0;
-        // bump stop / rigid overlap
-        let Fb = 0;
+        // bump stop: the suspension has run out of travel, so the chassis meets the axle rigidly. Solved
+        // as a hard contact rather than a stiff spring (which stored the landing and threw it back).
         if (c > PHYS.travel) {
           const e = c - PHYS.travel;
           const pv = this._pointVel(Hc, _v5).dot(n);
-          Fb = PHYS.bumpK * e - PHYS.bumpD * Math.min(0, pv);
+          this.contacts.push({ p: bestP.clone(), n: n.clone(), e, mu: 0, wheel: w, kind: 'rock' });
           if (e > 0.01) this.stats.impact = Math.max(this.stats.impact, Math.min(1, -pv * 0.25));
           this.stats.stress = Math.max(this.stats.stress * 0.999, Math.min(1, e * 8));
-        }
-        const N = Fs / Math.max(0.35, n.dot(up)) + Fb;
-        w.fn = N;
+        } else w.bumpF = 0;
+        // The spring/damper pushes the body; the bump stop is a solver contact, so its load only feeds
+        // tyre grip here (re-applying it as a force kicked every hard landing back up).
+        const N = Fs / Math.max(0.35, n.dot(up));
+        w.fn = N + (w.bumpF || 0);
         const F = _v4.copy(n).multiplyScalar(N);
         const app = Hc.clone().addScaledVector(n, -R * 0.6);
         this._applyForce(F, app, dt);
@@ -290,11 +328,10 @@ export class CrawlerPhysics {
         w.contact = false; w.fn = 0; w.c = 0; w.cPrev = Math.max(0, w.cPrev - dt * 2);
       }
       if (frontPen > 0.002) {
-        // tyre face pressed into a wall
+        // tyre face pressed into a wall (log, ledge): a hard contact at the hub
         const Hc = Hd.clone().addScaledVector(up, Math.max(0, w.c));
         const pv = this._pointVel(Hc, _v5).dot(frontN);
-        const Ff = Math.max(0, 900 * frontPen - 20 * Math.min(0, pv));
-        this._applyForce(_v4.copy(frontN).multiplyScalar(Ff), Hc, dt);
+        this.contacts.push({ p: Hc, n: frontN.clone(), e: frontPen, mu: 0.5, kind: 'rock' });
         this.stats.impact = Math.max(this.stats.impact, Math.min(1, -pv * 0.2));
       }
     }
@@ -353,57 +390,86 @@ export class CrawlerPhysics {
     // unloaded wheels slowly lose speed (bearing drag)
     for (const w of this.wheels) if (!w.contact) w.om *= 1 - 0.4 * dt;
 
-    // ---- chassis probes (bumpers, skid, body, roof)
+    // ---- chassis probes (bumpers, skid, body, roof) against the ground
     for (const pr of PROBES) {
       const P = _p.set(pr[0], pr[1], pr[2]).applyQuaternion(q).add(this.pos);
       const h = hf.heightAt(P.x, P.z);
       if (P.y < h) {
-        const n = hf.normalAt(P.x, P.z, _n);
-        const e = (h - P.y) * Math.max(0.25, n.y);
-        const vp = this._pointVel(P, _v3);
-        const vn = vp.dot(n);
-        const Fn = Math.max(0, PHYS.chassisK * e - PHYS.chassisD * Math.min(0, vn));
-        _v4.copy(n).multiplyScalar(Fn);
-        // kinetic friction
-        const vt = _v5.copy(vp).addScaledVector(n, -vn);
-        const vtl = vt.length();
-        if (vtl > 1e-4) _v4.addScaledVector(vt, -Math.min(PHYS.chassisMu * Fn, vtl * 40) / vtl);
-        this._applyForce(_v4, P, dt);
-        if (vn < -0.4) this.events.push({ kind: pr[1] > 0.3 ? 'thud' : 'rock', strength: Math.min(1, -vn * 0.35), p: P.clone() });
-        if (vtl > 0.3) this.stats.scrape = Math.max(this.stats.scrape, Math.min(1, vtl * 0.4));
+        const n = hf.normalAt(P.x, P.z, _n).clone();
+        this.contacts.push({ p: P.clone(), n, e: (h - P.y) * Math.max(0.25, n.y), mu: PHYS.chassisMu, kind: pr[1] > 0.3 ? 'thud' : 'rock', scrape: true });
       }
-      // tree trunks
+    }
+
+    // ---- tree trunks (vertical cylinders) against the whole body outline and every wheel. The old
+    // test only checked the probe points, 0.62 m apart along the sides, so a trunk could sit between two
+    // of them inside the doors; the wheels weren't tested at all.
+    if (this.trunks.length) {
+      _q.copy(q).invert();
       for (const t of this.trunks) {
-        const dx = P.x - t.x, dz = P.z - t.z, d2 = dx * dx + dz * dz;
-        if (d2 < t.r * t.r && P.y < t.top) {
-          const d = Math.sqrt(d2) || 1e-3;
-          const pen = t.r - d;
-          const n = _n.set(dx / d, 0, dz / d);
-          const vn = this._pointVel(P, _v3).dot(n);
-          this._applyForce(_v4.copy(n).multiplyScalar(Math.max(0, 2000 * pen - 30 * Math.min(0, vn))), P, dt);
-          if (vn < -0.4) this.events.push({ kind: 'rock', strength: Math.min(1, -vn * 0.3), p: P.clone() });
+        const dx0 = t.x - this.pos.x, dz0 = t.z - this.pos.z;
+        if (dx0 * dx0 + dz0 * dz0 > 9) continue;
+        // body: closest point of the chassis outline (in body space) to the trunk axis
+        const L = _v3.set(t.x, this.pos.y + up.y * BODY_YMID, t.z).sub(this.pos).applyQuaternion(_q);
+        let cx = THREE.MathUtils.clamp(L.x, -BODY_X, BODY_X), cz = THREE.MathUtils.clamp(L.z, BODY_ZR, BODY_ZF);
+        let nlx = cx - L.x, nlz = cz - L.z, d = Math.hypot(nlx, nlz), pen = 0;
+        if (d < 1e-6) {
+          // axis inside the outline (deep overlap): leave by the nearest side
+          const sides = [[BODY_X - L.x, 1, 0], [L.x + BODY_X, -1, 0], [BODY_ZF - L.z, 0, 1], [L.z - BODY_ZR, 0, -1]];
+          sides.sort((a, b) => a[0] - b[0]);
+          const [dist, sx, sz] = sides[0];
+          nlx = sx; nlz = sz; cx = L.x + sx * dist; cz = L.z + sz * dist; pen = t.r + dist;
+        } else if (d < t.r) { nlx /= d; nlz /= d; pen = t.r - d; }
+        if (pen > 0) {
+          const P = new THREE.Vector3(cx, BODY_YMID, cz).applyQuaternion(q).add(this.pos);
+          const n = new THREE.Vector3(nlx, 0, nlz).applyQuaternion(q); n.y = 0;
+          if (P.y < t.top && n.lengthSq() > 1e-6) this.contacts.push({ p: P, n: n.normalize(), e: pen, mu: 0.35, kind: 'rock' });
+        }
+        // wheels: tyre (radius R) around each hub against the trunk
+        for (const w of this.wheels) {
+          const Hc = _v4.copy(w.hub).addScaledVector(up, Math.max(0, w.c));
+          const hx = Hc.x - t.x, hz = Hc.z - t.z, hd = Math.hypot(hx, hz);
+          if (hd < t.r + R && hd > 1e-6 && Hc.y < t.top) {
+            const n = new THREE.Vector3(hx / hd, 0, hz / hd);
+            this.contacts.push({ p: Hc.clone().addScaledVector(n, -R), n, e: t.r + R - hd, mu: 0.3, kind: 'rock' });
+          }
         }
       }
     }
 
-    // ---- water drag + slight buoyancy
+    this._solveContacts(dt);
+
+    // ---- water drag + buoyancy. Buoyancy acts at the four body corners in proportion to how deep each
+    // is, so a truck entering water nose-first gets lifted at the nose and levels out; the old single
+    // force at the centre had no righting moment, so it nose-dived.
     const depth = hf.waterDepthAt(this.pos.x, this.pos.z);
     if (depth > 0) {
       const sub = Math.min(1, depth / 0.7);
       this.vel.multiplyScalar(1 - sub * 1.6 * dt);
-      this.vel.y += sub * PHYS.gravity * 0.18 * dt;
       this.ang.multiplyScalar(1 - sub * 1.2 * dt);
+      for (const [x, z] of [[BODY_X, BODY_ZF - 0.15], [-BODY_X, BODY_ZF - 0.15], [BODY_X, BODY_ZR + 0.15], [-BODY_X, BODY_ZR + 0.15]]) {
+        const P = _p.set(x, 0, z).applyQuaternion(q).add(this.pos);
+        const dc = hf.waterDepthAt(P.x, P.z) - (P.y - hf.heightAt(P.x, P.z));
+        if (dc > 0) this._applyForce(_v4.set(0, PHYS.gravity * 0.045 * Math.min(1, dc / 0.35), 0), P, dt);
+      }
     }
 
     // ---- light damping
     this.ang.multiplyScalar(1 - 0.35 * dt);
     this.vel.multiplyScalar(1 - 0.02 * dt);
 
-    // ---- integrate
+    // ---- integrate (real velocity, then the split-impulse pseudo velocity, which only repairs overlap
+    // and is discarded so it can't add energy)
     this.pos.addScaledVector(this.vel, dt);
     const w = this.ang;
     _q.set(w.x * dt * 0.5, w.y * dt * 0.5, w.z * dt * 0.5, 0).multiply(q);
     q.x += _q.x; q.y += _q.y; q.z += _q.z; q.w += _q.w; q.normalize();
+    if (this.vPs.lengthSq() + this.wPs.lengthSq() > 0) {
+      this.pos.addScaledVector(this.vPs, dt);
+      const wp = this.wPs;
+      _q.set(wp.x * dt * 0.5, wp.y * dt * 0.5, wp.z * dt * 0.5, 0).multiply(q);
+      q.x += _q.x; q.y += _q.y; q.z += _q.z; q.w += _q.w; q.normalize();
+      this.vPs.set(0, 0, 0); this.wPs.set(0, 0, 0);
+    }
 
     // keep inside world
     const lim = hf.half - 2;
@@ -415,6 +481,67 @@ export class CrawlerPhysics {
     // safety: never fall through the world
     const gh = hf.heightAt(this.pos.x, this.pos.z);
     if (this.pos.y < gh - 0.6) { this.pos.y = gh + 0.5; this.vel.set(0, 0, 0); }
+  }
+
+  // Sequential-impulse contact solver. Normal impulses cancel closing speed (with a little restitution
+  // on hard hits only), Coulomb friction is bounded by the normal impulse, and penetration is removed
+  // through separate pseudo velocities (split impulse) so pushing out of an overlap never becomes
+  // rebound speed.
+  _solveContacts(dt) {
+    const C = this.contacts;
+    if (!C.length) return;
+    for (const c of C) {
+      c.mn = this._effMass(c.p, c.n);
+      c.vn0 = this._pointVel(c.p, _v3).dot(c.n);
+      c.target = c.vn0 < -PHYS.restMinV ? -PHYS.restitution * c.vn0 : 0;
+      c.jn = 0; c.jt = 0; c.jp = 0;
+    }
+    const tdir = _tdir;
+    for (let it = 0; it < 8; it++) {
+      for (const c of C) {
+        const vn = this._pointVel(c.p, _v3).dot(c.n);
+        let dj = (c.target - vn) * c.mn;
+        const old = c.jn; c.jn = Math.max(0, old + dj); dj = c.jn - old;
+        if (dj !== 0) this._applyImpulse(_v4.copy(c.n).multiplyScalar(dj), c.p);
+        if (c.mu > 0 && c.jn > 0) {
+          const vp = this._pointVel(c.p, _v3);
+          tdir.copy(vp).addScaledVector(c.n, -vp.dot(c.n));
+          const vt = tdir.length();
+          if (vt > 1e-5) {
+            tdir.multiplyScalar(1 / vt);
+            const budget = c.mu * c.jn - c.jt;
+            const jt = Math.min(vt * this._effMass(c.p, tdir), Math.max(0, budget));
+            if (jt > 0) { c.jt += jt; this._applyImpulse(_v4.copy(tdir).multiplyScalar(-jt), c.p); }
+          }
+        }
+      }
+    }
+    // penetration recovery on pseudo velocities
+    for (let it = 0; it < 6; it++) {
+      for (const c of C) {
+        if (c.e <= PHYS.slop) continue;
+        _r.copy(c.p).sub(this.pos);
+        const vpn = _v3.copy(_r).cross(this.wPs).negate().add(this.vPs).dot(c.n);
+        let dj = (PHYS.beta * (c.e - PHYS.slop) / dt - vpn) * c.mn;
+        const old = c.jp; c.jp = Math.max(0, old + dj); dj = c.jp - old;
+        if (dj !== 0) {
+          _v4.copy(c.n).multiplyScalar(dj);
+          this.vPs.addScaledVector(_v4, 1 / PHYS.mass);
+          this._applyInvI(_r.cross(_v4), _v3);
+          this.wPs.add(_v3);
+        }
+      }
+    }
+    // feedback: bump-stop load for tyre grip, impact events for audio/particles, scrape level
+    for (const c of C) {
+      if (c.wheel) c.wheel.bumpF = c.jn / dt;
+      if (c.vn0 < -0.4 && this.events.length < 8) this.events.push({ kind: c.kind, strength: Math.min(1, -c.vn0 * 0.35), p: c.p.clone() });
+      if (c.scrape) {
+        const vp = this._pointVel(c.p, _v3);
+        const vt = vp.addScaledVector(c.n, -vp.dot(c.n)).length();
+        if (vt > 0.3) this.stats.scrape = Math.max(this.stats.scrape, Math.min(1, vt * 0.4));
+      }
+    }
   }
 
   // body corner points (world xz) for marker-touch tests
