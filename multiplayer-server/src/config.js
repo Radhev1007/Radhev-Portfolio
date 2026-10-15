@@ -9,10 +9,12 @@ export const config = {
   allowedOrigins: (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
   maxPlayers: Math.min(20, Math.max(2, num(env.MAX_PLAYERS, 20))),
   reconnectSeconds: num(env.RECONNECT_SECONDS, 30),
+  // trimmed: values pasted into a hosting dashboard often carry a stray space or line break, which LiveKit
+  // then rejects as an invalid API key
   livekit: {
-    url: env.LIVEKIT_URL || '',               // wss://<project>.livekit.cloud, or ws://localhost:7880 for a local dev server
-    apiKey: env.LIVEKIT_API_KEY || '',
-    apiSecret: env.LIVEKIT_API_SECRET || '',
+    url: (env.LIVEKIT_URL || '').trim(),      // wss://<project>.livekit.cloud, or ws://localhost:7880 for a local dev server
+    apiKey: (env.LIVEKIT_API_KEY || '').trim(),
+    apiSecret: (env.LIVEKIT_API_SECRET || '').trim(),
     tokenTtl: env.LIVEKIT_TOKEN_TTL || '15m',
   },
 };
