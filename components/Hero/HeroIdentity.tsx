@@ -15,8 +15,8 @@ type Props = { lines: string[]; delay?: number };
  * `whitespace-nowrap` and the size is chosen to let the longest one sit on
  * one line at every breakpoint.
  *
- * The last line takes the lighter voice, so the sentence resolves rather than
- * ending at full weight.
+ * Every line is set light; the last steps back in colour rather than weight,
+ * so the sentence resolves without a change of voice.
  */
 export function HeroIdentity({ lines, delay = 0 }: Props) {
   const reduced = usePrefersReducedMotion();
@@ -34,7 +34,7 @@ export function HeroIdentity({ lines, delay = 0 }: Props) {
             key={text}
             aria-hidden
             className={`-mb-[0.04em] block overflow-hidden whitespace-nowrap pb-[0.1em] ${
-              last ? "font-accent text-bone/70" : "font-normal tracking-[-0.04em]"
+              last ? "font-accent text-bone/70" : "font-light tracking-[-0.035em]"
             }`}
           >
             {text.split("").map((c) => {
