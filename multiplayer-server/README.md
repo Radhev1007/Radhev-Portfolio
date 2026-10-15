@@ -121,8 +121,14 @@ Browser tests used separate headless Chrome profiles as separate players (`?nore
 the simulation and networking without drawing, for headless clients). Measured on an M3 Pro, real GPU, 19
 remote trucks all in view near the camera: 62 fps on High (87 solo), 96 fps on Low (226 solo).
 
-Not covered yet: end-to-end audio through a real LiveKit server (token issuance, scoping and the failure paths
-are tested), mobile devices, and play across different networks.
+Voice was tested end to end against LiveKit server 1.13.10 (built from source, `--dev` mode) with two browser
+players and a synthetic microphone signal: audio measured on the received track, speaking and mic indicators
+(lobby and name tags), mute, push-to-talk (key and on-screen), speaker / per-player mute and volume, a camera
+publish refused by the token, recovery from a dropped signal connection, leaving voice, and permission-denied
+and no-microphone handling — 20/20 checks.
+
+Not covered yet: LiveKit Cloud specifically (same protocol as the self-hosted server), mobile devices, and play
+across different networks.
 
 ## Files
 

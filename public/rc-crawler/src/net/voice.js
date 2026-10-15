@@ -56,7 +56,8 @@ export class Voice {
       const E = lk.RoomEvent;
       room.on(E.TrackSubscribed, (track, pub, part) => { if (track.kind === 'audio') { const el = track.attach(); this.audioBox.appendChild(el); this.applyVolume(part); } });
       room.on(E.TrackUnsubscribed, (track) => track.detach().forEach((el) => el.remove()));
-      room.on(E.ParticipantConnected, (part) => this.applyVolume(part));
+      room.on(E.ParticipantConnected, (part) => { this.applyVolume(part); this.emit('change'); });
+      room.on(E.ParticipantDisconnected, () => this.emit('change'));
       room.on(E.ActiveSpeakersChanged, (sp) => { this.speaking = new Set(sp.map((p) => p.identity)); this.emit('change'); });
       room.on(E.TrackMuted, () => this.emit('change'));
       room.on(E.TrackUnmuted, () => this.emit('change'));

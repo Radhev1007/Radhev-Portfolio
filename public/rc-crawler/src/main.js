@@ -563,6 +563,7 @@ const modes = new Modes(mp, game);
 const voice = new Voice(mp);
 const mpUI = new MpUI({ mp, voice, modes, game });
 mp.on('change', () => modes.sync());
+voice.on('change', () => mp.onState());   // speaking / mic indicators on name tags follow voice right away
 mp.on('joined', () => { audio.start(); if (level) placeAtSpawn(); });
 mp.on('left', () => { modes.teardown(); voice.leave(); });
 
