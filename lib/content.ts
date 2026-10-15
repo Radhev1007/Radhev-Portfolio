@@ -43,6 +43,8 @@ export const site = {
   /** Shown as icons in the hero's social rail, in this order. */
   socials: [
     { label: "Behance", href: "https://www.behance.net/radhev1999707d", icon: "behance" },
+    { label: "Dribbble", href: "https://dribbble.com/radhevr1550", icon: "dribbble" },
+    { label: "Pinterest", href: "https://in.pinterest.com/radhev99/", icon: "pinterest" },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a", icon: "linkedin" },
     { label: "Instagram", href: "https://instagram.com/_r_idz", icon: "instagram" },
   ],
