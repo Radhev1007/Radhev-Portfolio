@@ -1103,7 +1103,7 @@ def main():
             .replace("__ROLES__", build_roles())
             .replace("__SECTORS__", sectors)
             .replace("__RESUME__",
-                     "https://drive.google.com/file/d/1U4r89GXL9FD2KHwjFMjn_3RWmzFUPZU9/view?usp=sharing"))
+                     "https://drive.google.com/file/d/1FGt65CDoKoxUXWIjAgswC5341gIOfaFl/view?usp=sharing"))
 
     out = root / "radhev-portfolio.html"
     out.write_text(html, encoding="utf-8")

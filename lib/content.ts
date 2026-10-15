@@ -27,7 +27,7 @@ export const site = {
   email: "radhev1999@gmail.com",
   phone: "+91 808 982 1700",
   /** Hosted on Drive, so the CV can be updated without a deploy. */
-  resume: "https://drive.google.com/file/d/1U4r89GXL9FD2KHwjFMjn_3RWmzFUPZU9/view?usp=sharing",
+  resume: "https://drive.google.com/file/d/1FGt65CDoKoxUXWIjAgswC5341gIOfaFl/view?usp=sharing",
   location: "Kollam, Kerala",
   statement:
     "Product / UI/UX Designer specializing in enterprise SaaS, government platforms, dashboards, fintech products and scalable design systems.",
