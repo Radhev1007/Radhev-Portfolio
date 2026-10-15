@@ -43,7 +43,7 @@ export function GarageLauncher({ className }: { className?: string }) {
         aria-label="Open my garage — drive the RC crawler"
         title="My garage"
         data-cursor="cta"
-        className={`group grid size-5 place-items-center text-bone transition-opacity duration-300 hover:opacity-100 ${className ?? ""}`}
+        className={`group grid size-6 place-items-center text-bone transition-opacity duration-300 hover:opacity-100 ${className ?? ""}`}
       >
         <RcIcon />
       </button>
@@ -59,19 +59,25 @@ export function GarageLauncher({ className }: { className?: string }) {
   );
 }
 
-/** A crawler in nineteen strokes: body, roof, two wheels. */
+/**
+ * A lifted 4×4 in side profile on a 24px grid: sloped windscreen, roof light
+ * bar, the body riding clear of oversized tyres, and the accent as a tail
+ * light. On hover the body rocks on its suspension — a hint that it drives.
+ */
 function RcIcon() {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden className="size-5" fill="none">
-      <path
-        d="M2.4 11.6h15.2M3.6 11.6V9.4h12.8v2.2M6.2 9.4V6.9h7.6v2.5"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="6.4" cy="13.4" r="1.9" stroke="currentColor" strokeWidth="1.1" />
-      <circle cx="13.6" cy="13.4" r="1.9" stroke="currentColor" strokeWidth="1.1" />
+    <svg viewBox="0 0 24 24" aria-hidden className="size-6 overflow-visible" fill="none">
+      <g className="origin-bottom [transform-box:fill-box] group-hover:animate-[rock_0.6s_ease-in-out_infinite]">
+        <path d="M3 13.6V10.6h4.4l2.3-4.1h6.5l2.5 4.1H21v3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M13.2 6.5v4.1M10.4 4.4h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <rect x="19.2" y="11.4" width="1" height="1.4" fill="var(--color-accent)" />
+      </g>
+      {[7, 17].map((cx) => (
+        <g key={cx}>
+          <circle cx={cx} cy="17.6" r="2.9" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx={cx} cy="17.6" r="1" fill="currentColor" />
+        </g>
+      ))}
     </svg>
   );
 }
