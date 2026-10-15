@@ -43,25 +43,61 @@
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
   /* ── Type scale ────────────────────────────────────────────────
-     One step per role. `hero` is bound to svh as well as vw because the
-     hero has to fit the viewport height, so it cannot be a plain clamp.
+     Every size on the site is one of eleven steps:
+       14 · 16 · 18 · 24 · 32 · 40 · 48 · 56 · 64 · 72 · 80 px
+     Each role starts at its phone size here and steps up at the
+     breakpoints below, instead of scaling fluidly through in-between
+     values. The headline tops out at 72 because the hero sets it on one
+     unbroken line per row; display (the large index numbers) takes 80. */
+  /* The hero headline sets each row unbroken in a half-width column, so it
+     steps with that column's width rather than with the section titles. */
+  --text-hero: 2rem; /* 32 → 48 → 64 → 72 */
+  --text-display: 3rem; /* 48 → 64 → 72 → 80 */
+  --text-headline: 2rem; /* 32 → 48 → 56 → 64 → 72 */
+  --text-title: 2rem; /* 32 → 40 → 48 */
+  --text-subtitle: 1.5rem; /* 24 → 32 → 40 */
+  --text-lead: 1.125rem; /* 18 → 24 */
+  --text-body: 1rem; /* 16 */
+  --text-small: 0.875rem; /* 14 */
+  --text-caption: 0.875rem; /* 14 */
+  --text-micro: 0.875rem; /* 14 */
+}
 
-     The scale is compressed hardest at the top, where it was loudest: at
-     1440px the display step was 130px and the headline 101px. The bottom
-     steps move little and the smallest two not at all — captions at 11px
-     and labels at 10px were never the problem, and shrinking them further
-     would cost legibility to fix something else. */
-  --text-hero: min(12.5vw, 9.5svh);
-  --text-hero-lg: max(1.625rem, min(5.9vw, 10.5svh, 6.75rem));
-  --text-display: clamp(2.5rem, 6.4vw, 6.5rem);
-  --text-headline: clamp(1.875rem, 5vw, 5rem);
-  --text-title: clamp(1.5rem, 3.6vw, 3.75rem);
-  --text-subtitle: clamp(1.25rem, 2.35vw, 2.5rem);
-  --text-lead: clamp(1.0625rem, 1.35vw, 1.5rem);
-  --text-body: 0.9375rem;
-  --text-small: 0.8125rem;
-  --text-caption: 0.6875rem;
-  --text-micro: 0.625rem;
+/* Type-scale steps. Unlayered, so they override the theme defaults above. */
+@media (min-width: 48rem) {
+  :root {
+    --text-display: 4rem;
+    --text-headline: 3rem;
+    --text-title: 2.5rem;
+  }
+}
+@media (min-width: 64rem) {
+  :root {
+    --text-hero: 3rem;
+    --text-display: 4.5rem;
+    --text-headline: 3.5rem;
+    --text-title: 3rem;
+    --text-subtitle: 2rem;
+    --text-lead: 1.5rem;
+  }
+}
+@media (min-width: 80rem) {
+  :root {
+    --text-hero: 4rem;
+    --text-display: 5rem;
+    --text-headline: 4rem;
+    --text-subtitle: 2.5rem;
+  }
+}
+@media (min-width: 90rem) {
+  :root {
+    --text-hero: 4.5rem;
+  }
+}
+@media (min-width: 96rem) {
+  :root {
+    --text-headline: 4.5rem;
+  }
 }
 
 :root {

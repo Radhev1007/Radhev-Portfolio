@@ -24,7 +24,7 @@ export function HeroIdentity({ lines, delay = 0, accent }: Props) {
   return (
     <h1
       aria-label={lines.join(" ")}
-      className="text-headline leading-[0.98] md:leading-[0.94]"
+      className="text-hero leading-[0.98] md:leading-[0.94]"
     >
       {lines.map((text, li) => {
         const last = li === lines.length - 1;
