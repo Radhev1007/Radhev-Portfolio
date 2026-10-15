@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease } from "@/lib/motion";
 
-type Props = { lines: string[]; delay?: number };
+type Props = { lines: string[]; delay?: number; /** A word to set in the accent colour. */ accent?: string };
 
 /**
  * The positioning statement, one masked line at a time.
@@ -15,10 +15,9 @@ type Props = { lines: string[]; delay?: number };
  * `whitespace-nowrap` and the size is chosen to let the longest one sit on
  * one line at every breakpoint.
  *
- * Every line is set light; the last steps back in colour rather than weight,
- * so the sentence resolves without a change of voice.
+ * Every line is set light and white; one word carries the accent colour.
  */
-export function HeroIdentity({ lines, delay = 0 }: Props) {
+export function HeroIdentity({ lines, delay = 0, accent }: Props) {
   const reduced = usePrefersReducedMotion();
   let n = 0;
 
@@ -29,20 +28,22 @@ export function HeroIdentity({ lines, delay = 0 }: Props) {
     >
       {lines.map((text, li) => {
         const last = li === lines.length - 1;
+        const at = accent ? text.indexOf(accent) : -1;
         return (
           <span
             key={text}
             aria-hidden
             className={`-mb-[0.04em] block overflow-hidden whitespace-nowrap pb-[0.1em] ${
-              last ? "font-accent text-bone/70" : "font-light tracking-[-0.035em]"
+              last ? "font-accent" : "font-light tracking-[-0.035em]"
             }`}
           >
-            {text.split("").map((c) => {
+            {text.split("").map((c, ci) => {
               const i = n++;
+              const lit = at >= 0 && ci >= at && ci < at + (accent?.length ?? 0);
               return (
                 <motion.span
                   key={i}
-                  className="inline-block will-change-transform"
+                  className={`inline-block will-change-transform ${lit ? "text-accent" : ""}`}
                   initial={{ y: reduced ? 0 : "105%", opacity: reduced ? 0 : 1 }}
                   animate={{ y: "0%", opacity: 1 }}
                   transition={{ duration: 1.1, ease: ease.outExpo, delay: delay + i * 0.016 }}

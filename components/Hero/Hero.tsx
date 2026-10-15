@@ -40,6 +40,7 @@ export function Hero() {
         <div className="relative z-10 order-2 md:order-1 md:col-span-6">
           <HeroIdentity
             lines={[site.heroTitle.lead, site.heroTitle.mid, site.heroTitle.tail]}
+            accent={site.heroTitle.accent}
             delay={intro.title}
           />
 

@@ -19,6 +19,8 @@ export const site = {
     lead: "I design complex",
     mid: "digital products into",
     tail: "clear experiences.",
+    /** Set in the accent colour wherever it appears in the headline. */
+    accent: "products",
   },
   brand: "Radhev R",
   role: "UI/UX Designer",
