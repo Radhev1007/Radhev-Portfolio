@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { TextReveal } from "@/components/Animations/TextReveal";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
-import { useMediaQuery } from "@/lib/hooks";
+import { useMediaQuery, usePrefersReducedMotion } from "@/lib/hooks";
 import { ease } from "@/lib/motion";
 
 const layers = [
@@ -88,14 +88,7 @@ export function DesignSystem() {
                   exit={{ opacity: 0, scale: 1.02, y: -8 }}
                   transition={{ duration: 0.8, ease: ease.outExpo }}
                 >
-                  <Image
-                    src={layers[step].img}
-                    alt={`${layers[step].k}: ${layers[step].d}`}
-                    fill
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    unoptimized
-                    className="object-cover"
-                  />
+                  <LayerImage src={layers[step].img} label={layers[step].k} alt={`${layers[step].k}: ${layers[step].d}`} />
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -103,5 +96,77 @@ export function DesignSystem() {
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * A layer's photograph with its own loading choreography.
+ *
+ * Until the file arrives the frame shows a skeleton — faint blocks under a
+ * light sweep, with an accent bar running along the bottom — so the stage
+ * never sits empty. When it lands, the photo wipes up from the bottom while
+ * resolving from blur, then keeps a slow drift so a held step still feels
+ * alive. Reduced motion gets a plain fade.
+ */
+function LayerImage({ src, alt, label }: { src: string; alt: string; label: string }) {
+  const reduced = usePrefersReducedMotion();
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <>
+      <AnimatePresence>
+        {!loaded && (
+          <motion.div
+            key="skeleton"
+            aria-hidden
+            className="absolute inset-0 overflow-hidden bg-ink-3"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <div className="absolute inset-6 flex flex-col gap-4 md:inset-10">
+              <div className="h-1/2 w-3/5 rounded-xl bg-bone/5" />
+              <div className="h-3 w-2/5 rounded-full bg-bone/5" />
+              <div className="h-3 w-1/4 rounded-full bg-bone/5" />
+            </div>
+            <div className="absolute inset-0 animate-[shimmer_1.6s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-bone/[0.07] to-transparent" />
+            <span className="label absolute bottom-6 left-6 md:bottom-10 md:left-10">Loading {label}</span>
+            <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-bone/10">
+              <div className="h-full w-full origin-left animate-[load-bar_1.4s_ease-in-out_infinite] bg-accent" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        className="absolute inset-0"
+        initial={false}
+        animate={
+          loaded
+            ? { opacity: 1, clipPath: "inset(0% 0% 0% 0%)", filter: "blur(0px)", scale: 1 }
+            : { opacity: 0, clipPath: reduced ? "inset(0% 0% 0% 0%)" : "inset(100% 0% 0% 0%)", filter: reduced ? "blur(0px)" : "blur(16px)", scale: reduced ? 1 : 1.12 }
+        }
+        transition={{ duration: reduced ? 0.4 : 1.2, ease: ease.outExpo }}
+      >
+        {/* Slow drift once shown: a held step still moves. */}
+        <motion.div
+          className="absolute inset-0"
+          animate={loaded && !reduced ? { scale: [1, 1.06] } : undefined}
+          transition={{ duration: 14, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
+        >
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            sizes="(min-width: 768px) 50vw, 100vw"
+            unoptimized
+            // Eager: the frame starts clipped and transparent, which can keep a
+            // lazy image from ever being requested. The files are small.
+            loading="eager"
+            onLoad={() => setLoaded(true)}
+            className="object-cover"
+          />
+        </motion.div>
+      </motion.div>
+    </>
   );
 }

@@ -261,6 +261,29 @@ html.has-custom-cursor * {
   }
 }
 
+/* Loading sweep for image placeholders. */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Indeterminate progress: a short bar that travels the track. */
+@keyframes load-bar {
+  0% {
+    transform: translateX(-100%) scaleX(0.3);
+  }
+  50% {
+    transform: translateX(40%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(110%) scaleX(0.3);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
