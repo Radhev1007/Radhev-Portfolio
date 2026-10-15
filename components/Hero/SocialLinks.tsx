@@ -4,7 +4,10 @@ import { motion } from "framer-motion";
 import { site } from "@/lib/content";
 import { intro, transition } from "@/lib/motion";
 
-/** Understated profile links; the hero places them under its call to action. */
+/**
+ * Understated profile links; the hero places them under its call to action.
+ * LinkedIn is left out here because it is already the hero's second button.
+ */
 export function SocialLinks() {
   return (
     <motion.ul
@@ -14,7 +17,7 @@ export function SocialLinks() {
       animate={{ opacity: 1 }}
       transition={transition(intro.nav, 1.2)}
     >
-      {site.socials.map((s) => (
+      {site.socials.filter((s) => s.label !== "LinkedIn").map((s) => (
         <li key={s.label}>
           <a
             href={s.href}

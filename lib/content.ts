@@ -33,10 +33,10 @@ export const site = {
     "Product / UI/UX Designer specializing in enterprise SaaS, government platforms, dashboards, fintech products and scalable design systems.",
   /**
    * The hero's two actions. The CV is the primary — it is what a recruiter
-   * opens first — and the work is the secondary, in the page.
+   * opens first — and LinkedIn is the secondary, the other place they check.
    */
   heroCtas: {
-    secondary: { label: "View Selected Work", target: "work" },
+    secondary: { label: "View LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a" },
   },
   socials: [
     { label: "LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a" },

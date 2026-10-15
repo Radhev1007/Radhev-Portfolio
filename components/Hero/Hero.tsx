@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/Animations/Button";
 import { HeroIllustration } from "@/components/Illustrations/HeroIllustration";
-import { useScrollTo } from "@/components/Providers/SmoothScroll";
 import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { intro, transition } from "@/lib/motion";
@@ -20,7 +19,6 @@ import { SocialLinks } from "./SocialLinks";
  */
 export function Hero() {
   const reduced = usePrefersReducedMotion();
-  const scrollTo = useScrollTo();
 
   const appear = (delay: number) => ({
     initial: { opacity: 0, y: reduced ? 0 : 16 },
@@ -58,9 +56,10 @@ export function Hero() {
             </Button>
             <Button
               variant="ghost"
-              onClick={() => scrollTo(site.heroCtas.secondary.target)}
+              href={site.heroCtas.secondary.href}
+              external
               cursor="view"
-              cursorLabel="Read"
+              cursorLabel="Open"
             >
               {site.heroCtas.secondary.label}
             </Button>
