@@ -33,6 +33,13 @@ export const PHYS = {
   restMinV: 0.8,        // below this closing speed, contacts are fully inelastic (no micro-bounce)
   slop: 0.004,          // allowed penetration before position recovery kicks in
   beta: 0.2,            // fraction of penetration recovered per substep (split impulse, adds no velocity)
+  // breakable marker stakes. Two ways to snap one: an impact faster than stakeSnapV, or sustained
+  // pushing: contact impulse accumulates as stress fading with stakeHalfLife, and past stakeLimit it
+  // breaks. Measured stuck-push force is ~16 N at 15% throttle, ~30 N at 40%, ~65 N at full, so a
+  // stuck truck snaps the stake after ~1 s, ~0.4 s and ~0.15 s; a gentle bump holds.
+  stakeSnapV: 1.0,      // m/s closing speed
+  stakeLimit: 9,        // N·s of accumulated impulse
+  stakeHalfLife: 0.5,   // s
 };
 
 // Collision boxes in body space, measured from the rendered model (wheels excluded), against upright
@@ -195,6 +202,18 @@ export class CrawlerPhysics {
     let steps = 0;
     this.stats.impact = 0; this.stats.scrape = 0;
     this.touched.clear();
+    // stake stress fades between hits; past the limit the stake snaps and stops colliding
+    const decay = Math.pow(0.5, Math.min(dt, 0.05) / PHYS.stakeHalfLife);
+    for (const t of this.posts) {
+      if (!t.breakable || t.broken || !t.stress) continue;
+      if (t.stress > PHYS.stakeLimit || (t.hitV || 0) > PHYS.stakeSnapV) {
+        t.broken = true; t.enabled = false;
+        t.fallDir = new THREE.Vector3(-(t.pushN?.x || 0), 0, -(t.pushN?.z || 0));
+        if (t.fallDir.lengthSq() < 1e-6) t.fallDir.set(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+        t.fallDir.normalize();
+        this.events.push({ type: 'break', mat: t.mat, speed: t.hitV || 0, p: new THREE.Vector3(t.x, t.y0 + 0.15, t.z), post: t });
+      } else { t.stress *= decay; t.hitV = (t.hitV || 0) * decay; }
+    }
     while (this.accum >= this.dt && steps < 14) {
       this.prevPos.copy(this.pos); this.prevQ.copy(this.q);
       this._step(this.dt); this.accum -= this.dt; steps++;
@@ -633,6 +652,11 @@ export class CrawlerPhysics {
     // feedback: bump-stop load for tyre grip, impact events for audio/particles, scrape level
     for (const c of C) {
       if (c.wheel) c.wheel.bumpF = c.jn / dt;
+      if (c.post && c.post.breakable && !c.post.broken) {
+        c.post.stress = (c.post.stress || 0) + c.jn;
+        c.post.pushN = (c.post.pushN || new THREE.Vector3()).copy(c.n);   // n pushes the truck; the stake goes -n
+        c.post.hitV = Math.max(c.post.hitV || 0, -c.vn0);
+      }
       // every contact that closed at speed is a collision the player should hear, at that point
       if (c.vn0 < -0.25 && this.events.length < 64) this.events.push({ type: 'hit', mat: c.mat || 'dirt', part: c.part || 'body', speed: -c.vn0, impulse: c.jn, p: c.p.clone() });
       if (c.scrape) {

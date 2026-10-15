@@ -122,6 +122,38 @@ async function loadLevel(id, { keepState = false } = {}) {
 function placeAtSpawn() {
   const s = level.spawn;
   phys.placeAt(s.x, s.z, s.yaw);
+  resetStakes();
+}
+
+// Broken stakes stand back up when the truck goes back to the start or a challenge is picked.
+function resetStakes() {
+  if (!level || !level.posts) return;
+  for (const t of level.posts) {
+    if (!t.breakable) continue;
+    t.broken = false; t.enabled = true; t.stress = 0; t.hitV = 0; t.fallA = 0; t.fallW = 0; t.landed = false;
+    if (t.mesh) t.mesh.quaternion.identity();
+  }
+}
+
+// A snapped stake topples about its base like a rigid rod under the game's gravity:
+// angular acceleration (3g / 2L) sin θ, starting from a nudge set by how hard it was hit, until it lies on
+// the ground. Purely the visual; the collider is already off.
+const _fallAxis = new THREE.Vector3(), _fallQ = new THREE.Quaternion();
+function updateStakes(dt) {
+  if (!level || !level.posts) return;
+  for (const t of level.posts) {
+    if (!t.broken || !t.mesh || t.landed) continue;
+    if (!t.fallA) { t.fallA = 0.06; t.fallW = 1.5 + 2.5 * Math.min(1, (t.hitV || 0) / 4); }
+    const L = 0.6, g = 30;
+    t.fallW += (3 * g / (2 * L)) * Math.sin(t.fallA) * dt;
+    t.fallA = Math.min(Math.PI / 2 - 0.04, t.fallA + t.fallW * dt);
+    if (t.fallA >= Math.PI / 2 - 0.04 && !t.landed) {
+      t.landed = true;
+      audio.events([{ type: 'stakeland', speed: t.fallW * L, p: new THREE.Vector3(t.x + t.fallDir.x * 0.3, t.y0, t.z + t.fallDir.z * 0.3) }]);
+    }
+    _fallAxis.set(0, 1, 0).cross(t.fallDir).normalize();
+    t.mesh.quaternion.copy(_fallQ.setFromAxisAngle(_fallAxis, t.fallA));
+  }
 }
 
 function applyLevelEnv() {
@@ -165,6 +197,7 @@ function updateTouchVisibility() {
 // ------------------------------------------------------------ challenges
 function setChallengeMarkers(id) {
   if (!level) return;
+  resetStakes();
   level.group.traverse((o) => { if (o.userData.markerId !== undefined) o.visible = o.userData.markerId === id; });
   for (const p of level.posts) if (p.markerId !== undefined) p.enabled = p.markerId === id;   // colliders follow visibility
 }
@@ -355,6 +388,7 @@ function tick(dt, forced) {
 
   if (state === 'play') challenges.update(dt, phys);
   updateEffects(dt);
+  updateStakes(dt);
   contact.update(phys, level.hf);
   particles.update(dt, scene.fog);
   tracks.update(dt);

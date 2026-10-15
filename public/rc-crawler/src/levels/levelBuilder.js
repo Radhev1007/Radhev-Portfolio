@@ -580,7 +580,8 @@ function buildMarkers(ctx) {
       g.children.forEach((c) => (c.castShadow = true));
       g.position.set(m.x, y, m.z);
       group.add(g);
-      posts.push({ x: m.x, z: m.z, r: 0.024, y0: y, top: y + 0.6, mat: 'pole', kind: 'stake', id: m.id });
+      // fibreglass stakes snap under enough force (see CrawlerPhysics stake stress); steel posts don't
+      posts.push({ x: m.x, z: m.z, r: 0.024, y0: y, top: y + 0.6, mat: 'pole', kind: 'stake', id: m.id, breakable: true, mesh: g });
     }
   }
   return group;

@@ -1075,6 +1075,10 @@ export class AudioEngine {
           if (ok('takeoff', 1, 0.3)) this._takeoff(now, e);
         } else if (e.type === 'land') {
           if (ok('land', e.speed, 0.25)) this._land(now, e);
+        } else if (e.type === 'break') {
+          this._stakeSnap(now, e);
+        } else if (e.type === 'stakeland') {
+          this._stakeClatter(now, e);
         }
       }
       [...hits.values()].sort((a, b) => b.speed - a.speed).slice(0, 3).forEach((h) => {
@@ -1213,6 +1217,24 @@ export class AudioEngine {
     this._tone({ t, dur: 0.2 + 0.2 * k, f0: 62 * r, f1: 34 * r, amp: 0.08 + 0.3 * k, attack: 0.003, dest, echo: this._env.echo > 0.2 ? 1 : 0 });
     this._burst({ t, dur: 0.1 + 0.1 * k, buf: 'brown', type: 'lowpass', f: 320 * r, q: 0.7, amp: 0.06 + 0.22 * k, attack: 0.003, dest });
     if (k > 0.35) this._rattle(t + 0.03, k, 4 + Math.round(9 * k), 0.2 + 0.25 * k, dest);
+  }
+
+  // a fibreglass stake snapping at the base: a sharp crack, the splintering fibres, a low knock
+  _stakeSnap(now, e) {
+    const dest = this._spot(e.p, 1.2), r = rand(0.92, 1.08), t = now + 0.002;
+    const k = clamp(0.4 + num(e.speed) / 6);
+    this._burst({ t, dur: 0.012, f: rand(3800, 5200) * r, q: 2, amp: 0.06 + 0.08 * k, attack: 0.0004, dest });
+    this._burst({ t: t + 0.004, dur: 0.06 + 0.04 * k, f: rand(1800, 2600) * r, q: 3, amp: 0.025 + 0.04 * k, attack: 0.001, dest });
+    for (let i = 0; i < 4; i++) this._burst({ t: t + rand(0.006, 0.05), dur: rand(0.004, 0.01), f: rand(2500, 4500), q: 5, amp: 0.012 * k * rand(0.5, 1), attack: 0.0004, dest });
+    this._tone({ t, dur: 0.07, f0: 340 * r, f1: 220 * r, amp: 0.03 + 0.04 * k, attack: 0.001, dest });
+  }
+
+  // the snapped stake hitting the ground: a hollow tock and a short bounce-clatter
+  _stakeClatter(now, e) {
+    const dest = this._spot(e.p, 1), t = now + 0.002, k = clamp(num(e.speed) / 3);
+    this._burst({ t, dur: 0.04, f: rand(1000, 1400), q: 6, amp: 0.02 + 0.04 * k, attack: 0.001, dest });
+    this._tone({ t, dur: 0.05, f0: rand(300, 380), amp: 0.015 + 0.025 * k, attack: 0.001, dest });
+    this._burst({ t: t + rand(0.06, 0.09), dur: 0.025, f: rand(1100, 1500), q: 6, amp: 0.01 + 0.015 * k, attack: 0.001, dest });
   }
 
   uiClick() {
