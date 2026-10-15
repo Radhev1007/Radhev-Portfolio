@@ -41,7 +41,9 @@ const BODY_X = 0.44, BODY_ZF = 0.86, BODY_ZR = -0.93, BODY_YMID = 0.15;
 // wheel mounts (local), order FL, FR, RL, RR. +X = left, +Z = forward
 const MOUNTS = [[0.34, 0.56], [-0.34, 0.56], [0.34, -0.56], [-0.34, -0.56]];
 
-// chassis/body collision probe points (local)
+// chassis/body collision probe points (local); PROBE_PART names what each one is, for impact sounds
+const PROBE_PART = ['skid', 'skid', 'skid', 'skid', 'skid', 'skid', 'skid', 'bumper', 'bumper', 'bumper', 'bumper', 'bumper', 'bumper',
+  'body', 'body', 'body', 'body', 'body', 'body', 'roof', 'roof', 'roof', 'roof', 'body', 'body', 'roof'];
 const PROBES = [
   [0, -0.15, 0.05], [0.16, -0.12, 0.3], [-0.16, -0.12, 0.3], [0.16, -0.12, -0.3], [-0.16, -0.12, -0.3], // skid / frame
   [0, -0.11, 0.56], [0, -0.11, -0.56],         // diff pumpkins
@@ -92,8 +94,14 @@ export class CrawlerPhysics {
       hub: V(), om: 0,
     }));
     this.trunks = [];       // [{x,z,r}]
-    this.stats = { speed: 0, slip: 0, grounded: 0, load: 0, surface: 'dirt', water: 0, impact: 0, scrape: 0, suspension: 0, traction: 1, stress: 0 };
-    this.events = [];      // impact events for audio/particles
+    this.stats = { speed: 0, slip: 0, slide: 0, grounded: 0, load: 0, surface: 'dirt', water: 0, impact: 0, scrape: 0, scrapeMat: 'dirt', suspension: 0, traction: 1, stress: 0 };
+    // Physics events for audio/particles, consumed (and cleared) by the game each frame:
+    //   hit      {mat, part, speed, impulse, p}  a contact closing at speed (collisions, tumbles)
+    //   touch    {wheel, mat, speed, air, p}     a tyre landing after being off the ground
+    //   release  {wheel, c, p}                   a tyre leaving the ground
+    //   takeoff  {up, p} / land {air, speed, p}  the whole truck leaving / regaining the ground
+    this.events = [];
+    this.airT = 0;          // time with no wheel or body contact
     this.upsideTimer = 0;
     this.accum = 0;
     this.dt = 1 / 360;
@@ -183,9 +191,9 @@ export class CrawlerPhysics {
 
     // derived stats
     const fwd = _v1.set(0, 0, 1).applyQuaternion(this.q);
-    let g = 0, slip = 0, load = 0, water = 0; const surfCount = {};
+    let g = 0, slip = 0, slide = 0, load = 0, water = 0; const surfCount = {};
     for (const w of this.wheels) {
-      if (w.contact) { g++; slip += Math.min(1, Math.abs(w.slip) / 1.5); load += w.fn; const s = SURF_PROPS[w.surf].audio; surfCount[s] = (surfCount[s] || 0) + 1; }
+      if (w.contact) { g++; slip += Math.min(1, Math.abs(w.slip) / 1.5); slide += Math.abs(w.vt || 0); load += w.fn; const s = SURF_PROPS[w.surf].audio; surfCount[s] = (surfCount[s] || 0) + 1; }
       water += w.water;
       // visual compression smoothing (wheel droops when unloaded)
       const target = w.contact ? w.c : 0;
@@ -196,6 +204,7 @@ export class CrawlerPhysics {
     const s = this.stats;
     s.speed = this.vel.dot(fwd);
     s.slip = g ? slip / g : 0;
+    s.slide = g ? slide / g : 0;
     s.grounded = g / 4;
     s.load = Math.min(1, Math.abs(this.motorTorque || 0) / this.gear.tstall);
     s.surface = water / 4 > 0.25 ? 'water' : surf;
@@ -218,6 +227,7 @@ export class CrawlerPhysics {
     const R = PHYS.wheelRadius, HW = PHYS.wheelHalfWidth;
 
     this.contacts.length = 0;
+    for (const w of this.wheels) w.was = w.contact;
 
     // ---- gravity
     this.vel.y -= PHYS.gravity * dt;
@@ -312,7 +322,7 @@ export class CrawlerPhysics {
         if (c > PHYS.travel) {
           const e = c - PHYS.travel;
           const pv = this._pointVel(Hc, _v5).dot(n);
-          this.contacts.push({ p: bestP.clone(), n: n.clone(), e, mu: 0, wheel: w, kind: 'rock' });
+          this.contacts.push({ p: bestP.clone(), n: n.clone(), e, mu: 0, wheel: w, part: 'bump', mat: SURF_NAMES[w.surf] || 'dirt' });
           if (e > 0.01) this.stats.impact = Math.max(this.stats.impact, Math.min(1, -pv * 0.25));
           this.stats.stress = Math.max(this.stats.stress * 0.999, Math.min(1, e * 8));
         } else w.bumpF = 0;
@@ -331,8 +341,23 @@ export class CrawlerPhysics {
         // tyre face pressed into a wall (log, ledge): a hard contact at the hub
         const Hc = Hd.clone().addScaledVector(up, Math.max(0, w.c));
         const pv = this._pointVel(Hc, _v5).dot(frontN);
-        this.contacts.push({ p: Hc, n: frontN.clone(), e: frontPen, mu: 0.5, kind: 'rock' });
+        this.contacts.push({ p: Hc, n: frontN.clone(), e: frontPen, mu: 0.5, part: 'tyre', mat: SURF_NAMES[hf.surfaceAt(Hc.x, Hc.z)] || 'rock' });
         this.stats.impact = Math.max(this.stats.impact, Math.min(1, -pv * 0.2));
+      }
+    }
+
+    // ---- tyre touchdown / lift-off, per wheel, at the substep it happens
+    for (const w of this.wheels) {
+      if (w.contact) {
+        if (!w.was && (w.air || 0) > 0.06) {
+          const sp = -this._pointVel(w.hub, _v5).dot(w.n);
+          this.events.push({ type: 'touch', wheel: w.i, mat: SURF_NAMES[w.surf] || 'dirt', speed: Math.max(0, sp), air: w.air, p: w.p.clone() });
+        }
+        w.air = 0; w.relC = w.c;
+      } else {
+        const a0 = w.air || 0;
+        w.air = a0 + dt;
+        if (a0 < 0.05 && w.air >= 0.05) this.events.push({ type: 'release', wheel: w.i, c: w.relC || 0, p: w.hub.clone() });
       }
     }
 
@@ -370,6 +395,7 @@ export class CrawlerPhysics {
         const p = w.app;
         const vp = this._pointVel(p, _v3);
         const vl = vp.dot(tl), vt = vp.dot(tt);
+        if (it === 0) w.vt = vt;               // sideways tyre slide, for skid sounds
         const slip = w.om * R - vl;
         w.slip = slip;
         const ml = this._effMass(p, tl), mt = this._effMass(p, tt);
@@ -391,12 +417,13 @@ export class CrawlerPhysics {
     for (const w of this.wheels) if (!w.contact) w.om *= 1 - 0.4 * dt;
 
     // ---- chassis probes (bumpers, skid, body, roof) against the ground
-    for (const pr of PROBES) {
+    for (let pi = 0; pi < PROBES.length; pi++) {
+      const pr = PROBES[pi];
       const P = _p.set(pr[0], pr[1], pr[2]).applyQuaternion(q).add(this.pos);
       const h = hf.heightAt(P.x, P.z);
       if (P.y < h) {
         const n = hf.normalAt(P.x, P.z, _n).clone();
-        this.contacts.push({ p: P.clone(), n, e: (h - P.y) * Math.max(0.25, n.y), mu: PHYS.chassisMu, kind: pr[1] > 0.3 ? 'thud' : 'rock', scrape: true });
+        this.contacts.push({ p: P.clone(), n, e: (h - P.y) * Math.max(0.25, n.y), mu: PHYS.chassisMu, part: PROBE_PART[pi], mat: SURF_NAMES[hf.surfaceAt(P.x, P.z)] || 'dirt', scrape: true });
       }
     }
 
@@ -422,7 +449,7 @@ export class CrawlerPhysics {
         if (pen > 0) {
           const P = new THREE.Vector3(cx, BODY_YMID, cz).applyQuaternion(q).add(this.pos);
           const n = new THREE.Vector3(nlx, 0, nlz).applyQuaternion(q); n.y = 0;
-          if (P.y < t.top && n.lengthSq() > 1e-6) this.contacts.push({ p: P, n: n.normalize(), e: pen, mu: 0.35, kind: 'rock' });
+          if (P.y < t.top && n.lengthSq() > 1e-6) this.contacts.push({ p: P, n: n.normalize(), e: pen, mu: 0.35, part: 'body', mat: 'wood' });
         }
         // wheels: tyre (radius R) around each hub against the trunk
         for (const w of this.wheels) {
@@ -430,13 +457,25 @@ export class CrawlerPhysics {
           const hx = Hc.x - t.x, hz = Hc.z - t.z, hd = Math.hypot(hx, hz);
           if (hd < t.r + R && hd > 1e-6 && Hc.y < t.top) {
             const n = new THREE.Vector3(hx / hd, 0, hz / hd);
-            this.contacts.push({ p: Hc.clone().addScaledVector(n, -R), n, e: t.r + R - hd, mu: 0.3, kind: 'rock' });
+            this.contacts.push({ p: Hc.clone().addScaledVector(n, -R), n, e: t.r + R - hd, mu: 0.3, part: 'tyre', mat: 'wood' });
           }
         }
       }
     }
 
     this._solveContacts(dt);
+
+    // ---- whole-truck takeoff / landing (no wheel and no body contact = airborne)
+    const touching = this.contacts.length > 0 || this.wheels.some((w) => w.contact);
+    if (touching) {
+      if (this.airT > 0.15) this.events.push({ type: 'land', air: this.airT, speed: Math.max(0, -(this._vyAir || 0)), p: this.pos.clone() });
+      this.airT = 0;
+    } else {
+      const a0 = this.airT;
+      this.airT += dt;
+      this._vyAir = this.vel.y;            // vertical speed just before the next touchdown
+      if (a0 < 0.08 && this.airT >= 0.08) this.events.push({ type: 'takeoff', up: Math.max(0, this.vel.y), p: this.pos.clone() });
+    }
 
     // ---- water drag + buoyancy. Buoyancy acts at the four body corners in proportion to how deep each
     // is, so a truck entering water nose-first gets lifted at the nose and levels out; the old single
@@ -535,11 +574,12 @@ export class CrawlerPhysics {
     // feedback: bump-stop load for tyre grip, impact events for audio/particles, scrape level
     for (const c of C) {
       if (c.wheel) c.wheel.bumpF = c.jn / dt;
-      if (c.vn0 < -0.4 && this.events.length < 8) this.events.push({ kind: c.kind, strength: Math.min(1, -c.vn0 * 0.35), p: c.p.clone() });
+      // every contact that closed at speed is a collision the player should hear, at that point
+      if (c.vn0 < -0.25 && this.events.length < 64) this.events.push({ type: 'hit', mat: c.mat || 'dirt', part: c.part || 'body', speed: -c.vn0, impulse: c.jn, p: c.p.clone() });
       if (c.scrape) {
         const vp = this._pointVel(c.p, _v3);
         const vt = vp.addScaledVector(c.n, -vp.dot(c.n)).length();
-        if (vt > 0.3) this.stats.scrape = Math.max(this.stats.scrape, Math.min(1, vt * 0.4));
+        if (vt > 0.15 && Math.min(1, vt * 0.4) > this.stats.scrape) { this.stats.scrape = Math.min(1, vt * 0.4); this.stats.scrapeMat = c.mat || 'dirt'; }
       }
     }
   }

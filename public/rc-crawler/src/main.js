@@ -310,7 +310,6 @@ function updateEffects(dt) {
 
 // ------------------------------------------------------------ HUD
 let hudAcc = 0, fpsAcc = 0, fpsN = 0;
-let impactCooldown = 0;
 function updateHud(dt) {
   hudAcc += dt;
   if (hudAcc < 0.08) return;
@@ -336,6 +335,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   tick(dt);
 }
+const _aFwd = new THREE.Vector3();
 function tick(dt, forced) {
   if (!level || !phys) { if (post) post.render(dt); return; }
   time += dt;
@@ -358,20 +358,25 @@ function tick(dt, forced) {
   tracks.update(dt);
 
   // impacts -> audio
-  impactCooldown -= dt;
-  for (const e of phys.events) if (impactCooldown <= 0) { audio.impact(e.strength, e.kind); impactCooldown = 0.12; }
+  // every collision, tyre touchdown/lift-off and landing comes straight from the physics step that
+  // produced it; the audio engine merges and rate-limits them
+  audio.events(phys.events);
   phys.events.length = 0;
-  if (phys.stats.scrape > 0.3 && Math.random() < 0.05) audio.impact(phys.stats.scrape * 0.5, 'scrape');
   if (phys.stats.water > 0.2 && Math.abs(phys.stats.speed) > 0.5 && Math.random() < 0.03) audio.impact(0.4, 'splash');
 
   audio.update({
     motor: Math.min(1, Math.abs(phys.omega) / 14), rpm: Math.min(1, Math.abs(phys.omega) / phys.gear.wmax), throttle: phys.throttle, load: phys.stats.load,
-    speed: Math.abs(phys.stats.speed) * 0.1, slip: phys.stats.slip, surface: phys.stats.surface, water: phys.stats.water,
+    speed: Math.abs(phys.stats.speed) * 0.1, slip: phys.stats.slip, slide: phys.stats.slide, scrape: phys.stats.scrape, scrapeMat: phys.stats.scrapeMat,
+    surface: phys.stats.surface, water: phys.stats.water,
     suspension: phys.stats.suspension, steerRate: phys.steerRate || 0, grounded: phys.stats.grounded,
   }, dt);
 
   // camera
   rig.update(dt, model.group, phys);
+  // 3D audio: the camera listens, the truck's own sounds come from the truck
+  camera.getWorldDirection(_aFwd);
+  audio.setListener(camera.position, _aFwd, camera.up);
+  audio.setVehiclePosition(model.group.position);
   env.update(dt, phys.pos, time);
   sharedTerrainUniforms.uTime.value = time;
   windUniforms.uTime.value = time;

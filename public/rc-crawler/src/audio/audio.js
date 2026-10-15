@@ -28,6 +28,20 @@ const SURF = {
   water:  { f: 1900, q: 0.6, lvl: 0.16, low: 0.18, lowF: 280, grain: 0, splash: 5, scrubF: 1200 },
 };
 
+// ---------------------------------------------------------------- impact materials
+// knock: band of the material's own click; body: low resonance; dull: soft ground (lowpass, no ring);
+// debris: what gets thrown about on a hard hit.
+const MAT = {
+  rock:   { knock: [2200, 3600], kq: 2.5, body: [150, 230], debris: 'pebble' },
+  gravel: { knock: [1600, 3000], kq: 1.6, body: [100, 150], debris: 'gravel' },
+  wood:   { knock: [420, 780], kq: 7, body: [105, 175], debris: 'bark', hollow: true },
+  dirt:   { knock: [500, 950], kq: 1.1, body: [70, 115], debris: 'dirt', dull: true },
+  grass:  { knock: [650, 1200], kq: 1, body: [70, 110], debris: 'dirt', dull: true },
+  sand:   { knock: [800, 1500], kq: 0.8, body: [60, 100], debris: 'sand', dull: true },
+  snow:   { knock: [700, 1300], kq: 0.8, body: [60, 95], debris: 'sand', dull: true },
+  mud:    { knock: [280, 560], kq: 2, body: [55, 90], debris: 'mud', dull: true },
+};
+
 // ---------------------------------------------------------------- ambience
 const BIOMES = {
   canyon: { wind: 0.9,  leaves: 0.08, whistle: 0.6, birds: 0.14, stream: 0,    crickets: 0.10, echo: 0.38, drips: 0.4, species: ['cascade', 'chirp', 'whistle', 'chirp'] },
@@ -236,6 +250,48 @@ export class AudioEngine {
     this._voice(src, nodes, t + dur + 0.05);
   }
 
+  // ------------------------------------------------------------ 3D positioning
+  // Distance falloff is inverse with a 4 m reference: the chase camera sits about 4.6 m away, so normal
+  // driving plays near full level, a truck tumbling away gets quieter, and pan follows the screen.
+  _makePanner() {
+    const p = this.ctx.createPanner();
+    p.panningModel = 'equalpower';
+    p.distanceModel = 'inverse';
+    p.refDistance = 4;
+    p.rolloffFactor = 1.1;
+    p.maxDistance = 80;
+    return p;
+  }
+
+  _placeAt(node, x, y, z) {
+    if (node.positionX) { const t = this.ctx.currentTime; node.positionX.setValueAtTime(x, t); node.positionY.setValueAtTime(y, t); node.positionZ.setValueAtTime(z, t); }
+    else if (node.setPosition) node.setPosition(x, y, z);
+  }
+
+  // a one-shot's own point in space; freed once its sounds have finished
+  _spot(p, life = 2.5) {
+    const pn = this._makePanner();
+    this._placeAt(pn, num(p && p.x), num(p && p.y), num(p && p.z));
+    pn.connect(this.sfxBus);
+    setTimeout(() => { try { pn.disconnect(); } catch (e) { /* */ } }, life * 1000);
+    return pn;
+  }
+
+  // camera as the listener; called every frame with the camera's world position and orientation
+  setListener(pos, fwd, up) {
+    try {
+      if (!this._started || !this.ctx) return;
+      const L = this.ctx.listener, t = this.ctx.currentTime;
+      if (L.positionX) {
+        L.positionX.setValueAtTime(pos.x, t); L.positionY.setValueAtTime(pos.y, t); L.positionZ.setValueAtTime(pos.z, t);
+        L.forwardX.setValueAtTime(fwd.x, t); L.forwardY.setValueAtTime(fwd.y, t); L.forwardZ.setValueAtTime(fwd.z, t);
+        L.upX.setValueAtTime(up.x, t); L.upY.setValueAtTime(up.y, t); L.upZ.setValueAtTime(up.z, t);
+      } else { L.setPosition(pos.x, pos.y, pos.z); L.setOrientation(fwd.x, fwd.y, fwd.z, up.x, up.y, up.z); }
+    } catch (e) { /* */ }
+  }
+
+  setVehiclePosition(p) { try { if (this._started && this.vehPan) this._placeAt(this.vehPan, p.x, p.y, p.z); } catch (e) { /* */ } }
+
   // short sine/triangle tone with pitch glide and exp decay
   _tone({ t, dur, type = 'sine', f0 = 440, f1 = 0, amp = 0.05, attack = 0.003, pan = 0, dest = null, echo = 0 }) {
     if (!this._canVoice()) return;
@@ -298,6 +354,11 @@ export class AudioEngine {
     this.echoLP.connect(this.echoOut);
     this.birdBus.connect(this.echoIn);
 
+    // vehicle sounds (engine, tyres, servo, scrape) come from one point that follows the truck
+    this.vehBus = this._gain(1);
+    this.vehPan = this._makePanner();
+    this.vehBus.connect(this.vehPan).connect(this.sfxBus);
+
     this._buildMotor();
     this._buildTires();
     this._buildServo();
@@ -346,7 +407,7 @@ export class AudioEngine {
   // and soft saturation that grows with throttle and load.
   _buildMotor() {
     const c = this.ctx;
-    this.mOut = this._gain(0, this.sfxBus);
+    this.mOut = this._gain(0, this.vehBus);
 
     // exhaust: low-passed, opens up with revs and throttle
     this.eLP = this._filter('lowpass', 500, 0.6);
@@ -410,17 +471,33 @@ export class AudioEngine {
 
   _buildTires() {
     this.tBP = this._filter('bandpass', 2000, 0.7, true);
-    this.tG = this._gain(0, this.sfxBus);
+    this.tG = this._gain(0, this.vehBus);
     this.vWhite.connect(this.tBP).connect(this.tG);
 
     this.tLP = this._filter('lowpass', 300, 0.8, true);
-    this.tLowG = this._gain(0, this.sfxBus);
+    this.tLowG = this._gain(0, this.vehBus);
     this.vBrown.connect(this.tLP).connect(this.tLowG);
 
     this.sBP = this._filter('bandpass', 1200, 0.9, true);
     this.sLP = this._filter('lowpass', 4000, 0.5, true);
-    this.sG = this._gain(0, this.sfxBus);
+    this.sG = this._gain(0, this.vehBus);
     this.vWhite.connect(this.sBP).connect(this.sLP).connect(this.sG);
+
+    // body scrape: chassis/roof sliding on the ground (rollovers, high-centring). Its level and colour
+    // follow the actual sliding speed and material of the body contacts.
+    this.scrBP = this._filter('bandpass', 1400, 1.4, true);
+    this.scrLP = this._filter('lowpass', 3500, 0.6, true);
+    this.scrG = this._gain(0, this.vehBus);
+    this.scrSrc = this._loop(this._buf.white);
+    this.scrSrc.connect(this.scrBP).connect(this.scrLP).connect(this.scrG);
+    this.scrLowG = this._gain(0, this.vehBus);
+    this.scrLowLP = this._filter('lowpass', 260, 0.7, true);
+    this.vBrown.connect(this.scrLowLP).connect(this.scrLowG);
+
+    // tyre skid: sideways slide. On hard ground a soft rubber chirp, on loose ground a spray hiss.
+    this.skBP = this._filter('bandpass', 900, 3, true);
+    this.skG = this._gain(0, this.vehBus);
+    this.vWhite.connect(this.skBP).connect(this.skG);
   }
 
   _buildServo() {
@@ -428,7 +505,7 @@ export class AudioEngine {
     this.svOsc2 = this._osc('square', 1500 * 0.5);
     this.svBP = this._filter('bandpass', 1600, 3);
     this.svLP = this._filter('lowpass', 2600, 0.5);
-    this.svG = this._gain(0, this.sfxBus);
+    this.svG = this._gain(0, this.vehBus);
     this.svOsc.connect(this.svBP);
     this.svOsc2.connect(this._gain(0.3, this.svBP));
     this.svBP.connect(this.svLP).connect(this.svG);
@@ -533,7 +610,7 @@ export class AudioEngine {
       // vehicle watchdog: fade out vehicle beds if update() stopped being called
       if (!this._vehicleQuiet && (this._lastUpdate < 0 || now - this._lastUpdate > 0.25)) {
         this._vehicleQuiet = true;
-        for (const g of [this.mOut, this.tG, this.tLowG, this.sG, this.svG, this.mBrushG]) this._set(g.gain, 0, 0.1);
+        for (const g of [this.mOut, this.tG, this.tLowG, this.sG, this.svG, this.mBrushG, this.scrG, this.scrLowG, this.skG]) this._set(g.gain, 0, 0.1);
       }
 
       // wind gusts
@@ -732,6 +809,9 @@ export class AudioEngine {
       const water = clamp(num(p.water));
       const susp = clamp(num(p.suspension));
       const steer = Math.abs(num(p.steerRate));
+      const slide = Math.max(0, num(p.slide));                 // sideways tyre slide, m/s
+      const scrapeV = clamp(num(p.scrape));                     // body sliding on the ground, 0..1
+      const scrapeM = MAT[p.scrapeMat] ? p.scrapeMat : 'dirt';
       const grounded = clamp(num(p.grounded, 1));
       const surf = SURF[p.surface] || SURF.dirt;
       const s = clamp(speed / 0.4);
@@ -785,6 +865,23 @@ export class AudioEngine {
       this._set(this.sBP.frequency, glerp(surf.scrubF, W.scrubF, w) * rand(0.8, 1.2), 0.05);
       this._set(this.sG.gain, scrub * 0.06 * rand(0.7, 1.2), 0.04);
 
+      // ---- tyre skid (sideways slide). Hard ground: a soft rubber chirp; loose ground: spray hiss.
+      const hard = p.surface === 'rock' || p.surface === 'wood';
+      const sk = clamp((slide - 0.25) / 1.5) * gnd * (1 - w);
+      this._set(this.skBP.frequency, (hard ? 950 : 2600) * rand(0.9, 1.1), 0.05);
+      this._set(this.skBP.Q, hard ? 3.5 : 0.7, 0.1);
+      this._set(this.skG.gain, sk * (hard ? 0.05 : 0.07) * rand(0.8, 1.15), 0.04);
+
+      // ---- body scrape: follows the real sliding speed of body contacts, coloured by material, with a
+      // stick-slip flutter (plastic and steel catching and releasing on rock)
+      const scr = scrapeV * gnd;
+      const sm = MAT[scrapeM];
+      const scrF = (sm.dull ? 700 : sm.hollow ? 900 : 1700) * rand(0.75, 1.3);
+      this._set(this.scrBP.frequency, scrF, 0.02);
+      this._set(this.scrLP.frequency, sm.dull ? 1600 : 4200, 0.1);
+      this._set(this.scrG.gain, scr * (sm.dull ? 0.05 : 0.09) * (sm.dull ? 1 : rand(0.35, 1.2)), 0.015);
+      this._set(this.scrLowG.gain, scr * 0.12 * rand(0.6, 1.1), 0.03);
+
       // ---- servo
       if (steer > 0.15) {
         const k = clamp(steer / 4);
@@ -795,8 +892,8 @@ export class AudioEngine {
         this._set(this.svG.gain, 0, 0.03);
       }
 
-      // ---- grains: rock clicks / gravel crunch / dirt
-      const gRate = surf.grain * s * gnd * (1 - w);
+      // ---- grains: rock clicks / gravel crunch / dirt, plus scatter thrown by sliding tyres
+      const gRate = (surf.grain * s + surf.grain * 0.8 * clamp(slide / 1.5)) * gnd * (1 - w);
       if (gRate > 0) {
         let n = Math.floor(gRate * dt + Math.random());
         n = Math.min(n, 3);
@@ -825,11 +922,15 @@ export class AudioEngine {
         }
       }
 
-      // ---- suspension creaks & spring boings
+      // ---- suspension creaks and spring ticks (metal coil-over and link noise, not a cartoon boing)
       if (susp > 0.05 && Math.random() < susp * 5 * dt) {
         if (Math.random() < 0.72) this._creak(now, susp);
-        else this._boing(now, susp);
+        else this._springTick(now, susp, this.vehBus);
       }
+
+      // ---- chassis vibration on rough ground: body panels and links ticking against each other
+      const vib = susp * clamp(speed / 0.25) * gnd;
+      if (vib > 0.08 && Math.random() < vib * 14 * dt) this._rattle(now, 0.25 + 0.5 * vib, 1 + Math.round(2 * vib), 0.08, this.vehBus);
     } catch (e) { /* never throw */ }
   }
 
@@ -848,34 +949,26 @@ export class AudioEngine {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.linearRampToValueAtTime(a, t + dur * 0.3);
     g.gain.linearRampToValueAtTime(0, t + dur);
-    o.connect(bp).connect(g).connect(this.sfxBus);
+    o.connect(bp).connect(g).connect(this.vehBus || this.sfxBus);
     o.start(t);
     this._voice(o, [bp, g], t + dur + 0.02);
   }
 
-  _boing(t, k) {
-    if (!this._canVoice()) return;
-    const c = this.ctx;
-    const dur = rand(0.18, 0.3);
-    const o = c.createOscillator();
-    o.type = 'triangle';
-    const f = rand(320, 540);
-    o.frequency.setValueAtTime(f * 1.08, t);
-    o.frequency.exponentialRampToValueAtTime(f, t + dur);
-    const vib = c.createOscillator();
-    vib.frequency.value = rand(18, 28);
-    const vd = c.createGain();
-    vd.gain.setValueAtTime(f * 0.04, t);
-    vd.gain.linearRampToValueAtTime(0, t + dur);
-    vib.connect(vd).connect(o.frequency);
-    const g = c.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(0.008 * (0.5 + 0.5 * k), t + 0.004);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(this.sfxBus);
-    o.start(t);
-    vib.start(t);
-    this._voice(o, [g, vd], t + dur + 0.02, [vib]);
+  // metal spring/link tick: two inharmonic partials with a fast decay
+  _springTick(t, k, dest) {
+    const f = rand(1700, 2600);
+    const a = 0.008 + 0.012 * k;
+    this._tone({ t, dur: rand(0.03, 0.06), f0: f, amp: a, attack: 0.0006, dest });
+    this._tone({ t, dur: rand(0.02, 0.04), f0: f * rand(1.47, 1.61), amp: a * 0.6, attack: 0.0006, dest });
+  }
+
+  // a run of small plastic/metal clicks with falling level: loose body panels, light bar, links
+  _rattle(t, k, n, span, dest) {
+    for (let i = 0; i < n; i++) {
+      const tt = t + Math.pow(Math.random(), 0.7) * span;
+      const decay = 1 - (tt - t) / (span * 1.2);
+      this._burst({ t: tt, dur: rand(0.006, 0.018), f: rand(1500, 4200), q: rand(4, 9), amp: (0.012 + 0.045 * k) * Math.max(0.15, decay) * rand(0.5, 1), attack: 0.0006, dest });
+    }
   }
 
   // ------------------------------------------------------------ one-shots
@@ -948,6 +1041,175 @@ export class AudioEngine {
         }
       }
     } catch (e) { /* */ }
+  }
+
+  // ------------------------------------------------------------ physics-driven one-shots
+  // Takes the frame's physics events (see CrawlerPhysics.events). Contacts from the same collision arrive
+  // as many points across several substeps, so hits are merged per material+part first and only the
+  // strongest few play; each key then has a short cooldown that a clearly harder hit can override.
+  events(list) {
+    try {
+      if (!this._started || !this.ctx || this.ctx.state !== 'running' || !list || !list.length) return;
+      const now = this.ctx.currentTime;
+      this._cool = this._cool || {};
+      const ok = (key, strength, gap) => {
+        const c = this._cool[key];
+        if (c && now - c.t < gap && strength < c.s * 1.4) return false;
+        this._cool[key] = { t: now, s: strength };
+        return true;
+      };
+      const hits = new Map();
+      for (const e of list) {
+        if (e.type === 'hit') {
+          const key = e.mat + '|' + e.part;
+          const h = hits.get(key);
+          if (!h) hits.set(key, { ...e, n: 1, imp: num(e.impulse) });
+          else { h.n++; h.imp += num(e.impulse); if (e.speed > h.speed) { h.speed = e.speed; h.p = e.p; } }
+        } else if (e.type === 'touch') {
+          if (ok('touch' + e.wheel, e.speed, 0.08)) this._touch(now, e);
+        } else if (e.type === 'release') {
+          if (ok('rel' + e.wheel, 1, 0.15)) this._release(now, e);
+        } else if (e.type === 'takeoff') {
+          if (ok('takeoff', 1, 0.3)) this._takeoff(now, e);
+        } else if (e.type === 'land') {
+          if (ok('land', e.speed, 0.25)) this._land(now, e);
+        }
+      }
+      [...hits.values()].sort((a, b) => b.speed - a.speed).slice(0, 3).forEach((h) => {
+        if (h.speed >= 0.35 && ok('hit|' + h.mat + '|' + h.part, h.speed, 0.07)) this._hit(now, h);
+      });
+    } catch (e) { /* never throw */ }
+  }
+
+  // A collision: a material layer (what was hit) + a truck layer (what part hit it), scaled by closing
+  // speed and impulse. Light: a small plastic or metal knock. Heavy: deep thud, crunch, debris and a
+  // rattle of loose parts. Every frequency gets a small random pitch, and layer choices vary per hit.
+  _hit(now, h) {
+    const m = MAT[h.mat] || MAT.dirt;
+    const v = num(h.speed);
+    const s = clamp((v - 0.3) / 3.7);                      // 0 = brush, 1 = ~4 m/s and up
+    const force = clamp(h.imp / 2.5);
+    const k = clamp(0.7 * s + 0.3 * force);
+    const heavy = k > 0.45;
+    const r = rand(0.92, 1.08);                            // per-hit pitch variation
+    const t = now + 0.002;
+    const dest = this._spot(h.p, 1.5);
+    const echo = this._env.echo > 0.2 ? 1 : 0;
+
+    // material: the surface's own click (rock, wood) or a dull push into soft ground
+    if (m.dull) this._burst({ t, dur: 0.05 + 0.08 * k, buf: 'brown', type: 'lowpass', f: rand(m.knock[0], m.knock[1]) * r, q: 0.7, amp: 0.05 + 0.2 * k, attack: 0.002, dest });
+    else this._burst({ t, dur: 0.025 + 0.04 * k, f: rand(m.knock[0], m.knock[1]) * r, q: m.kq, amp: 0.04 + 0.13 * k, attack: 0.0008, dest, echo });
+    if (m.hollow) this._tone({ t, dur: 0.08 + 0.1 * k, f0: rand(m.body[0], m.body[1]) * r, f1: m.body[0] * 0.7 * r, amp: 0.05 + 0.15 * k, attack: 0.001, dest });
+
+    // the truck's part
+    switch (h.part) {
+      case 'tyre':      // rubber meeting a wall: soft, low, no click
+        this._burst({ t, dur: 0.07 + 0.06 * k, buf: 'brown', type: 'lowpass', f: 260 * r, q: 0.8, amp: 0.06 + 0.2 * k, attack: 0.003, dest });
+        this._tone({ t, dur: 0.08 + 0.05 * k, f0: 72 * r, f1: 46 * r, amp: 0.05 + 0.14 * k, attack: 0.002, dest });
+        break;
+      case 'bump':      // suspension bottoming out: metal-on-rubber clunk
+        this._tone({ t, dur: 0.05 + 0.04 * k, f0: 230 * r, f1: 170 * r, amp: 0.04 + 0.12 * k, attack: 0.001, dest });
+        this._tone({ t, dur: 0.03 + 0.02 * k, f0: 610 * r, amp: 0.02 + 0.06 * k, attack: 0.0008, dest });
+        this._tone({ t, dur: 0.1 + 0.06 * k, f0: 95 * r, f1: 55 * r, amp: 0.05 + 0.15 * k, attack: 0.002, dest });
+        break;
+      case 'skid':      // steel skid plate / diff: metallic knock
+        this._tone({ t, dur: 0.04 + 0.05 * k, f0: rand(1700, 2300) * r, amp: 0.02 + 0.06 * k, attack: 0.0006, dest });
+        this._tone({ t, dur: 0.03 + 0.04 * k, f0: rand(2600, 3300) * r, amp: 0.012 + 0.04 * k, attack: 0.0006, dest });
+        this._tone({ t, dur: 0.07 + 0.06 * k, f0: 150 * r, f1: 85 * r, amp: 0.04 + 0.12 * k, attack: 0.001, dest });
+        break;
+      case 'roof':      // body shell: hollow, deeper plastic
+        this._tone({ t, dur: 0.12 + 0.08 * k, f0: 125 * r, f1: 72 * r, amp: 0.05 + 0.16 * k, attack: 0.002, dest });
+        this._burst({ t, dur: 0.04 + 0.03 * k, f: rand(700, 1000) * r, q: 7, amp: 0.03 + 0.08 * k, attack: 0.001, dest });
+        break;
+      default:          // bumper / body panel: plastic knock
+        this._burst({ t, dur: 0.035 + 0.035 * k, f: rand(850, 1500) * r, q: rand(6, 9), amp: 0.03 + 0.1 * k, attack: 0.0008, dest });
+        this._tone({ t, dur: 0.06 + 0.05 * k, f0: rand(150, 200) * r, f1: 80 * r, amp: 0.03 + 0.1 * k, attack: 0.001, dest });
+    }
+
+    if (heavy) {
+      // deep thud, crunch with a stuttering envelope, debris, and loose parts rattling afterwards
+      this._tone({ t, dur: 0.18 + 0.15 * k, f0: 78 * r, f1: 36 * r, amp: 0.12 + 0.25 * k, attack: 0.002, dest, echo });
+      this._crunch(t, k, m, r, dest);
+      this._debris(t + 0.02, k, m.debris, dest);
+      this._rattle(t + 0.03, k, 3 + Math.round(8 * k * rand(0.7, 1.2)), 0.12 + 0.25 * k, dest);
+    } else if (k > 0.15 && Math.random() < 0.6) {
+      this._rattle(t + 0.01, k * 0.6, 1 + Math.round(2 * Math.random()), 0.06, dest);
+    }
+  }
+
+  // plastic and steel deforming against the surface: a short noise burst with stick-slip flutter
+  _crunch(t, k, m, r, dest) {
+    if (!this._canVoice()) return;
+    const c = this.ctx, dur = 0.08 + 0.17 * k;
+    const src = c.createBufferSource();
+    src.buffer = this._buf.pink;
+    const bp = this._filter('bandpass', (m.dull ? 900 : 1500) * r, 1.2, true);
+    const g = c.createGain();
+    const a = 0.05 + 0.14 * k;
+    g.gain.setValueAtTime(0.0001, t);
+    let tt = t;
+    g.gain.linearRampToValueAtTime(a, t + 0.004);
+    while (tt < t + dur - 0.015) { tt += rand(0.008, 0.025); g.gain.linearRampToValueAtTime(a * rand(0.2, 1) * (1 - (tt - t) / dur), tt); }
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    src.connect(bp).connect(g).connect(dest || this.sfxBus);
+    src.start(t, Math.random() * 2);
+    this._voice(src, [bp, g], t + dur + 0.02);
+  }
+
+  // what a hard hit throws about: pebbles skittering, dirt pattering, bark cracking, sand hiss, mud
+  _debris(t, k, kind, dest) {
+    const n = Math.round(2 + 6 * k);
+    for (let i = 0; i < n; i++) {
+      const tt = t + rand(0.01, 0.12 + 0.3 * k);
+      const a = (0.008 + 0.03 * k) * rand(0.4, 1);
+      if (kind === 'pebble' || kind === 'gravel') this._burst({ t: tt, dur: rand(0.004, 0.012), f: rand(2500, 5500), q: rand(3, 6), amp: a, attack: 0.0005, dest });
+      else if (kind === 'bark') this._burst({ t: tt, dur: rand(0.01, 0.03), f: rand(900, 1800), q: rand(3, 6), amp: a * 0.8, attack: 0.0008, dest });
+      else if (kind === 'sand') this._burst({ t: tt, dur: rand(0.04, 0.1), f: rand(4000, 7000), q: 0.6, amp: a * 0.5, attack: 0.01, dest });
+      else if (kind === 'mud') { if (i < 2) this._burst({ t: tt, dur: rand(0.08, 0.15), buf: 'pink', f: rand(250, 450), f1: rand(600, 900), q: 5, amp: a * 1.2, attack: 0.015, dest }); }
+      else this._burst({ t: tt, dur: rand(0.02, 0.05), buf: 'brown', type: 'lowpass', f: rand(500, 900), q: 0.7, amp: a, attack: 0.002, dest });
+    }
+  }
+
+  // one tyre meeting the ground after being airborne: a soft rubber thump, a bit of the surface, and on
+  // hard touchdowns the suspension compressing
+  _touch(now, e) {
+    const k = clamp(num(e.speed) / 3);
+    if (k < 0.05) return;
+    const m = MAT[e.mat] || MAT.dirt;
+    const r = rand(0.9, 1.1), t = now + 0.002;
+    const dest = this._spot(e.p, 1);
+    this._burst({ t, dur: 0.05 + 0.06 * k, buf: 'brown', type: 'lowpass', f: rand(180, 260) * r, q: 0.8, amp: 0.04 + 0.16 * k, attack: 0.003, dest });
+    this._tone({ t, dur: 0.06 + 0.05 * k, f0: 66 * r, f1: 44 * r, amp: 0.03 + 0.1 * k, attack: 0.002, dest });
+    if (!m.dull) this._burst({ t, dur: 0.015 + 0.02 * k, f: rand(m.knock[0], m.knock[1]) * r * 0.8, q: m.kq, amp: 0.01 + 0.04 * k, attack: 0.0008, dest });
+    else this._debris(t + 0.01, k * 0.4, m.debris, dest);
+    if (k > 0.4) this._springTick(t + 0.02, k, dest);
+  }
+
+  // a tyre leaving the ground: the rubber unsticking and, if the suspension was loaded, the shock
+  // topping out against its droop limit
+  _release(now, e) {
+    const dest = this._spot(e.p, 0.6);
+    const t = now + 0.002;
+    this._burst({ t, dur: 0.02, f: rand(550, 850), q: 3, amp: 0.008, attack: 0.002, dest });
+    if (num(e.c) > 0.05) this._springTick(t + 0.01, clamp(num(e.c) * 4), dest);
+  }
+
+  // the whole truck leaving the ground: suspension extending
+  _takeoff(now, e) {
+    this._creak(now + 0.005, clamp(0.3 + num(e.up) * 0.2));
+  }
+
+  // the whole truck landing: the tyres already play their own touchdowns, so this adds the weight. Hard
+  // landings get a heavy chassis thump and a rattle of loose parts; scaled by landing speed and airtime.
+  _land(now, e) {
+    const v = num(e.speed), air = num(e.air);
+    const k = clamp((v - 1.2) / 5) * clamp(0.5 + air);
+    if (k < 0.05) return;
+    const dest = this._spot(e.p, 1.5);
+    const r = rand(0.92, 1.08), t = now + 0.004;
+    this._tone({ t, dur: 0.2 + 0.2 * k, f0: 62 * r, f1: 34 * r, amp: 0.08 + 0.3 * k, attack: 0.003, dest, echo: this._env.echo > 0.2 ? 1 : 0 });
+    this._burst({ t, dur: 0.1 + 0.1 * k, buf: 'brown', type: 'lowpass', f: 320 * r, q: 0.7, amp: 0.06 + 0.22 * k, attack: 0.003, dest });
+    if (k > 0.35) this._rattle(t + 0.03, k, 4 + Math.round(9 * k), 0.2 + 0.25 * k, dest);
   }
 
   uiClick() {
