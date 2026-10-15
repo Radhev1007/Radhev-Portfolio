@@ -219,6 +219,23 @@ html.has-custom-cursor * {
   background-color: var(--color-ink);
 }
 
+/* Deep navy: a coloured block drawn from the project palettes (Thuna's
+   #101C33), the complement of the orange accent so both stay vivid. */
+@utility surface-deep {
+  --color-ink: #0e1626;
+  --color-ink-2: #131d31;
+  --color-ink-3: #1a263d;
+  --color-mute: #9aa6bd;
+  --color-faint: #5d6a83;
+  --color-line: rgb(220 234 255 / 0.14);
+  --ill-ink: #0e1626;
+  --ill-surface: #131d31;
+  --ill-surface2: #1a263d;
+  --ill-surface3: #23314c;
+  background-color: var(--color-ink);
+  color: var(--color-bone);
+}
+
 /* Full inversion: a cream block between the dark ones. */
 @utility surface-invert {
   --color-ink: #ffffff;
