@@ -152,9 +152,12 @@ export class UI {
   refreshChallenges(ch) {
     if (!ch) return;
     $('#ch-list').innerHTML = ch.list.map((c) => {
-      const b = ch.bestFor(c);
+      const b = ch.bestFor(c), medal = ch.medalOf ? ch.medalOf(c) : null;
+      const tier = c.tier ? `<span class="tier tier-${c.tier.toLowerCase()}">${c.tier}</span>` : '';
+      const par = c.par ? ` <span class="par">Par ${fmtTime(c.par)}</span>` : '';
+      const med = medal ? `<span class="medal medal-${medal}" title="${medal} medal"></span>` : '';
       return `<button class="ch-item ${ch.active?.id === c.id ? 'on' : ''}" data-id="${c.id}">
-        <h4>${c.name}</h4><p>${c.desc}</p>
+        <h4>${med}${c.name} ${tier}</h4><p>${c.desc}${par}</p>
         <div class="best">${ch.active?.id === c.id ? 'ACTIVE · TAP TO CLEAR' : 'BEST'}<b>${b ? fmtTime(b) : '—'}</b></div></button>`;
     }).join('') || '<p class="note">No challenges on this terrain.</p>';
     $$('.ch-item').forEach((b) => (b.onclick = () => this.emit('challenge', b.dataset.id)));

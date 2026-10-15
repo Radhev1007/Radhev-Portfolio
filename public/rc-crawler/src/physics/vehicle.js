@@ -391,6 +391,18 @@ export class CrawlerPhysics {
       }
     }
 
+    // ---- moving platforms: each loaded wheel standing on one pushes its end down; it then steps
+    if (hf.dyn) for (const d of hf.dyn) {
+      for (const w of this.wheels) {
+        if (!w.contact || !w.p) continue;
+        const y = d.heightAt(w.p.x, w.p.z);
+        if (y > -Infinity && Math.abs(y - w.p.y) < 0.05) d.load(w.p.x, w.p.z, w.fn);
+      }
+      d.step(dt);
+      for (const e of d.events) if (this.events.length < 64) this.events.push(e);
+      d.events.length = 0;
+    }
+
     // ---- tyre touchdown / lift-off, per wheel, at the substep it happens
     for (const w of this.wheels) {
       if (w.contact) {

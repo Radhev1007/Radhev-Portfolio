@@ -203,12 +203,17 @@ function setChallengeMarkers(id) {
   level.group.traverse((o) => { if (o.userData.markerId !== undefined) o.visible = o.userData.markerId === id; });
   for (const p of level.posts) if (p.markerId !== undefined) p.enabled = p.markerId === id;   // colliders follow visibility
 }
-function onChallengeEvent(type, c, a, b) {
+function onChallengeEvent(type, c, a, b, medal) {
   if (type === 'select') { setChallengeMarkers(c ? c.id : null); ui.setChallenge(c, c ? 'Drive through the start gate' : ''); }
   if (type === 'start') { ui.toast(c.name, 'Go! Timer started'); ui.setChallenge(c, 'In progress'); }
   if (type === 'checkpoint') ui.toast(`Checkpoint ${a + 1}/${b}`, '');
   if (type === 'fail') { ui.toast('Challenge failed', a); ui.setChallenge(c, `Failed — ${a}. Return to the start gate`); audio.impact(0.2, 'thud'); }
-  if (type === 'complete') { ui.toast('Challenge complete', `${fmtTime(a)}${b ? ' · New best!' : ''}`); ui.setChallenge(c, `Complete · ${fmtTime(a)}`); ui.refreshChallenges(challenges); }
+  if (type === 'complete') {
+    const m = medal ? ` · ${medal[0].toUpperCase() + medal.slice(1)} medal` : '';
+    ui.toast('Challenge complete', `${fmtTime(a)}${m}${b ? ' · New best!' : ''}`);
+    ui.setChallenge(c, `Complete · ${fmtTime(a)}${m}`);
+    ui.refreshChallenges(challenges);
+  }
 }
 
 // ------------------------------------------------------------ UI wiring
@@ -274,11 +279,21 @@ async function rebuildForQuality() {
 function recover() {
   if (!phys) return;
   audio.uiClick();
-  // Back to the trail's start. Righting the truck where it stood left it on
-  // whatever had trapped it (a log pile, a ledge), so it stayed stuck.
-  placeAtSpawn();
   tracks.reset();
-  ui.toast('Vehicle recovered', 'Back to the start');
+  // With a challenge active, retry it: back to just before its start gate, facing through it, without
+  // touching anything else. Otherwise back to the trail's start (righting the truck where it stood left it
+  // on whatever had trapped it).
+  const c = challenges.active;
+  if (c && c.gates?.length) {
+    const g = c.gates[0];
+    phys.placeAt(g.x - Math.sin(g.yaw) * 1.4, g.z - Math.cos(g.yaw) * 1.4, g.yaw);
+    resetStakes();
+    challenges.select(c.id);
+    ui.toast('Vehicle recovered', 'Back to the start of ' + c.name);
+  } else {
+    placeAtSpawn();
+    ui.toast('Vehicle recovered', 'Back to the start');
+  }
 }
 
 const unlockAudio = () => { audio.start().then(() => { audio.setMasterVolume(settings.volume / 100); if (level) audio.setEnvironment({ biome: level.def.biome, weather: settings.preset }); }); };
@@ -391,6 +406,7 @@ function tick(dt, forced) {
   if (state === 'play') challenges.update(dt, phys);
   updateEffects(dt);
   updateStakes(dt);
+  for (const d of level.dynamics || []) if (d.mesh) d.mesh.rotation.x = -d.a;
   contact.update(phys, level.hf);
   particles.update(dt, scene.fog);
   tracks.update(dt);

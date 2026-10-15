@@ -159,6 +159,7 @@ const rockyCanyon = {
   backdrop: { edgeHeight: 16, peak: 160, hills: 40, mesa: 70, trees: 0 },
   backdropSplat: (x, z, h, ny) => [0.55 + (1 - ny), 0.15, 0, 0.3, 0, 0, 0.1, 0],
   trailLayer: 3,
+  activityCut: true,          // activity pads are cut into the foot of the gorge walls as side alcoves
   build(ctx) {
     ctx.rocks.warmBase = 0.14;
     const path = ctx.path([[-8, -50], [0, -42], [9, -32], [7, -20], [-4, -10], [-10, 2], [-3, 14], [9, 22], [14, 33], [7, 43], [-3, 49]]);

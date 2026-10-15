@@ -1,5 +1,10 @@
 // Optional objectives: ordered gates (start -> checkpoints -> finish) with rules
-// noRollover / noStop / noTouch (stakes). One challenge active at a time.
+// noRollover / noStop / noTouch (stakes) / minY (fell off a bridge or ridge). One challenge active at a time.
+// Challenges with a par time (the activity sections) award a medal for a clean finish:
+// gold within par, silver within 1.4x par, bronze otherwise. Only clean runs finish at all, since any
+// broken rule restarts the run, so a medal always means a clean completion.
+export const MEDALS = ['bronze', 'silver', 'gold'];
+export function medalFor(c, time) { if (!c.par) return null; return time <= c.par ? 'gold' : time <= c.par * 1.4 ? 'silver' : 'bronze'; }
 
 const BEST_KEY = 'rccrawler.best.v1';
 function loadBest() { try { return JSON.parse(localStorage.getItem(BEST_KEY) || '{}'); } catch { return {}; } }
@@ -20,6 +25,7 @@ export class ChallengeManager {
   }
 
   bestFor(c) { return this.best[this.level.def.id + ':' + c.id]; }
+  medalOf(c) { return this.best[this.level.def.id + ':' + c.id + '#medal'] || null; }
 
   select(id) {
     this.active = this.list.find((c) => c.id === id) || null;
@@ -58,6 +64,10 @@ export class ChallengeManager {
     this.time += dt;
     // rules
     if (c.rules.noRollover && phys.upsideTimer > 0.4) return this.fail('Rolled over');
+    if (c.rules.minY !== undefined && phys.pos.y < c.rules.minY) {
+      const z = c.rules.zone;
+      if (!z || Math.hypot(phys.pos.x - z.x, phys.pos.z - z.z) < z.r) return this.fail('Fell off');
+    }
     if (c.rules.noStop) {
       if (Math.abs(phys.stats.speed) < 0.12) this.stopT += dt; else this.stopT = 0;
       if (this.stopT > 1.2) return this.fail('Stopped in the creek');
@@ -73,8 +83,11 @@ export class ChallengeManager {
         this.state = 'done';
         const key = this.level.def.id + ':' + c.id;
         const isBest = !this.best[key] || this.time < this.best[key];
-        if (isBest) { this.best[key] = this.time; saveBest(this.best); }
-        this.onEvent('complete', c, this.time, isBest);
+        if (isBest) this.best[key] = this.time;
+        const medal = medalFor(c, this.time);
+        if (medal && MEDALS.indexOf(medal) > MEDALS.indexOf(this.best[key + '#medal'])) this.best[key + '#medal'] = medal;
+        saveBest(this.best);
+        this.onEvent('complete', c, this.time, isBest, medal);
       } else this.onEvent('checkpoint', c, this.next - 1, gates.length - 2);
     }
   }

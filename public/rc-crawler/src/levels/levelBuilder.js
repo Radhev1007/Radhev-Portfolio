@@ -7,6 +7,7 @@ import { RockField } from '../terrain/rocks.js';
 import { Vegetation } from '../terrain/vegetation.js';
 import { createTerrainMaterial, createRockMaterial, sharedTerrainUniforms } from '../terrain/terrainMaterial.js';
 import { createWaterMesh, createWaterfall } from '../terrain/water.js';
+import { buildActivities } from './activities.js';
 
 const yieldFrame = () => new Promise((r) => setTimeout(r, 0));
 
@@ -312,6 +313,13 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   await yieldFrame();
   // level-specific terrain + layout
   const layout = def.build(ctx);
+  // optional obstacle sections and stunt areas beside the trail (never on it); see activities.js
+  const trailBefore = layout.path ? layout.path.pts.map((p) => ctx.hf.baseHeightAt(p.x, p.z)) : [];
+  const activities = buildActivities(ctx, def, layout, TrailPath);
+  // guard: the activities must leave the original trail exactly as it was
+  activities.trailDelta = layout.path ? Math.max(0, ...layout.path.pts.map((p, i) => Math.abs(ctx.hf.baseHeightAt(p.x, p.z) - trailBefore[i]))) : 0;
+  if (activities.trailDelta > 0.005) console.warn(`[activities] ${def.id}: trail centreline moved by ${activities.trailDelta.toFixed(3)} m`);
+  layout.challenges = [...(layout.challenges || []), ...activities.challenges];
   // murky puddles inside mud pits
   for (const pd of ctx.pendingPuddles || []) {
     let mn = 1e9;
@@ -360,6 +368,10 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   hf.finalizePhysics();
   ctx.rocks.rasterize(hf);
   for (const g of ctx.logsPhys) hf.rasterize(g.attributes.position.array, g.index ? g.index.array : null, SURF.WOOD, 0.02);
+  // activity props (planks, beams, tyres): their real top surfaces become collision, like rocks
+  for (const pr of ctx.props?.phys || []) hf.rasterize(pr.geo.attributes.position.array, pr.geo.index ? pr.geo.index.array : null, pr.surf, 0);
+  // moving platforms (seesaws) are part of every height query
+  hf.dyn = ctx.dynamics?.length ? ctx.dynamics : null;
   // water bodies
   hf.waterBodies = ctx.water;
   if (ctx.water.length) {
@@ -388,6 +400,8 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   for (const w of ctx.water) group.add(createWaterMesh(hf, w, quality === 'low' ? 0.5 : 0.25));
   for (const wf of ctx.waterfalls) group.add(createWaterfall(wf.x, wf.y0, wf.y1, wf.z, wf.width, wf.yaw));
   group.add(buildMarkers(ctx));
+  if (ctx.props) group.add(ctx.props.build());
+  for (const d of ctx.dynamics || []) group.add(buildSeesawMesh(d));
   onProgress(0.85, 'Raising mountains');
   await yieldFrame();
   const backdrop = buildBackdrop(ctx, terrainMat);
@@ -398,7 +412,7 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
 
   onProgress(1, 'Ready');
   return {
-    def, hf, group, ctx, trunks, posts: ctx.posts || [],
+    def, hf, group, ctx, trunks, posts: ctx.posts || [], dynamics: ctx.dynamics || [], activities,
     spawn: layout.spawn, intro: layout.intro || layout.spawn,
     challenges: layout.challenges || [],
     markers: ctx.markers,
@@ -528,6 +542,28 @@ function buildBackdrop(ctx, terrainMat) {
   return grp;
 }
 
+// the seesaw's moving plank: pivot group at the fulcrum, plank rotated each frame from the platform angle
+function buildSeesawMesh(d) {
+  const pivot = new THREE.Group();
+  pivot.position.set(d.px, d.py, d.pz);
+  pivot.rotation.y = d.yaw;
+  const { halfLen, halfWid, thick } = d.meshSpec;
+  const plankMat = new THREE.MeshStandardMaterial({ color: 0x8a6a48, roughness: 0.85 });
+  const tilt = new THREE.Group();
+  for (let i = 0; i < Math.round(halfLen * 2 / 0.16); i++) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(halfWid * 2, thick, 0.145), plankMat);
+    m.position.set(0, thick / 2, -halfLen + 0.08 + i * 0.16);
+    m.castShadow = m.receiveShadow = true;
+    tilt.add(m);
+  }
+  const rail = new THREE.MeshStandardMaterial({ color: 0x5e4630, roughness: 0.9 });
+  for (const sg of [-1, 1]) { const r = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, halfLen * 2), rail); r.position.set(sg * (halfWid - 0.03), -0.025, 0); r.castShadow = true; tilt.add(r); }
+  tilt.rotation.x = -d.a;
+  pivot.add(tilt);
+  d.mesh = tilt;
+  return pivot;
+}
+
 // ---------------------------------------------------------------- Markers (lane signs, gates, stakes)
 // Every marker is also registered as a solid physics post (vertical cylinder) with the same position,
 // radius and height as its mesh: lane signs and gate posts are steel, stakes are the red-and-white poles.
@@ -561,6 +597,8 @@ function buildMarkers(ctx) {
       group.add(g);
       // steel lane signs bend over under a harder hit than a stake (see CrawlerPhysics), never trap the truck
       posts.push({ x: m.x, z: m.z, r: 0.03, y0: y, top: y + 0.9, mat: 'metal', kind: 'sign', breakable: true, snapV: 1.5, limit: 14, pushTime: 0.5, mesh: g });
+    } else if ((m.type === 'gate' || m.type === 'finish' || m.type === 'start') && m.hidden) {
+      // checkpoint line only (e.g. inside a slalom, where the stakes are the gate): no posts
     } else if (m.type === 'gate' || m.type === 'finish' || m.type === 'start') {
       for (const sgn of [-1, 1]) {
         const g = new THREE.Group();

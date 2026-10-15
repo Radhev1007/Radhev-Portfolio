@@ -54,14 +54,20 @@ export class Heightfield {
     return d + (c - d) * (1 - tx) + (b - d) * (1 - tz);
   }
 
-  heightAt(x, z) { return this._sample(this.phys || this.base, x, z); }
+  heightAt(x, z) {
+    let h = this._sample(this.phys || this.base, x, z);
+    // moving platforms (seesaw planks) are solid ground wherever they are higher than the terrain
+    if (this.dyn) for (const d of this.dyn) { const y = d.heightAt(x, z); if (y > h) h = y; }
+    return h;
+  }
   baseHeightAt(x, z) { return this._sample(this.base, x, z); }
 
   normalAt(x, z, out, phys = true, eps = 0) {
     const e = eps || this.cell;
     const arr = phys && this.phys ? this.phys : this.base;
-    const hl = this._sample(arr, x - e, z), hr = this._sample(arr, x + e, z);
-    const hd = this._sample(arr, x, z - e), hu = this._sample(arr, x, z + e);
+    const S = phys && this.dyn ? (px, pz) => this.heightAt(px, pz) : (px, pz) => this._sample(arr, px, pz);
+    const hl = S(x - e, z), hr = S(x + e, z);
+    const hd = S(x, z - e), hu = S(x, z + e);
     let nx = hl - hr, ny = 2 * e, nz = hd - hu;
     const l = Math.hypot(nx, ny, nz);
     out.x = nx / l; out.y = ny / l; out.z = nz / l;
@@ -69,6 +75,7 @@ export class Heightfield {
   }
 
   surfaceAt(x, z) {
+    if (this.dyn) for (const d of this.dyn) { const y = d.heightAt(x, z); if (y > -Infinity && y >= this._sample(this.phys || this.base, x, z) - 0.001) return SURF.WOOD; }
     const i = Math.round((x + this.half) / this.cell), j = Math.round((z + this.half) / this.cell);
     if (i < 0 || j < 0 || i > this.n || j > this.n) return SURF.ROCK;
     return this.surf[j * this.v + i];
