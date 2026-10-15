@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/Animations/Button";
-import { HeroIllustration } from "@/components/Illustrations/HeroIllustration";
 import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { intro, transition } from "@/lib/motion";
+import { HeroEditor } from "./HeroEditor";
 import { HeroIdentity } from "./HeroIdentity";
 import { HeroVideo } from "./HeroVideo";
 import { ScrollCue } from "./ScrollCue";
@@ -14,8 +14,8 @@ import { SocialLinks } from "./SocialLinks";
 /**
  * Two columns rather than two stacked rows: the left carries the whole
  * written argument — disciplines, display line, statement, actions — and
- * the right is given over to an animated design-session illustration —
- * the work itself, shown rather than described.
+ * the right is given over to a design editor mid-session — the work
+ * itself, shown rather than described.
  */
 export function Hero() {
   const reduced = usePrefersReducedMotion();
@@ -33,8 +33,8 @@ export function Hero() {
         {/* The illustration leads on narrow screens, right-hand column on wide
             ones. It sits behind the written column's stacking context, so the
             links and buttons there still take their own clicks. */}
-        <div className="order-1 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px]">
-          <HeroIllustration delay={intro.objects} />
+        <div className="order-1 mx-auto w-full max-w-[420px] md:order-2 md:col-span-6 md:col-start-7 md:max-w-[640px]">
+          <HeroEditor delay={intro.objects} />
         </div>
 
         <div className="relative z-10 order-2 md:order-1 md:col-span-6">
