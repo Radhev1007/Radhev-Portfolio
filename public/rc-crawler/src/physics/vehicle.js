@@ -40,6 +40,7 @@ export const PHYS = {
   stakeSnapV: 1.0,      // m/s closing speed
   stakeLimit: 9,        // N·s of accumulated impulse
   stakeHalfLife: 0.5,   // s
+  stakePushTime: 0.4,   // s of contact with the throttle held before a post gives way regardless of force
 };
 
 // Collision boxes in body space, measured from the rendered model (wheels excluded), against upright
@@ -201,12 +202,22 @@ export class CrawlerPhysics {
     this.accum += Math.min(dt, 0.05);
     let steps = 0;
     this.stats.impact = 0; this.stats.scrape = 0;
+    // posts touched during the previous frame's substeps, before the set is refilled for this frame
+    const prevTouched = this._prevTouched || (this._prevTouched = new Set());
+    prevTouched.clear(); for (const t of this.touched) prevTouched.add(t);
     this.touched.clear();
     // stake stress fades between hits; past the limit the stake snaps and stops colliding
     const decay = Math.pow(0.5, Math.min(dt, 0.05) / PHYS.stakeHalfLife);
     for (const t of this.posts) {
-      if (!t.breakable || t.broken || !t.stress) continue;
-      if (t.stress > PHYS.stakeLimit || (t.hitV || 0) > PHYS.stakeSnapV) {
+      if (!t.breakable || t.broken) continue;
+      // driving into a post with the throttle held: on a slope with the wheels spinning the push can be
+      // too weak to reach the force limit, so being stuck against it for long enough breaks it anyway
+      if (prevTouched.has(t) && Math.abs(this.throttle) > 0.1) t.pushT = (t.pushT || 0) + Math.min(dt, 0.05);
+      else t.pushT = Math.max(0, (t.pushT || 0) - Math.min(dt, 0.05) * 2);
+      if ((t.pushT || 0) > (t.pushTime ?? PHYS.stakePushTime)) t.stress = Infinity;
+      if (!t.stress) continue;
+      // per-post limits: steel signs and gate posts (snapV 1.5, limit 14) are tougher than fibreglass stakes
+      if (t.stress > (t.limit ?? PHYS.stakeLimit) || (t.hitV || 0) > (t.snapV ?? PHYS.stakeSnapV)) {
         t.broken = true; t.enabled = false;
         t.fallDir = new THREE.Vector3(-(t.pushN?.x || 0), 0, -(t.pushN?.z || 0));
         if (t.fallDir.lengthSq() < 1e-6) t.fallDir.set(Math.sin(this.yaw), 0, Math.cos(this.yaw));

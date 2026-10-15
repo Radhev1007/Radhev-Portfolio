@@ -1223,6 +1223,14 @@ export class AudioEngine {
   _stakeSnap(now, e) {
     const dest = this._spot(e.p, 1.2), r = rand(0.92, 1.08), t = now + 0.002;
     const k = clamp(0.4 + num(e.speed) / 6);
+    if (e.mat === 'metal') {
+      // steel post folding at the base: a dull clank, a short inharmonic ring, the base plate grinding
+      this._tone({ t, dur: 0.12, f0: 420 * r, f1: 360 * r, amp: 0.05 + 0.06 * k, attack: 0.001, dest });
+      this._tone({ t, dur: 0.18, f0: 1130 * r, amp: 0.018 + 0.025 * k, attack: 0.0008, dest });
+      this._tone({ t, dur: 0.1, f0: 1870 * r, amp: 0.01 + 0.015 * k, attack: 0.0008, dest });
+      this._crunch(t + 0.01, 0.4 * k, MAT.rock, r, dest);
+      return;
+    }
     this._burst({ t, dur: 0.012, f: rand(3800, 5200) * r, q: 2, amp: 0.06 + 0.08 * k, attack: 0.0004, dest });
     this._burst({ t: t + 0.004, dur: 0.06 + 0.04 * k, f: rand(1800, 2600) * r, q: 3, amp: 0.025 + 0.04 * k, attack: 0.001, dest });
     for (let i = 0; i < 4; i++) this._burst({ t: t + rand(0.006, 0.05), dur: rand(0.004, 0.01), f: rand(2500, 4500), q: 5, amp: 0.012 * k * rand(0.5, 1), attack: 0.0004, dest });
@@ -1232,6 +1240,12 @@ export class AudioEngine {
   // the snapped stake hitting the ground: a hollow tock and a short bounce-clatter
   _stakeClatter(now, e) {
     const dest = this._spot(e.p, 1), t = now + 0.002, k = clamp(num(e.speed) / 3);
+    if (e.mat === 'metal') {
+      this._tone({ t, dur: 0.15, f0: rand(900, 1200), amp: 0.02 + 0.03 * k, attack: 0.0008, dest });
+      this._burst({ t, dur: 0.05, buf: 'brown', type: 'lowpass', f: 400, q: 0.7, amp: 0.03 + 0.05 * k, attack: 0.002, dest });
+      this._tone({ t: t + rand(0.07, 0.1), dur: 0.08, f0: rand(900, 1200), amp: 0.01 + 0.015 * k, attack: 0.0008, dest });
+      return;
+    }
     this._burst({ t, dur: 0.04, f: rand(1000, 1400), q: 6, amp: 0.02 + 0.04 * k, attack: 0.001, dest });
     this._tone({ t, dur: 0.05, f0: rand(300, 380), amp: 0.015 + 0.025 * k, attack: 0.001, dest });
     this._burst({ t: t + rand(0.06, 0.09), dur: 0.025, f: rand(1100, 1500), q: 6, amp: 0.01 + 0.015 * k, attack: 0.001, dest });

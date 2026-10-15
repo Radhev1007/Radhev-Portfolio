@@ -559,7 +559,8 @@ function buildMarkers(ctx) {
       g.add(sym, sym2);
       g.position.set(m.x, y, m.z); g.rotation.y = m.yaw;
       group.add(g);
-      posts.push({ x: m.x, z: m.z, r: 0.03, y0: y, top: y + 0.9, mat: 'metal', kind: 'sign' });
+      // steel lane signs bend over under a harder hit than a stake (see CrawlerPhysics), never trap the truck
+      posts.push({ x: m.x, z: m.z, r: 0.03, y0: y, top: y + 0.9, mat: 'metal', kind: 'sign', breakable: true, snapV: 1.5, limit: 14, pushTime: 0.5, mesh: g });
     } else if (m.type === 'gate' || m.type === 'finish' || m.type === 'start') {
       for (const sgn of [-1, 1]) {
         const g = new THREE.Group();
@@ -572,7 +573,7 @@ function buildMarkers(ctx) {
         g.userData.markerId = m.id;
         group.add(g);
         // gate posts only exist while their challenge's markers are shown (see setChallengeMarkers)
-        posts.push({ x: px, z: pz, r: 0.03, y0: g.position.y, top: g.position.y + 0.9 * 1.4, mat: 'metal', kind: 'gate', markerId: m.id, enabled: false });
+        posts.push({ x: px, z: pz, r: 0.03, y0: g.position.y, top: g.position.y + 0.9 * 1.4, mat: 'metal', kind: 'gate', markerId: m.id, enabled: false, breakable: true, snapV: 1.5, limit: 14, pushTime: 0.5, mesh: g });
       }
     } else if (m.type === 'stake') {
       const g = new THREE.Group();
