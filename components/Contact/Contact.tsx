@@ -20,18 +20,18 @@ export function Contact() {
     <section
       id="contact"
       aria-label="Contact"
-      className="relative gutter mx-auto flex min-h-[100svh] max-w-[1600px] flex-col py-24 md:py-32"
+      className="relative gutter mx-auto flex min-h-[100svh] max-w-[1600px] flex-col section-y"
     >
       <SectionHeader index="06" label="Contact" />
 
       <div className="flex flex-1 flex-col justify-center py-16">
-        <h2 className="max-w-[16ch] text-headline font-medium leading-[0.92] tracking-[-0.045em]">
+        <h2 className="section-title max-w-[16ch]">
           <TextReveal as="span" text="Let's build" className="block" />
-          <TextReveal as="span" text="something good." delay={0.1} className="block text-bone/55" />
+          <TextReveal as="span" text="something good." delay={0.1} className="block font-accent text-bone/60" />
         </h2>
 
         <Reveal delay={0.15}>
-          <p className="mt-8 max-w-[46ch] text-lead leading-[1.45] tracking-[-0.01em] text-mute">
+          <p className="section-intro mt-6 md:mt-8">
             Have a complex product, ambitious idea or design challenge? Let&apos;s talk.
           </p>
         </Reveal>

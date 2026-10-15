@@ -17,11 +17,15 @@ export function Specialisms() {
     <section
       id="specialisms"
       aria-label="What I specialise in"
-      className="surface-invert relative gutter mx-auto max-w-[1600px] py-24 md:py-32"
+      className="surface-invert relative gutter mx-auto max-w-[1600px] section-y"
     >
-      <SectionHeader index="03" label="What I specialise in" countNoun="areas" />
+      <SectionHeader index="03" label="Specialisms" count={specialisms.length} countNoun="Areas" />
 
-      <ul className="mt-14 md:mt-20">
+      <h2 className="section-title mt-8 max-w-[14ch] md:mt-12">
+        What I <span className="font-accent text-bone/60">specialise in</span>
+      </h2>
+
+      <ul className="mt-12 md:mt-16">
         {specialisms.map((s, i) => (
           <li key={s.id}>
             <Reveal delay={i * 0.05}>

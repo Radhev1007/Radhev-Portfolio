@@ -17,11 +17,11 @@ export function Process() {
 
 function Intro() {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col">
       <SectionHeader index="04" label="Process" />
-      <TextReveal as="h2" text="How I Design" className="text-headline font-medium leading-[0.9] tracking-[-0.05em]" />
-      <Reveal delay={0.15}>
-        <p className="max-w-sm text-body leading-relaxed text-bone/80">
+      <TextReveal as="h2" text="How I Design" className="section-title mt-8 md:mt-12" />
+      <Reveal delay={0.15} className="mt-6 md:mt-8">
+        <p className="section-intro">
           A flexible, evidence-led process — six stages that move from understanding to a refined, shippable product.
         </p>
       </Reveal>
@@ -136,9 +136,9 @@ function StackedProcess() {
   const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <section id="process" aria-label="How I design" className="relative gutter py-28">
+    <section id="process" aria-label="How I design" className="relative gutter section-y">
       <Intro />
-      <ol ref={ref} className="relative mt-16 flex flex-col gap-14 pl-10">
+      <ol ref={ref} className="relative mt-12 flex flex-col gap-14 pl-10">
         <span aria-hidden className="absolute bottom-0 left-[7px] top-0 w-px bg-bone/20" />
         <motion.span aria-hidden className="absolute bottom-0 left-[7px] top-0 w-px origin-top bg-accent" style={{ scaleY }} />
         {processSteps.map((s, i) => (

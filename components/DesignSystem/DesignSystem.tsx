@@ -33,15 +33,15 @@ export function DesignSystem() {
   return (
     <section ref={ref} aria-label="Design beyond the screen" className="relative md:h-[280vh]">
       <div className="flex items-center md:sticky md:top-0 md:min-h-[100svh]">
-        <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 gutter py-24 md:grid-cols-12 md:gap-8">
+        <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 gutter section-y md:grid-cols-12 md:gap-8">
           <div className="md:col-span-5">
             <SectionHeader index="02" label="Systems thinking" />
             <TextReveal
               as="h2"
               text="Design Beyond the Screen"
-              className="mt-8 max-w-[12ch] text-title font-medium leading-[0.95] tracking-[-0.045em]"
+              className="section-title mt-8 max-w-[12ch] md:mt-12"
             />
-            <p className="mt-6 max-w-sm text-body leading-relaxed text-mute">
+            <p className="section-intro mt-6 md:mt-8">
               Interfaces are systems before they are screens. A shared set of decisions keeps products coherent as they grow.
             </p>
 

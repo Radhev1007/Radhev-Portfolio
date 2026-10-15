@@ -51,20 +51,20 @@ export function Experience() {
   const focus = hover ?? open;
 
   return (
-    <section id="experience" aria-label="Experience" className="surface-invert relative py-24 md:py-40">
+    <section id="experience" aria-label="Experience" className="surface-invert relative section-y">
       <div className="gutter mx-auto max-w-[1600px]">
         <SectionHeader index="05" label="Experience" count={experience.length} countNoun="Roles" />
 
-        <div className="mt-10 grid grid-cols-1 gap-14 md:mt-16 lg:grid-cols-12 lg:gap-8">
+        <div className="mt-8 grid grid-cols-1 gap-12 md:mt-12 lg:grid-cols-12 lg:gap-8">
           {/* ── Summary ─────────────────────────────── */}
           <div className="lg:col-span-4 lg:sticky lg:top-28 lg:self-start">
             <Reveal>
-              <h2 className="max-w-[12ch] text-title font-medium leading-[0.95] tracking-[-0.045em]">
-                Where I&apos;ve <span className="font-accent text-bone/70">worked</span>
+              <h2 className="section-title max-w-[12ch]">
+                Where I&apos;ve <span className="font-accent text-bone/60">worked</span>
               </h2>
             </Reveal>
 
-            <dl className="mt-10 grid grid-cols-2 border-t border-line">
+            <dl className="mt-12 grid grid-cols-2 border-t border-line md:mt-16">
               <div className="border-r border-line py-6 pr-6">
                 <dt className="label">Experience</dt>
                 <dd className="mt-3 text-subtitle font-medium leading-none tracking-[-0.04em]" suppressHydrationWarning>

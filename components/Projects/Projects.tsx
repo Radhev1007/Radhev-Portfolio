@@ -30,19 +30,19 @@ export function Projects() {
       {/* The padding lives here, not on the section: `surface-invert` paints
           this element, so padding on the parent sits outside the white and
           leaves the header flush against its top edge. */}
-      <div className="surface-invert relative gutter mx-auto max-w-[1600px] py-24 md:py-32">
+      <div className="surface-invert relative gutter mx-auto max-w-[1600px] section-y">
         <SectionHeader index="01" label="Selected Work" count={projects.length} />
 
         {/* Heading on the left; on the right, what the work is and an index
             of it, so the header previews the section instead of only
             announcing it. */}
-        <div className="mt-10 grid grid-cols-1 gap-12 md:mt-14 md:grid-cols-12 md:gap-8">
+        <div className="mt-8 grid grid-cols-1 gap-12 md:mt-12 md:grid-cols-12 md:gap-8">
           <Parallax speed={30} className="md:col-span-6">
-            <h2 className="text-display leading-[0.88]">
-              <TextReveal as="span" text="Selected" className="block font-medium tracking-[-0.05em]" />
-              <TextReveal as="span" text="Work" delay={0.1} className="block font-accent text-bone/85" />
+            <h2 className="section-title">
+              <TextReveal as="span" text="Selected" className="block" />
+              <TextReveal as="span" text="Work" delay={0.1} className="block font-accent text-bone/60" />
             </h2>
-            <ul className="mt-8 flex flex-wrap gap-2 md:mt-10">
+            <ul className="mt-12 flex flex-wrap gap-2 md:mt-16">
               {focusAreas.map((area) => (
                 <li key={area} className="label border border-line px-3 py-2 !text-bone">
                   {area}
@@ -52,12 +52,12 @@ export function Projects() {
           </Parallax>
 
           <Reveal className="md:col-span-5 md:col-start-8 md:self-end" delay={0.2}>
-            <p className="max-w-md text-lead leading-snug text-bone/70">
+            <p className="section-intro">
               A selection of complex digital products, enterprise platforms and interfaces I&apos;ve
               designed.
             </p>
 
-            <ol className="mt-8 border-b border-line md:mt-10">
+            <ol className="mt-12 border-b border-line md:mt-16">
               {projects.map((p) => (
                 <li key={p.slug} className="border-t border-line">
                   <button

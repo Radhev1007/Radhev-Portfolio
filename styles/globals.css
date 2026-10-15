@@ -140,6 +140,33 @@ html.has-custom-cursor * {
   color: var(--color-mute);
 }
 
+/* ── Section rhythm ─────────────────────────────────────────────
+   Every section shares one title size, one intro style and one vertical
+   padding, so the page reads as a single system. Header → title is
+   mt-8 / md:mt-12 and title → content is mt-12 / md:mt-16 at the call site. */
+@utility section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-headline);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+}
+
+@utility section-intro {
+  max-width: 46ch;
+  font-size: var(--text-lead);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--color-mute);
+}
+
+@utility section-y {
+  padding-block: 6rem;
+  @media (min-width: 48rem) {
+    padding-block: 8rem;
+  }
+}
+
 /* Frosted chip for use ON media (project covers are always dark), so it is
    theme-independent: dark glass + fixed off-white text. */
 @utility glass {
