@@ -40,10 +40,11 @@ export const site = {
   heroCtas: {
     secondary: { label: "View LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a" },
   },
-  /** `icon` marks the profiles shown as icons in the hero's social rail. */
+  /** Shown as icons in the hero's social rail, in this order. */
   socials: [
-    { label: "LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a" },
     { label: "Behance", href: "https://www.behance.net/radhev1999707d", icon: "behance" },
+    { label: "LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a", icon: "linkedin" },
+    { label: "Instagram", href: "https://instagram.com/_r_idz", icon: "instagram" },
   ],
 } as const;
 
