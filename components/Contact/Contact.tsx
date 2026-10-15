@@ -98,7 +98,7 @@ export function Contact() {
                 >
                   <span className="label transition-colors duration-300 group-hover:!text-accent">{c.label}</span>
                   <span
-                    className={`min-w-0 break-words font-medium leading-[1.1] tracking-[-0.03em] ${
+                    className={`min-w-0 break-words font-light leading-[1.1] tracking-[-0.02em] ${
                       i === 0 ? "text-lead text-accent sm:text-subtitle" : "text-lead md:text-[1.5rem]"
                     }`}
                   >

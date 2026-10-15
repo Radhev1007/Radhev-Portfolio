@@ -67,13 +67,13 @@ export function Experience() {
             <dl className="mt-12 grid grid-cols-2 border-t border-line md:mt-16">
               <div className="border-r border-line py-6 pr-6">
                 <dt className="label">Experience</dt>
-                <dd className="mt-3 text-subtitle font-medium leading-none tracking-[-0.04em]" suppressHydrationWarning>
+                <dd className="mt-3 text-subtitle font-light leading-none tracking-[-0.03em]" suppressHydrationWarning>
                   {years}+<span className="font-accent text-mute"> yrs</span>
                 </dd>
               </div>
               <div className="py-6 pl-6">
                 <dt className="label">Companies</dt>
-                <dd className="mt-3 text-subtitle font-medium leading-none tracking-[-0.04em]">
+                <dd className="mt-3 text-subtitle font-light leading-none tracking-[-0.03em]">
                   {String(experience.length).padStart(2, "0")}
                 </dd>
               </div>
@@ -140,7 +140,7 @@ export function Experience() {
 
                     <span className="min-w-0">
                       <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                        <span className="text-subtitle font-medium leading-[1.05] tracking-[-0.035em]">
+                        <span className="text-subtitle font-light leading-[1.05] tracking-[-0.025em]">
                           {role.company}
                         </span>
                         {current && (

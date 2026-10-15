@@ -53,7 +53,7 @@ export function DesignSystem() {
                     type="button"
                     onClick={() => setStep(i)}
                     aria-pressed={i === step}
-                    className="text-left text-subtitle font-medium tracking-[-0.03em] md:text-subtitle"
+                    className="text-left text-subtitle font-light tracking-[-0.025em] md:text-subtitle"
                     animate={{ opacity: i === step ? 1 : 0.5, x: i === step ? 0 : -6 }}
                     transition={{ duration: 0.6, ease: ease.outExpo }}
                   >

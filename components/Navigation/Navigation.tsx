@@ -214,7 +214,7 @@ export function Navigation() {
                         setMenuOpen(false);
                         if (!("href" in item && item.href)) go(item.id)(e);
                       }}
-                      className="flex items-baseline gap-4 py-2 text-headline font-medium leading-[1.05] tracking-[-0.04em] md:text-headline"
+                      className="flex items-baseline gap-4 py-2 text-headline font-light leading-[1.05] tracking-[-0.03em] md:text-headline"
                     >
                       <span className="label">0{i + 1}</span>
                       {item.label}

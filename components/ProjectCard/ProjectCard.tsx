@@ -129,7 +129,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
 
         <div className="flex flex-col gap-4">
           <motion.h3
-            className="text-subtitle font-medium leading-[1] tracking-[-0.035em]"
+            className="text-subtitle font-light leading-[1] tracking-[-0.025em]"
             style={{ x: interactive ? titleX : 0 }}
           >
             <a {...external} className="focus-visible:outline-offset-8" data-cursor="view">
