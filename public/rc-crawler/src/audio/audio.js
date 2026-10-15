@@ -349,9 +349,9 @@ export class AudioEngine {
     this.mOut = this._gain(0, this.sfxBus);
 
     // exhaust: low-passed, opens up with revs and throttle
-    this.eLP = this._filter('lowpass', 500, 0.9);
+    this.eLP = this._filter('lowpass', 500, 0.6);
     this.eShape = c.createWaveShaper();
-    this.eShape.curve = this._satCurve(2.2);
+    this.eShape.curve = this._satCurve(1.3);
     this.eShape.oversample = '2x';
     this.eDrive = this._gain(1);
     this.eDrive.connect(this.eShape).connect(this.eLP).connect(this.mOut);
@@ -362,8 +362,10 @@ export class AudioEngine {
     this.eLP.connect(this.eBody).connect(this.mOut);
 
     // firing pulses: harmonic-rich, falling off like a real exhaust note
-    const N = 24, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
-    for (let n = 1; n <= N; n++) im[n] = (n % 2 ? 1 : 0.65) / Math.pow(n, 0.85) * (n % 3 === 0 ? 1.25 : 1);
+    // Overtones fall away steeply: a bright, flat series is what made the
+    // first version read as an electronic buzz.
+    const N = 12, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
+    for (let n = 1; n <= N; n++) im[n] = (n % 2 ? 1 : 0.7) / Math.pow(n, 1.5);
     this.eWave = c.createPeriodicWave(re, im);
     this.eFire = this._osc('sine', 38);
     this.eFire.setPeriodicWave(this.eWave);
@@ -382,17 +384,22 @@ export class AudioEngine {
     // combustion noise, amplitude-gated by the firing pulse
     this.vWhite = this._loop(this._buf.white);
     this.vBrown = this._loop(this._buf.brown);
-    this.eNoiseBP = this._filter('bandpass', 320, 0.8, true);
+    this.eNoiseBP = this._filter('bandpass', 320, 0.55, true);
     this.mBrushG = this._gain(0); // engine noise level (name kept for the watchdog)
     this.eGate = this._gain(0.5);
     this.vBrown.connect(this.eNoiseBP).connect(this.eGate).connect(this.mBrushG).connect(this.eDrive);
-    this.eGateDepth = this._gain(0.45);
+    this.eGateDepth = this._gain(0.7);
     this.eFire.connect(this.eGateDepth).connect(this.eGate.gain);
 
     // slow idle lope so the note never sits perfectly still
     this.eLope = this._osc('sine', 1.7);
     this.eLopeDepth = this._gain(0.6);
     this.eLope.connect(this.eLopeDepth).connect(this.eFire.frequency);
+    // random cycle-to-cycle wander: no real engine fires perfectly evenly
+    this.eJitSrc = this._loop(this._buf.brown);
+    this.eJitLP = this._filter('lowpass', 9, 0.5, true);
+    this.eJitDepth = this._gain(1);
+    this.eJitSrc.connect(this.eJitLP).connect(this.eJitDepth).connect(this.eFire.frequency);
   }
 
   _satCurve(k) {
@@ -745,14 +752,17 @@ export class AudioEngine {
       this._set(this.eHalf.frequency, fire / 2, ftc);
       this._set(this.eSub.frequency, fire / 3, ftc);
       this._set(this.eLopeDepth.gain, fire * 0.02 * (1 - rpmN), 0.2);
+      this._set(this.eJitDepth.gain, fire * 0.05, 0.2);
       const push = clamp(0.25 + 0.75 * thr + 0.5 * load);
-      this._set(this.eLP.frequency, 380 + 1600 * rpmN + 900 * push, 0.08);
-      this._set(this.eDrive.gain, 0.7 + 1.1 * push, 0.08);       // more drive = more growl
+      // exhaust opens with revs and throttle, but stays dark enough not to buzz
+      this._set(this.eLP.frequency, 260 + 700 * rpmN + 450 * push, 0.08);
+      this._set(this.eDrive.gain, 0.5 + 0.45 * push, 0.08);       // light growl, never a square wave
       this._set(this.eHalfG.gain, 0.18 + 0.2 * (1 - rpmN), 0.1);
       this._set(this.eSubG.gain, 0.3 + 0.25 * load, 0.1);
       this._set(this.eNoiseBP.frequency, 240 + 700 * rpmN, ftc);
-      this._set(this.mBrushG.gain, 0.12 + 0.35 * push, 0.08);
-      const vol = (bog ? 0.85 : 0.45 + 0.35 * rpmN + 0.3 * thr) * 0.11;
+      this._set(this.mBrushG.gain, 0.22 + 0.4 * push, 0.08);
+      // about half the first version's level (−6 dB), quieter still at idle
+      const vol = (bog ? 0.8 : 0.3 + 0.4 * rpmN + 0.3 * thr) * 0.06;
       this._set(this.mOut.gain, vol, 0.06);
 
       // ---- tire rolling (blend toward water when submerged)
