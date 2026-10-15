@@ -56,6 +56,8 @@
   --text-headline: 2rem; /* 32 → 48 → 56 → 64 → 72 */
   --text-title: 2rem; /* 32 → 40 → 48 */
   --text-subtitle: 1.5rem; /* 24 → 32 → 40 */
+  /* Titles of items inside a section: projects, cards, companies, steps. */
+  --text-item: 1.5rem; /* 24 → 32 */
   --text-lead: 1.125rem; /* 18 → 24 */
   --text-body: 1rem; /* 16 */
   --text-small: 0.875rem; /* 14 */
@@ -78,6 +80,7 @@
     --text-headline: 3.5rem;
     --text-title: 3rem;
     --text-subtitle: 2rem;
+    --text-item: 2rem;
     --text-lead: 1.5rem;
   }
 }
