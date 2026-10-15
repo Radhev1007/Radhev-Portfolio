@@ -22,6 +22,13 @@ npm run build && npm start
 
 Node was installed locally at `~/.local/node` for this project. Add it to your PATH with `export PATH=$HOME/.local/node/bin:$PATH`.
 
+## RC Crawler multiplayer
+
+The garage game (`public/rc-crawler`) has optional online multiplayer (up to 20 players) and voice chat. It needs
+a separately deployed Node server in `multiplayer-server/`; see `multiplayer-server/README.md`. Set
+`NEXT_PUBLIC_RC_MULTIPLAYER_URL` (see `.env.example`) to that server's `wss://` URL. Without it, the game and
+the rest of the site work as before and the Multiplayer screen says no server is configured.
+
 ## Replacing the content
 
 All copy lives in **`lib/content.ts`**. Content is populated from the owner's CV: name, role, contact, projects, skills and about copy all live in `site`, `projects`, `skills` and `about`. The nav initials, footer and page title all follow it.

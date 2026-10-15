@@ -2073,8 +2073,10 @@ export function createCrawler(opts = {}) {
   }
 
   // ----------------------------------------------------------- Lights -------
+  // real headlight beams for the player's own truck; other players' trucks (opts.realLights === false) keep
+  // only the glowing lamp materials, since every extra light makes every surface in the scene costlier to shade
   const spots = [];
-  for (const s of [1, -1]) {
+  if (opts.realLights !== false) for (const s of [1, -1]) {
     const spot = new THREE.SpotLight(0xffece0, 0, 14, 0.6, 0.6, 1.5);
     spot.castShadow = false;
     spot.position.set(s * 0.19, 0.158, 0.74);
@@ -2182,7 +2184,7 @@ export function createCrawler(opts = {}) {
       }
       if (o.isSpotLight) o.dispose?.();
     });
-    for (const m of Object.values(mats)) ms.add(m);
+    for (const m of Object.values(mats)) if (m) ms.add(m);    // low quality leaves some slots empty (null)
     for (const m of ms) {
       for (const k of ['map', 'roughnessMap', 'normalMap', 'bumpMap']) if (m[k]) texs.add(m[k]);
       m.dispose();

@@ -18,6 +18,10 @@ import { AudioEngine } from './audio/audio.js';
 import { Input } from './core/input.js';
 import { ChallengeManager, fmtTime } from './challenges/challenges.js';
 import { UI } from './ui/ui.js';
+import { Multiplayer } from './net/multiplayer.js';
+import { Modes } from './net/modes.js';
+import { Voice } from './net/voice.js';
+import { MpUI } from './ui/mpUI.js';
 
 // ------------------------------------------------------------ settings
 const SET_KEY = 'rccrawler.settings.v1';
@@ -27,6 +31,7 @@ let settings = { ...defaults };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || '{}')); } catch { /* ignore */ }
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch { /* ignore */ } };
 const params = new URLSearchParams(location.search);
+const NORENDER = params.has('norender');   // dev/test: simulate and network without drawing (headless test clients)
 if (params.get('q')) settings.quality = params.get('q');
 if (params.get('level') && LEVEL_BY_ID[params.get('level')]) settings.level = params.get('level');
 
@@ -101,7 +106,8 @@ async function loadLevel(id, { keepState = false } = {}) {
   settings.level = id; saveSettings();
   scene.add(level.group);
   phys = new CrawlerPhysics(level.hf);
-  phys.trunks = level.trunks;
+  level.posts.forEach((t, i) => { t.netId = i; });       // stable ids: every client builds the same level
+  phys.trunks = level.trunks.concat(remoteColliders);
   phys.posts = level.posts;
   applyDrivetrain();
   placeAtSpawn();
@@ -116,12 +122,14 @@ async function loadLevel(id, { keepState = false } = {}) {
   ui.setLevel(def, challenges);
   ui.setCardLoading(id, false);
   ui.hideLoading();
+  if (mp.active) { for (const i of mp.broken) breakPost(i, 0, 0, 1, true); placeAtSpawn(); modes.sync(); }
   if (!keepState && state === 'loading') setState('title');
 }
 
 function placeAtSpawn() {
-  const s = level.spawn;
+  const s = mp.active ? modes.spawnPose(mpOrder()) : level.spawn;
   phys.placeAt(s.x, s.z, s.yaw);
+  if (mp.active) mp.flagRecover();
   resetStakes();
 }
 
@@ -130,6 +138,7 @@ function resetStakes() {
   if (!level || !level.posts) return;
   for (const t of level.posts) {
     if (!t.breakable) continue;
+    if (mp.active && mp.broken.has(t.netId)) continue;     // knocked down in this room: stays down for everyone
     t.broken = false; t.stress = 0; t.hitV = 0; t.pushT = 0; t.fallA = 0; t.fallW = 0; t.landed = false;
     // gate posts only collide while their gate is shown; everything else stands solid again
     t.enabled = t.markerId === undefined ? true : t.mesh ? t.mesh.visible : false;
@@ -204,6 +213,7 @@ function setChallengeMarkers(id) {
   for (const p of level.posts) if (p.markerId !== undefined) p.enabled = p.markerId === id;   // colliders follow visibility
 }
 function onChallengeEvent(type, c, a, b, medal) {
+  if (mp.active) modes.onChallengeEvent(type, c, a, b);
   if (type === 'select') { setChallengeMarkers(c ? c.id : null); ui.setChallenge(c, c ? 'Drive through the start gate' : ''); }
   if (type === 'start') { ui.toast(c.name, 'Go! Timer started'); ui.setChallenge(c, 'In progress'); }
   if (type === 'checkpoint') ui.toast(`Checkpoint ${a + 1}/${b}`, '');
@@ -219,6 +229,11 @@ function onChallengeEvent(type, c, a, b, medal) {
 // ------------------------------------------------------------ UI wiring
 ui.buildCards(LEVELS, (id) => {
   audio.uiClick();
+  if (mp.active) {
+    if (mp.isHost && mp.state.phase !== 'running' && mp.state.phase !== 'countdown') mp.room.send('config', { map: id });
+    else ui.toast('In a room', mp.isHost ? 'Change the map between sessions' : 'Only the host can change the map');
+    return;
+  }
   if (state === 'paused') { ui.closeMenu(); loadLevel(id, { keepState: true }).then(() => setState('play')); }
   else if (!level || id !== level.def.id) loadLevel(id, { keepState: true });
 });
@@ -280,6 +295,12 @@ function recover() {
   if (!phys) return;
   audio.uiClick();
   tracks.reset();
+  if (mp.active) {
+    mp.flagRecover();
+    mp.relay('recover', phys.pos, 0);
+    const pose = modes.recoverPose();
+    if (pose) { phys.placeAt(pose.x, pose.z, pose.yaw); ui.toast('Vehicle recovered', 'Back to your last gate'); return; }
+  }
   // With a challenge active, retry it: back to just before its start gate, facing through it, without
   // touching anything else. Otherwise back to the trail's start (righting the truck where it stood left it
   // on whatever had trapped it).
@@ -301,6 +322,7 @@ addEventListener('pointerdown', unlockAudio, { once: true });
 addEventListener('keydown', unlockAudio, { once: true });
 
 input.on('press', (k) => {
+  if (k === 'escape' && mpUI.open) { mpUI.hide(); return; }
   if (k === 'escape') { if (state === 'play') openMenu(); else if (state === 'paused') { ui.closeMenu(); setState('play'); } return; }
   if (state === 'title' && (k === 'enter')) { ui.emit('start'); return; }
   if (state !== 'play') return;
@@ -391,7 +413,9 @@ const _aFwd = new THREE.Vector3();
 function tick(dt, forced) {
   if (!level || !phys) { if (post) post.render(dt); return; }
   time += dt;
-  const inp = forced || (state === 'play' ? input.state : { throttle: 0, steer: 0, handbrake: true });
+  let inp = forced || (state === 'play' && !mpUI.open ? input.state : { throttle: 0, steer: 0, handbrake: true });
+  if (mp.active) inp = modes.inputOverride(inp);
+  mp.preStep(dt);
   phys.update(dt, inp);
 
   // drive the visual model from the interpolated pose (smooth between physics substeps)
@@ -410,6 +434,11 @@ function tick(dt, forced) {
   contact.update(phys, level.hf);
   particles.update(dt, scene.fog);
   tracks.update(dt);
+
+  if (mp.active) {
+    mp.postStep(dt, phys, inp, { lights: lightsOn, brake: inp.handbrake || (phys.omega > 0.5 && inp.throttle < -0.1) || (phys.omega < -0.5 && inp.throttle > 0.1) });
+    modes.update(dt, phys);
+  }
 
   // impacts -> audio
   // every collision, tyre touchdown/lift-off and landing comes straight from the physics step that
@@ -441,7 +470,7 @@ function tick(dt, forced) {
   post.setDOF(rig.focusDist, dofAmt);
 
   if (state === 'play' || state === 'paused') updateHud(dt);
-  post.render(dt);
+  if (!NORENDER) post.render(dt);
 
   fpsAcc += dt; fpsN++;
   if (fpsAcc > 0.5) { ui.fps(Math.round(fpsN / fpsAcc)); fpsAcc = 0; fpsN = 0; }
@@ -482,11 +511,71 @@ async function capturePreviews() {
   document.title = 'CAPTURE DONE';
 }
 
+// ------------------------------------------------------------ multiplayer (optional, loads on demand)
+let remoteColliders = [];
+function mpOrder() {
+  const k = mp.players.filter((x) => x.p.connected).sort((a, b) => a.p.slot - b.p.slot).findIndex((x) => x.sid === mp.room?.sessionId);
+  return Math.max(0, k);
+}
+function breakPost(i, fx, fz, speed, silent) {
+  const t = level?.posts?.[i];
+  if (!t || t.broken) return;
+  t.broken = true; t.enabled = false; t.hitV = speed || 1;
+  t.fallDir = new THREE.Vector3(fx, 0, fz);
+  if (t.fallDir.lengthSq() < 1e-6) t.fallDir.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+  t.fallDir.normalize();
+  if (!silent) audio.events([{ type: 'break', mat: t.mat, speed: speed || 1, p: new THREE.Vector3(t.x, t.y0 + 0.15, t.z), post: t }]);
+}
+let mapLoading = null;
+const game = {
+  levels: LEVELS,
+  scene: () => scene,
+  level: () => level,
+  levelId: () => level?.def.id || settings.level,
+  loadMap: (id) => {
+    if (!LEVEL_BY_ID[id] || mapLoading === id || level?.def.id === id) return;
+    mapLoading = id;
+    loadLevel(id, { keepState: true }).finally(() => { mapLoading = null; });
+  },
+  placeAt: (x, z, yaw) => { if (phys) { phys.placeAt(x, z, yaw); tracks.reset(); } },
+  setRemoteColliders: (list) => { remoteColliders = list; if (phys && level) phys.trunks = level.trunks.concat(list); },
+  breakPost,
+  unbreakAll: () => resetStakes(),
+  remoteEvent: (m) => {
+    const p = new THREE.Vector3(m.x, m.y, m.z);
+    if (m.k === 'hit') audio.events([{ type: 'hit', mat: m.mat || 'metal', part: 'body', speed: m.s, impulse: m.s * 0.4, p }]);
+    if (m.k === 'land') audio.events([{ type: 'land', air: 0.5, speed: m.s, p }]);
+  },
+  selectChallenge: (id) => { challenges.select(id); ui.refreshChallenges(challenges); },
+  voiceInfo: (sid) => voice.info(sid),
+  toast: (a, b) => ui.toast(a, b),
+  sound: () => audio.uiClick(),
+  driving: () => state === 'play' || state === 'paused',
+  eye: () => camera.position,
+  closeMenu: () => { if (state === 'paused') { ui.closeMenu(); setState('play'); } },
+  panelOpen: (open) => {
+    if (!open && mp.active && state === 'title') { audio.start(); rig.mode = 0; rig.blendIn = 0; setState('play'); }
+    input.enabled = state === 'play' && !open;
+  },
+};
+const mp = new Multiplayer(game);
+const modes = new Modes(mp, game);
+const voice = new Voice(mp);
+const mpUI = new MpUI({ mp, voice, modes, game });
+mp.on('change', () => modes.sync());
+mp.on('joined', () => { audio.start(); if (level) placeAtSpawn(); });
+mp.on('left', () => { modes.teardown(); voice.leave(); });
+
 // ------------------------------------------------------------ boot
 requestAnimationFrame(frame);
 if (params.has('capture')) capturePreviews();
-else loadLevel(settings.level);
+else loadLevel(settings.level).then(async () => {
+  const code = params.get('join');
+  if (await mp.resume()) { if (state === 'title') game.panelOpen(false); ui.toast('Rejoined room', mp.code); return; }
+  if (code && mp.available) { mpUI.show(); document.getElementById('mp-code').value = code.toUpperCase().slice(0, 5); }
+});
 window.__game = {
+  mp, modes, voice, mpUI,
   get phys() { return phys; }, get level() { return level; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
   step(n, inp, dt = 1 / 60) { for (let i = 0; i < n; i++) tick(dt, inp); },
   // dev: save the current frame to assets/previews/<name>.jpg (localhost only)

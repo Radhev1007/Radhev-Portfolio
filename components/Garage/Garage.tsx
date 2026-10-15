@@ -13,6 +13,29 @@ import { createPortal } from "react-dom";
 const GAME_URL = "/rc-crawler/index.html";
 
 /**
+ * Online multiplayer runs on a separate server (multiplayer-server/). Its
+ * WebSocket URL is baked in at build time; without it the game still runs,
+ * and only the Multiplayer screen says no server is configured. On localhost
+ * the game finds a local dev server by itself.
+ */
+const MULTIPLAYER_URL = process.env.NEXT_PUBLIC_RC_MULTIPLAYER_URL ?? "";
+
+/** An invite link is this page with `?rc=CODE`: it opens the garage with the code filled in. */
+function inviteCode(): string | null {
+  if (typeof window === "undefined") return null;
+  const code = new URLSearchParams(window.location.search).get("rc");
+  return code && /^[A-Za-z0-9]{5}$/.test(code) ? code.toUpperCase() : null;
+}
+
+function gameSrc(join: string | null) {
+  const q = new URLSearchParams();
+  if (MULTIPLAYER_URL) q.set("mp", MULTIPLAYER_URL);
+  if (join) q.set("join", join);
+  const qs = q.toString();
+  return qs ? `${GAME_URL}?${qs}` : GAME_URL;
+}
+
+/**
  * A control in the nav bar, sized to sit beside the menu button.
  *
  * It is a toggle, not a link: there is nothing to scroll to and nothing to
@@ -22,8 +45,17 @@ const GAME_URL = "/rc-crawler/index.html";
 export function GarageLauncher({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [join, setJoin] = useState<string | null>(null);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    // arriving from an invite link: go straight into the garage
+    const code = inviteCode();
+    if (code) {
+      setJoin(code);
+      setOpen(true);
+    }
+  }, []);
 
   // The page must not scroll underneath the scene.
   useEffect(() => {
@@ -54,7 +86,16 @@ export function GarageLauncher({ className }: { className?: string }) {
           it the garage would cover only part of the screen. */}
       {mounted &&
         open &&
-        createPortal(<GameFrame onExit={() => setOpen(false)} />, document.body)}
+        createPortal(
+          <GameFrame
+            src={gameSrc(join)}
+            onExit={() => {
+              setOpen(false);
+              setJoin(null);
+            }}
+          />,
+          document.body,
+        )}
     </>
   );
 }
@@ -89,7 +130,7 @@ function RcIcon() {
  * straight away. Escape works while focus is on this page; once the game has
  * it, the "Back to portfolio" button is always on top.
  */
-function GameFrame({ onExit }: { onExit: () => void }) {
+function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -111,9 +152,9 @@ function GameFrame({ onExit }: { onExit: () => void }) {
       )}
       <iframe
         ref={frame}
-        src={GAME_URL}
+        src={src}
         title="RC Crawler — drive the SCX30"
-        allow="fullscreen; gamepad; autoplay"
+        allow="fullscreen; gamepad; autoplay; microphone; clipboard-write"
         className="absolute inset-0 size-full border-0"
         onLoad={() => {
           setReady(true);

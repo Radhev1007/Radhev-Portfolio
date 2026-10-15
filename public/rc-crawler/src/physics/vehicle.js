@@ -171,6 +171,9 @@ export class CrawlerPhysics {
   }
 
   _pointVel(p, out) { return out.copy(p).sub(this.pos).cross(this.ang).negate().add(this.vel); } // v + w x r
+  // contact point velocity relative to what it touches: an obstacle that moves itself (another player's
+  // truck, c.ov = its velocity) closes or opens the gap too; static ground and posts have no c.ov
+  _relVel(c, out) { this._pointVel(c.p, out); if (c.ov) out.sub(c.ov); return out; }
 
   _applyImpulse(J, p) {
     this.vel.addScaledVector(J, 1 / PHYS.mass);
@@ -592,7 +595,7 @@ export class CrawlerPhysics {
         const n = new THREE.Vector3(best.nx, 0, best.nz).applyQuaternion(q); n.y = 0;
         if (n.lengthSq() < 1e-6) continue;
         const cp = new THREE.Vector3(best.px, best.py, best.pz).applyQuaternion(q).add(this.pos);
-        this.contacts.push({ p: cp, n: n.normalize(), e: best.pen, mu: 0.35, part, mat, post: t });
+        this.contacts.push({ p: cp, n: n.normalize(), e: best.pen, mu: 0.35, part, mat, post: t, ov: t.v });
         hit = true;
       }
     }
@@ -618,7 +621,7 @@ export class CrawlerPhysics {
         const pen = Math.min(penR, penA);
         if (!best || pen > best.pen) best = { pen, n: n.normalize(), p: new THREE.Vector3(t.x, y, t.z) };
       }
-      if (best) { this.contacts.push({ p: best.p, n: best.n, e: best.pen, mu: 0.3, part: 'tyre', mat, post: t }); hit = true; }
+      if (best) { this.contacts.push({ p: best.p, n: best.n, e: best.pen, mu: 0.3, part: 'tyre', mat, post: t, ov: t.v }); hit = true; }
     }
     if (hit) this.touched.add(t);
   }
@@ -632,19 +635,19 @@ export class CrawlerPhysics {
     if (!C.length) return;
     for (const c of C) {
       c.mn = this._effMass(c.p, c.n);
-      c.vn0 = this._pointVel(c.p, _v3).dot(c.n);
+      c.vn0 = this._relVel(c, _v3).dot(c.n);
       c.target = c.vn0 < -PHYS.restMinV ? -PHYS.restitution * c.vn0 : 0;
       c.jn = 0; c.jt = 0; c.jp = 0;
     }
     const tdir = _tdir;
     for (let it = 0; it < 8; it++) {
       for (const c of C) {
-        const vn = this._pointVel(c.p, _v3).dot(c.n);
+        const vn = this._relVel(c, _v3).dot(c.n);
         let dj = (c.target - vn) * c.mn;
         const old = c.jn; c.jn = Math.max(0, old + dj); dj = c.jn - old;
         if (dj !== 0) this._applyImpulse(_v4.copy(c.n).multiplyScalar(dj), c.p);
         if (c.mu > 0 && c.jn > 0) {
-          const vp = this._pointVel(c.p, _v3);
+          const vp = this._relVel(c, _v3);
           tdir.copy(vp).addScaledVector(c.n, -vp.dot(c.n));
           const vt = tdir.length();
           if (vt > 1e-5) {

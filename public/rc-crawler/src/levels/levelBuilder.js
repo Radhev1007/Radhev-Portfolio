@@ -413,7 +413,7 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   onProgress(1, 'Ready');
   return {
     def, hf, group, ctx, trunks, posts: ctx.posts || [], dynamics: ctx.dynamics || [], activities,
-    spawn: layout.spawn, intro: layout.intro || layout.spawn,
+    spawn: layout.spawn, intro: layout.intro || layout.spawn, path: layout.path || null,
     challenges: layout.challenges || [],
     markers: ctx.markers,
     env: def.env || {},

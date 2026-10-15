@@ -6,3 +6,9 @@ next-env.d.ts
 
 # Static export output (npm run build:static)
 out/
+
+# secrets
+.env
+.env.*
+!.env.example
+multiplayer-server/.env
