@@ -1,20 +1,16 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 /**
  * The garage, opened from the nav rather than given a section of its own.
  *
- * The scene is behind a dynamic import with `ssr: false`, so the physics
- * engine, the terrain and the truck are only fetched once someone asks to go
- * in — the portfolio's own payload is unaffected by any of it.
+ * It runs RC Crawler — the standalone three.js rock-crawling game, copied
+ * into /public/rc-crawler — in a full-screen frame. Nothing of it loads until
+ * someone asks to go in, so the portfolio's own payload is unaffected.
  */
-const GarageScene = dynamic(() => import("./GarageScene").then((m) => m.GarageScene), {
-  ssr: false,
-  loading: () => <Loading />,
-});
+const GAME_URL = "/rc-crawler/index.html";
 
 /**
  * A control in the nav bar, sized to sit beside the menu button.
@@ -58,7 +54,7 @@ export function GarageLauncher({ className }: { className?: string }) {
           it the garage would cover only part of the screen. */}
       {mounted &&
         open &&
-        createPortal(<GarageScene onExit={() => setOpen(false)} />, document.body)}
+        createPortal(<GameFrame onExit={() => setOpen(false)} />, document.body)}
     </>
   );
 }
@@ -80,13 +76,55 @@ function RcIcon() {
   );
 }
 
-function Loading() {
+/**
+ * The game in a full-screen frame with a way back out.
+ *
+ * The frame takes keyboard focus once it loads so the driving keys work
+ * straight away. Escape works while focus is on this page; once the game has
+ * it, the "Back to portfolio" button is always on top.
+ */
+function GameFrame({ onExit }: { onExit: () => void }) {
+  const frame = useRef<HTMLIFrameElement>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onExit();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onExit]);
+
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-[#0b0b0c] text-white">
-      <div className="text-center">
-        <p className="text-caption uppercase tracking-[0.18em] text-white/45">Radhev R — Garage</p>
-        <p className="mt-4 text-caption uppercase tracking-[0.18em]">Loading experience…</p>
-      </div>
+    <div className="fixed inset-0 z-[100] bg-[#0b0b0c]" role="dialog" aria-modal="true" aria-label="RC Crawler game">
+      {!ready && (
+        <div className="absolute inset-0 grid place-items-center text-white">
+          <div className="text-center">
+            <p className="text-caption uppercase tracking-[0.18em] text-white/45">Radhev R — Garage</p>
+            <p className="mt-4 text-caption uppercase tracking-[0.18em]">Loading experience…</p>
+          </div>
+        </div>
+      )}
+      <iframe
+        ref={frame}
+        src={GAME_URL}
+        title="RC Crawler — drive the SCX30"
+        allow="fullscreen; gamepad; autoplay"
+        className="absolute inset-0 size-full border-0"
+        onLoad={() => {
+          setReady(true);
+          frame.current?.contentWindow?.focus();
+        }}
+      />
+      {/* Top centre: the game's own HUD holds all four corners. */}
+      <button
+        type="button"
+        onClick={onExit}
+        data-cursor="hover"
+        className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-3 border border-white/25 bg-black/60 px-4 py-2 font-mono text-caption uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors duration-300 hover:border-accent hover:bg-accent"
+      >
+        <span aria-hidden>←</span>
+        Back to portfolio
+        <span aria-hidden className="hidden border border-white/30 px-1.5 text-white/70 md:inline">Esc</span>
+      </button>
     </div>
   );
 }

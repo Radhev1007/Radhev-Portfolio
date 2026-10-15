@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>RC Crawler — SCX30</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,800;1,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    { "imports": {
+        "three": "./vendor/three/build/three.module.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <!-- loading -->
+  <div id="loading" class="overlay">
+    <div class="load-box">
+      <div class="logo small"><span class="rc">RC</span><span class="crawler">CRAWLER</span></div>
+      <div class="load-bar"><i></i></div>
+      <div class="load-text">Preparing terrain…</div>
+    </div>
+  </div>
+
+  <!-- title screen -->
+  <div id="title" class="overlay hidden">
+    <div class="title-left">
+      <div class="logo">
+        <div class="logo-row">
+          <span class="rc">RC</span>
+          <svg class="mtn" viewBox="0 0 120 50" aria-hidden="true"><path d="M2 48 L40 10 L52 22 L66 4 L118 48 Z" fill="none" stroke="#fff" stroke-width="5" stroke-linejoin="round"/><path d="M58 14 L66 4 L74 14 L68 12 L63 16 Z" fill="#fff"/></svg>
+        </div>
+        <span class="crawler">CRAWLER</span>
+      </div>
+      <div class="model">SCX30 · JEEP WRANGLER JLU 4X4</div>
+      <div class="tagline">ROCK <i>/</i> MUD <i>/</i> TRAILS <i>/</i> EXPLORE</div>
+      <button id="btn-start" class="btn-primary">START CRAWLING <span>→</span></button>
+      <div class="title-sub" id="title-level"></div>
+    </div>
+    <div id="cards" class="cards"></div>
+  </div>
+
+  <!-- weather presets -->
+  <div id="weather" class="weather hidden">
+    <button data-p="morning"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>MORNING</span></button>
+    <button data-p="golden"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="5"/><path d="M12 3v3M3 13h3M18 13h3M5.6 6.6l2 2M18.4 6.6l-2 2M2 20h20"/></svg><span>GOLDEN HOUR</span></button>
+    <button data-p="overcast"><svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/></svg><span>OVERCAST</span></button>
+    <button data-p="rain"><svg viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></svg><span>AFTER RAIN</span></button>
+  </div>
+
+  <!-- in-game HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-tl">
+      <div class="terrain-name" id="h-terrain">ROCKY CANYON</div>
+      <div class="terrain-meta"><span id="h-stars"></span><span id="h-diff">Difficulty: High</span><span id="h-surface" class="chip">DIRT</span></div>
+      <div id="h-challenge" class="challenge hidden">
+        <div class="ch-top"><span class="ch-name"></span><span class="ch-time">0:00.0</span></div>
+        <div class="ch-desc"></div>
+        <div class="ch-state"></div>
+      </div>
+    </div>
+    <div class="telemetry" id="telemetry">
+      <div class="speed"><b id="t-speed">0.0</b><span>km/h</span></div>
+      <div class="row"><label>GEAR</label><b id="t-gear" class="gearval">L</b><div class="bar"><i id="t-gearbar"></i></div><span id="t-dir">N</span></div>
+      <div class="row"><label>THROTTLE</label><div class="bar"><i id="t-thr"></i></div></div>
+      <div class="row"><label>BATTERY</label><div class="bar"><i id="t-bat"></i></div><span id="t-batv">100%</span></div>
+      <div class="row"><label>TRACTION</label><div class="bar"><i id="t-trac"></i></div></div>
+      <div class="row"><label>MOTOR</label><div class="bar"><i id="t-temp"></i></div><span id="t-tempv">25°</span></div>
+      <div class="fwd">
+        <svg viewBox="0 0 40 44" class="axle" id="t-4wd">
+          <rect x="3" y="4" width="8" height="12" rx="2"/><rect x="29" y="4" width="8" height="12" rx="2"/>
+          <rect x="3" y="28" width="8" height="12" rx="2"/><rect x="29" y="28" width="8" height="12" rx="2"/>
+          <path id="d-front" d="M11 10h18"/><path id="d-rear" d="M11 34h18"/>
+          <path id="d-shaftF" d="M20 10v12"/><path id="d-shaftR" d="M20 22v12"/>
+          <circle cx="20" cy="22" r="3"/>
+        </svg>
+        <div class="dt">
+          <div><b id="t-drive">4WD</b><span id="t-difflbl">LOCKED</span></div>
+          <div class="dt-btns">
+            <button id="b-range" title="Low / high range (G)">RANGE <i id="t-range">LOW</i></button>
+            <button id="b-diff" title="Diff locks (X)">DIFF</button>
+            <button id="b-dig" title="Dig (V)">DIG</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hud-br">
+      <button id="b-reset" title="Recover vehicle (R)"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg><span>RECOVER</span></button>
+      <button id="b-cam" title="Camera mode (C)"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="14" height="11" rx="2"/><path d="M17 11l4-2v8l-4-2"/></svg><span id="b-cam-l">CHASE</span></button>
+      <button id="b-lights" title="Lights (L)"><svg viewBox="0 0 24 24"><path d="M9 6a6 6 0 0 0 0 12h2V6z"/><path d="M15 8h5M15 12h6M15 16h5"/></svg><span>LIGHTS</span></button>
+      <button id="b-menu" title="Menu (Esc)"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>MENU</span></button>
+    </div>
+    <div class="hud-bl" id="keys">
+      <span><kbd>W</kbd><kbd>S</kbd> throttle / reverse</span><span><kbd>A</kbd><kbd>D</kbd> steer</span><span><kbd>Space</kbd> brake</span>
+      <span><kbd>Shift</kbd> feather</span><span><kbd>G</kbd> range</span><span><kbd>X</kbd> diffs</span><span><kbd>V</kbd> dig</span><span><kbd>R</kbd> recover</span><span><kbd>C</kbd> camera</span><span><kbd>Esc</kbd> menu</span>
+    </div>
+    <div id="toast" class="toast"></div>
+    <div id="recover" class="recover hidden">
+      <div>VEHICLE ROLLED OVER</div>
+      <button id="b-recover2" class="btn-primary small">RECOVER <kbd>R</kbd></button>
+    </div>
+  </div>
+
+  <!-- touch controls -->
+  <div id="touch" class="touch hidden">
+    <div id="tc-steer" class="stick"><div class="knob"></div><span>STEER</span></div>
+    <div class="pedals">
+      <div class="tc-modes">
+        <div id="tc-range" class="pedal mini">LOW</div>
+        <div id="tc-diff" class="pedal mini">DIFF</div>
+        <div id="tc-dig" class="pedal mini">DIG</div>
+      </div>
+      <div id="tc-brake" class="pedal small">BRAKE</div>
+      <div id="tc-rev" class="pedal">REV</div>
+      <div id="tc-gas" class="pedal gas">GAS</div>
+    </div>
+  </div>
+
+  <!-- pause / menu -->
+  <div id="menu" class="overlay dim hidden">
+    <div class="panel">
+      <div class="tabs">
+        <button data-tab="m-main" class="on">GAME</button>
+        <button data-tab="m-terrain">TERRAINS</button>
+        <button data-tab="m-ch">CHALLENGES</button>
+        <button data-tab="m-set">SETTINGS</button>
+        <button data-tab="m-help">CONTROLS</button>
+      </div>
+      <div id="m-main" class="tab on">
+        <button class="btn-primary" id="m-resume">RESUME</button>
+        <button class="btn" id="m-restart">RETURN TO TRAILHEAD</button>
+        <button class="btn" id="m-title">TITLE SCREEN</button>
+      </div>
+      <div id="m-terrain" class="tab"><div class="cards grid" id="menu-cards"></div></div>
+      <div id="m-ch" class="tab"><div id="ch-list" class="ch-list"></div></div>
+      <div id="m-set" class="tab">
+        <div class="set-row"><label>Graphics</label><div class="seg" id="s-quality"><button data-q="low">LOW</button><button data-q="medium">MEDIUM</button><button data-q="high">HIGH</button><button data-q="ultra">ULTRA</button></div></div>
+        <div class="set-row"><label>Volume</label><input type="range" id="s-vol" min="0" max="100" value="80" /></div>
+        <div class="set-row"><label>Touch controls</label><div class="seg" id="s-touch"><button data-v="auto">AUTO</button><button data-v="on">ON</button><button data-v="off">OFF</button></div></div>
+        <div class="set-row"><label>Depth of field</label><div class="seg" id="s-dof"><button data-v="on">ON</button><button data-v="off">OFF</button></div></div>
+        <div class="set-row"><label>Show FPS</label><div class="seg" id="s-fps"><button data-v="on">ON</button><button data-v="off">OFF</button></div></div>
+        <p class="note">Changing graphics quality rebuilds the current terrain.</p>
+      </div>
+      <div id="m-help" class="tab help">
+        <div><kbd>W</kbd>/<kbd>↑</kbd> Throttle</div><div><kbd>S</kbd>/<kbd>↓</kbd> Brake / reverse</div>
+        <div><kbd>A</kbd><kbd>D</kbd>/<kbd>←</kbd><kbd>→</kbd> Steer</div><div><kbd>Space</kbd> Hand brake</div>
+        <div><kbd>Shift</kbd> Feather throttle (half)</div><div><kbd>G</kbd> Low / high range</div>
+        <div><kbd>X</kbd> Diff locks: locked / front open / open</div><div><kbd>V</kbd> Dig (lock rear driveshaft for pivot turns)</div>
+        <div><kbd>R</kbd> Recover vehicle</div><div><kbd>C</kbd> Camera mode</div>
+        <div><kbd>L</kbd> Lights</div><div><kbd>Mouse drag</kbd> Orbit camera</div>
+        <div><kbd>Wheel</kbd> Zoom</div><div><kbd>Esc</kbd> Menu</div>
+        <p class="note">Crawling tips: feather the throttle, let the suspension articulate, and pick the line with the most tyre contact. Green ● easy, blue ■ medium, black ◆ hard.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="fps" class="fps hidden"></div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
