@@ -98,17 +98,23 @@ export function Cursor() {
     <div
       ref={dotRef}
       aria-hidden
-      className="pointer-events-none fixed left-0 top-0 z-[100]"
+      // The cursor lives outside every section, so it cannot follow a
+      // section's palette. The dot and ring invert against what is under
+      // them instead; the labelled bubble is accent-filled, which reads on
+      // both the black and the white sections.
+      className={`pointer-events-none fixed left-0 top-0 z-[100] ${filled ? "" : "mix-blend-difference"}`}
       style={{ transform: "translate3d(-100px,-100px,0)" }}
     >
       <motion.div
         // Colours come from theme tokens via classes (CSS-transitioned); size/visibility are animated.
         className={`flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-solid transition-[background-color,border-color] duration-300 ${
-          filled || active.state === "default"
-            ? "border-0 bg-bone"
+          filled
+            ? "border-0 bg-accent"
+            : active.state === "default"
+              ? "border-0 bg-white"
             : active.state === "cta"
               ? "border border-accent/90 bg-accent/20"
-              : "border border-bone/55 bg-bone/10"
+              : "border border-white/70 bg-white/10"
         }`}
         initial={false}
         animate={{
@@ -125,7 +131,7 @@ export function Cursor() {
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, ease: ease.outExpo }}
-            className="font-mono text-micro uppercase tracking-[0.18em] text-ink"
+            className="font-mono text-micro uppercase tracking-[0.18em] text-white"
           >
             {text}
           </motion.span>
