@@ -1,18 +1,18 @@
 "use client";
 
-import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { TextReveal } from "@/components/Animations/TextReveal";
-import { SystemIllustration } from "@/components/Illustrations/SystemIllustration";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
 import { useMediaQuery } from "@/lib/hooks";
 import { ease } from "@/lib/motion";
 
 const layers = [
-  { k: "Tokens", d: "Colour, type, spacing and radius — the smallest decisions, made once." },
-  { k: "Components", d: "Buttons, inputs, toggles and cards with every state accounted for." },
-  { k: "Patterns", d: "Forms, navigation and lists that solve recurring problems." },
-  { k: "Products", d: "Screens and flows composed from the system, consistent by default." },
+  { k: "Tokens", img: "/system/tokens.webp", d: "Colour, type, spacing and radius — the smallest decisions, made once." },
+  { k: "Components", img: "/system/components.webp", d: "Buttons, inputs, toggles and cards with every state accounted for." },
+  { k: "Patterns", img: "/system/patterns.webp", d: "Forms, navigation and lists that solve recurring problems." },
+  { k: "Products", img: "/system/products.webp", d: "Screens and flows composed from the system, consistent by default." },
 ];
 
 /**
@@ -77,7 +77,29 @@ export function DesignSystem() {
           </div>
 
           <div className="md:col-span-6 md:col-start-7">
-            <SystemIllustration step={step} />
+            {/* One image per layer, crossfaded. The backdrops were graded to a
+                true black so they sit on the page without a visible edge. */}
+            <div className="relative aspect-[75/56] w-full">
+              <AnimatePresence initial={false}>
+                <motion.div
+                  key={step}
+                  className="absolute inset-0"
+                  initial={{ opacity: 0, scale: 0.96, y: 16 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 1.02, y: -8 }}
+                  transition={{ duration: 0.8, ease: ease.outExpo }}
+                >
+                  <Image
+                    src={layers[step].img}
+                    alt={`${layers[step].k}: ${layers[step].d}`}
+                    fill
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    unoptimized
+                    className="object-contain"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
