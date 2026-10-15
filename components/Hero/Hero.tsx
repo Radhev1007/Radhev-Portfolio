@@ -10,6 +10,7 @@ import { HeroIdentity } from "./HeroIdentity";
 import { HeroVideo } from "./HeroVideo";
 import { ScrollCue } from "./ScrollCue";
 import { SocialLinks, SocialRail } from "./SocialLinks";
+import { useScrollTo } from "@/components/Providers/SmoothScroll";
 
 /**
  * Two columns rather than two stacked rows: the left carries the whole
@@ -19,6 +20,7 @@ import { SocialLinks, SocialRail } from "./SocialLinks";
  */
 export function Hero() {
   const reduced = usePrefersReducedMotion();
+  const scrollTo = useScrollTo();
 
   const appear = (delay: number) => ({
     initial: { opacity: 0, y: reduced ? 0 : 16 },
@@ -57,10 +59,9 @@ export function Hero() {
             </Button>
             <Button
               variant="ghost"
-              href={site.heroCtas.secondary.href}
-              external
+              onClick={() => scrollTo(site.heroCtas.secondary.target)}
               cursor="view"
-              cursorLabel="Open"
+              cursorLabel="Read"
             >
               {site.heroCtas.secondary.label}
             </Button>
