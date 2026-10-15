@@ -77,9 +77,8 @@ export function DesignSystem() {
           </div>
 
           <div className="md:col-span-6 md:col-start-7">
-            {/* One image per layer, crossfaded. The backdrops were graded to a
-                true black so they sit on the page without a visible edge. */}
-            <div className="relative aspect-[75/56] w-full">
+            {/* One photograph per layer, crossfaded inside a fixed frame. */}
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-ink-3">
               <AnimatePresence initial={false}>
                 <motion.div
                   key={step}
@@ -95,7 +94,7 @@ export function DesignSystem() {
                     fill
                     sizes="(min-width: 768px) 50vw, 100vw"
                     unoptimized
-                    className="object-contain"
+                    className="object-cover"
                   />
                 </motion.div>
               </AnimatePresence>
