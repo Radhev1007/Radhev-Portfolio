@@ -51,7 +51,14 @@ const input = new Input(canvas);
 const ui = new UI();
 const rig = new CameraRig(camera, null);
 
-function pixelRatio(q) { const d = devicePixelRatio || 1; return { low: Math.min(d, 1) * 0.75, medium: Math.min(d, 1), high: Math.min(d, 1.25), ultra: Math.min(d, 1.75) }[q] || 1; }
+// Phones have dense screens (2–3× DPR); rendering them at ≤1× CSS pixels
+// left the image soft. Touch devices keep their lighter effects but render
+// much closer to native resolution; desktop is unchanged.
+function pixelRatio(q) {
+  const d = devicePixelRatio || 1;
+  if (isTouch) return { low: Math.min(d, 1.5), medium: Math.min(d, 1.75), high: Math.min(d, 2), ultra: Math.min(d, 2.5) }[q] || Math.min(d, 1.5);
+  return { low: Math.min(d, 1) * 0.75, medium: Math.min(d, 1), high: Math.min(d, 1.25), ultra: Math.min(d, 1.75) }[q] || 1;
+}
 function applyQuality() {
   renderer.setPixelRatio(pixelRatio(settings.quality));
   renderer.setSize(innerWidth, innerHeight, false);
@@ -230,9 +237,11 @@ async function rebuildForQuality() {
 function recover() {
   if (!phys) return;
   audio.uiClick();
-  // lift upright where we are, facing the current heading
-  phys.placeAt(phys.pos.x, phys.pos.z, phys.yaw);
-  ui.toast('Vehicle recovered', '');
+  // Back to the trail's start. Righting the truck where it stood left it on
+  // whatever had trapped it (a log pile, a ledge), so it stayed stuck.
+  placeAtSpawn();
+  tracks.reset();
+  ui.toast('Vehicle recovered', 'Back to the start');
 }
 
 const unlockAudio = () => { audio.start().then(() => { audio.setMasterVolume(settings.volume / 100); if (level) audio.setEnvironment({ biome: level.def.biome, weather: settings.preset }); }); };
