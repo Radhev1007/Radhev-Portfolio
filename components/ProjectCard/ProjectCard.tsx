@@ -64,6 +64,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
   return (
     <motion.article
       ref={root}
+      id={`project-${project.slug}`}
       className="relative grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8"
       onViewportEnter={() => !fine && onActive(project)}
       viewport={{ margin: "-45% 0px -45% 0px" }}
