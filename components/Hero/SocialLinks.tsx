@@ -8,7 +8,7 @@ import { SocialGlyph, type SocialIcon } from "./SocialIcons";
 /** Profiles that carry an icon. */
 const profiles = site.socials.flatMap((s) => ("icon" in s ? [{ ...s, icon: s.icon as SocialIcon }] : []));
 
-function IconLink({ label, href, icon }: { label: string; href: string; icon: SocialIcon }) {
+export function IconLink({ label, href, icon }: { label: string; href: string; icon: SocialIcon }) {
   return (
     <a
       href={href}
