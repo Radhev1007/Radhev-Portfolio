@@ -366,7 +366,7 @@ function tick(dt, forced) {
   if (phys.stats.water > 0.2 && Math.abs(phys.stats.speed) > 0.5 && Math.random() < 0.03) audio.impact(0.4, 'splash');
 
   audio.update({
-    motor: Math.min(1, Math.abs(phys.omega) / 14), throttle: phys.throttle, load: phys.stats.load,
+    motor: Math.min(1, Math.abs(phys.omega) / 14), rpm: Math.min(1, Math.abs(phys.omega) / phys.gear.wmax), throttle: phys.throttle, load: phys.stats.load,
     speed: Math.abs(phys.stats.speed) * 0.1, slip: phys.stats.slip, surface: phys.stats.surface, water: phys.stats.water,
     suspension: phys.stats.suspension, steerRate: phys.steerRate || 0, grounded: phys.stats.grounded,
   }, dt);

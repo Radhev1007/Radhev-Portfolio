@@ -339,44 +339,66 @@ export class AudioEngine {
     return { white: mk('white'), pink: mk('pink'), brown: mk('brown') };
   }
 
+  // Engine: a synthesised 3.6L V6 (Wrangler JL), not the RC's electric motor.
+  // A V6 four-stroke fires 3 times per crank revolution, so the core voice is
+  // a pulse train at rpm/20 Hz: ~38 Hz at idle, ~290 Hz near redline. Around
+  // it: a half-order exhaust burble, combustion noise gated by each firing,
+  // and soft saturation that grows with throttle and load.
   _buildMotor() {
     const c = this.ctx;
     this.mOut = this._gain(0, this.sfxBus);
-    this.mLP = this._filter('lowpass', 2500, 0.6);
-    this.mBP = this._filter('bandpass', 500, 0.7);
-    this.mAM = this._gain(0.88);
-    this.mAM.connect(this.mBP).connect(this.mLP).connect(this.mOut);
-    // also a bit of the unfiltered body for warmth
-    this.mBody = this._gain(0.25, this.mLP);
-    this.mAM.connect(this.mBody);
 
-    this.mSaw1 = this._osc('sawtooth', 180);
-    this.mSaw2 = this._osc('sawtooth', 180);
-    this.mSaw2.detune.value = 11;
-    this.mTri = this._osc('triangle', 180);
-    this.mSaw1.connect(this._gain(0.28, this.mAM));
-    this.mSaw2.connect(this._gain(0.28, this.mAM));
-    this.mTri.connect(this._gain(0.5, this.mAM));
+    // exhaust: low-passed, opens up with revs and throttle
+    this.eLP = this._filter('lowpass', 500, 0.9);
+    this.eShape = c.createWaveShaper();
+    this.eShape.curve = this._satCurve(2.2);
+    this.eShape.oversample = '2x';
+    this.eDrive = this._gain(1);
+    this.eDrive.connect(this.eShape).connect(this.eLP).connect(this.mOut);
+    // a little body resonance around 120 Hz (exhaust pipe / cabin)
+    this.eBody = this._filter('peaking', 120, 1.2);
+    this.eBody.gain.value = 6;
+    this.eLP.disconnect();
+    this.eLP.connect(this.eBody).connect(this.mOut);
 
-    // gear mesh partial
-    this.mGear = this._osc('triangle', 576);
-    this.mGearG = this._gain(0.06, this.mLP);
-    this.mGear.connect(this.mGearG);
-    this.mGear2 = this._osc('sine', 1152);
-    this.mGear2G = this._gain(0.02, this.mLP);
-    this.mGear2.connect(this.mGear2G);
+    // firing pulses: harmonic-rich, falling off like a real exhaust note
+    const N = 24, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
+    for (let n = 1; n <= N; n++) im[n] = (n % 2 ? 1 : 0.65) / Math.pow(n, 0.85) * (n % 3 === 0 ? 1.25 : 1);
+    this.eWave = c.createPeriodicWave(re, im);
+    this.eFire = this._osc('sine', 38);
+    this.eFire.setPeriodicWave(this.eWave);
+    this.eFireG = this._gain(0.55, this.eDrive);
+    this.eFire.connect(this.eFireG);
 
-    // commutation ripple (AM)
-    this.mCog = this._osc('sine', 45);
-    this.mCogDepth = this._gain(0.1);
-    this.mCog.connect(this.mCogDepth).connect(this.mAM.gain);
+    // half-order burble: the slight unevenness that makes it sound like an engine
+    this.eHalf = this._osc('triangle', 19);
+    this.eHalfG = this._gain(0.25, this.eDrive);
+    this.eHalf.connect(this.eHalfG);
+    // crank-order sub rumble
+    this.eSub = this._osc('sine', 13);
+    this.eSubG = this._gain(0.35, this.eDrive);
+    this.eSub.connect(this.eSubG);
 
-    // brush noise
+    // combustion noise, amplitude-gated by the firing pulse
     this.vWhite = this._loop(this._buf.white);
     this.vBrown = this._loop(this._buf.brown);
-    this.mBrushBP = this._filter('bandpass', 6500, 0.6, true);
-    this.mBrushG = this._gain(0, this.mOut);
-    this.vWhite.connect(this.mBrushBP).connect(this.mBrushG);
+    this.eNoiseBP = this._filter('bandpass', 320, 0.8, true);
+    this.mBrushG = this._gain(0); // engine noise level (name kept for the watchdog)
+    this.eGate = this._gain(0.5);
+    this.vBrown.connect(this.eNoiseBP).connect(this.eGate).connect(this.mBrushG).connect(this.eDrive);
+    this.eGateDepth = this._gain(0.45);
+    this.eFire.connect(this.eGateDepth).connect(this.eGate.gain);
+
+    // slow idle lope so the note never sits perfectly still
+    this.eLope = this._osc('sine', 1.7);
+    this.eLopeDepth = this._gain(0.6);
+    this.eLope.connect(this.eLopeDepth).connect(this.eFire.frequency);
+  }
+
+  _satCurve(k) {
+    const n = 1024, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; curve[i] = Math.tanh(k * x) / Math.tanh(k); }
+    return curve;
   }
 
   _buildTires() {
@@ -708,28 +730,30 @@ export class AudioEngine {
       const s = clamp(speed / 0.4);
       const gnd = 0.25 + 0.75 * grounded;
 
-      // ---- motor
-      const f = Math.max(60, (180 + 720 * Math.pow(motor, 0.9)) * (1 - 0.06 * load));
-      let active = clamp(motor * 14);
-      let vol = active * (0.3 + 0.4 * thr + 0.3 * load);
-      let fm = f;
-      if (thr > 0.15 && motor < 0.05) { // stalled against a rock: low strained buzz
-        vol = Math.max(vol, 0.22 * thr * (0.3 + 0.7 * load));
-        fm = 150;
-      }
-      const ftc = 0.04;
-      this._set(this.mSaw1.frequency, fm, ftc);
-      this._set(this.mSaw2.frequency, fm * 1.004, ftc);
-      this._set(this.mTri.frequency, fm, ftc);
-      this._set(this.mGear.frequency, fm * 3.2, ftc);
-      this._set(this.mGear2.frequency, fm * 6.4, ftc);
-      this._set(this.mGearG.gain, 0.035 + 0.08 * motor, 0.08);
-      this._set(this.mCog.frequency, fm * 0.25, ftc);
-      this._set(this.mCogDepth.gain, 0.06 + 0.12 * load, 0.1);
-      this._set(this.mBP.frequency, fm * 1.8, ftc);
-      this._set(this.mLP.frequency, 1400 + 2400 * motor + 800 * load, 0.06);
-      this._set(this.mBrushG.gain, vol * (0.25 + 0.5 * load) * 0.18, 0.06);
-      this._set(this.mOut.gain, vol * 0.085, 0.05);
+      // ---- engine (V6). `rpm` is the drivetrain's position within the
+      // current gear range; idle 800, redline ~5800.
+      const rpmN = clamp(num(p.rpm, motor));
+      let rpm = 800 + 5000 * Math.pow(rpmN, 0.85);
+      // throttle revs the engine a little ahead of the wheels; a stall against a
+      // rock bogs it down to a heavy, low-rpm labour
+      rpm += 900 * thr * (1 - rpmN);
+      const bog = thr > 0.15 && rpmN < 0.05;
+      if (bog) rpm = 1300 + 300 * load;
+      const fire = rpm / 20;
+      const ftc = 0.06;
+      this._set(this.eFire.frequency, fire, ftc);
+      this._set(this.eHalf.frequency, fire / 2, ftc);
+      this._set(this.eSub.frequency, fire / 3, ftc);
+      this._set(this.eLopeDepth.gain, fire * 0.02 * (1 - rpmN), 0.2);
+      const push = clamp(0.25 + 0.75 * thr + 0.5 * load);
+      this._set(this.eLP.frequency, 380 + 1600 * rpmN + 900 * push, 0.08);
+      this._set(this.eDrive.gain, 0.7 + 1.1 * push, 0.08);       // more drive = more growl
+      this._set(this.eHalfG.gain, 0.18 + 0.2 * (1 - rpmN), 0.1);
+      this._set(this.eSubG.gain, 0.3 + 0.25 * load, 0.1);
+      this._set(this.eNoiseBP.frequency, 240 + 700 * rpmN, ftc);
+      this._set(this.mBrushG.gain, 0.12 + 0.35 * push, 0.08);
+      const vol = (bog ? 0.85 : 0.45 + 0.35 * rpmN + 0.3 * thr) * 0.11;
+      this._set(this.mOut.gain, vol, 0.06);
 
       // ---- tire rolling (blend toward water when submerged)
       const w = clamp(water * 1.5);
