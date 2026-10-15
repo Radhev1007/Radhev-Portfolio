@@ -49,9 +49,12 @@ export const DIFF_MODES = [
   { name: 'OPEN', label: 'Open', front: false, rear: false },
 ];
 
+// wmax: free-running wheel speed (rad/s); tstall: torque at stall.
+// Raised ~50% from 14.8/31 so the truck covers ground faster in both ranges,
+// with extra torque so it reaches the higher speeds.
 export const GEARS = {
-  LOW: { name: 'L', wmax: 14.8, tstall: 11.5 },
-  HIGH: { name: 'H', wmax: 31, tstall: 7.2 },
+  LOW: { name: 'L', wmax: 22, tstall: 14 },
+  HIGH: { name: 'H', wmax: 48, tstall: 10 },
 };
 
 export class CrawlerPhysics {
