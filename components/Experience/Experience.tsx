@@ -140,7 +140,7 @@ export function Experience() {
 
                     <span className="min-w-0">
                       <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                        <span className="text-subtitle font-light leading-[1.05] tracking-[-0.025em]">
+                        <span className="text-subtitle font-medium leading-[1.05] tracking-[-0.035em]">
                           {role.company}
                         </span>
                         {current && (
