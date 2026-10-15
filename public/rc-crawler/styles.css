@@ -207,7 +207,29 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
   .weather { top: auto; bottom: auto; right: 10px; top: 10px; }
   .weather button { width: 44px; } .weather button span { display: none; }
   .telemetry { top: 70px; transform: scale(.78); transform-origin: right top; }
-  .hud-tl { max-width: 60vw; }
+  /* Below the weather bar, which spans most of the top on a phone, and left
+     of the telemetry panel. */
+  .hud-tl { top: 70px; left: 12px; max-width: calc(100vw - 150px); }
   .terrain-name { font-size: 20px; }
   .help { grid-template-columns: 1fr; }
+
+  /* Phone HUD: give every control its own space.
+     Side buttons become a compact column on the left edge, clear of the
+     telemetry panel on the right. */
+  .telemetry { top: 64px; transform: scale(.7); }
+  .touch-on .hud-br { left: 10px; right: auto; top: 46%; bottom: auto; transform: translateY(-50%); flex-direction: column; gap: 6px; }
+  .touch-on .hud-br button { min-width: 0; width: 56px; padding: 7px 4px 5px; font-size: 9.5px; letter-spacing: .8px; }
+  .touch-on .hud-br button svg { width: 18px; height: 18px; }
+  /* Steering on the left, three pedals on the right, drive modes in a row
+     above the steering pad instead of stacked beside the brake. */
+  .stick { left: 12px; bottom: 34px; width: 140px; }
+  .pedals { right: 12px; bottom: 34px; gap: 8px; }
+  .pedal { width: 58px; height: 84px; }
+  .pedal.gas { height: 116px; }
+  .pedal.small { height: 58px; }
+  .tc-modes { position: fixed; left: 12px; bottom: 124px; flex-direction: row; }
+  .pedal.mini { width: 54px; height: 32px; }
+
+  /* Inside the portfolio, the "back" button holds the top-left corner. */
+  html.embedded .title-left { top: 84px; }
 }

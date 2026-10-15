@@ -120,15 +120,18 @@ function GameFrame({ onExit }: { onExit: () => void }) {
           frame.current?.contentWindow?.focus();
         }}
       />
-      {/* Top centre: the game's own HUD holds all four corners. */}
+      {/* Phones: a small square in the top-left, which the game leaves free
+          when embedded. Wider screens: a labelled pill at top centre, since
+          the game's HUD holds all four corners there. */}
       <button
         type="button"
         onClick={onExit}
+        aria-label="Back to portfolio"
         data-cursor="hover"
-        className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-3 border border-white/25 bg-black/60 px-4 py-2 font-mono text-caption uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors duration-300 hover:border-accent hover:bg-accent"
+        className="absolute left-3 top-3 z-10 flex size-10 items-center justify-center gap-3 whitespace-nowrap border border-white/25 bg-black/60 font-mono text-caption uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors duration-300 hover:border-accent hover:bg-accent md:left-1/2 md:top-4 md:size-auto md:-translate-x-1/2 md:px-4 md:py-2"
       >
         <span aria-hidden>←</span>
-        Back to portfolio
+        <span className="hidden md:inline">Back to portfolio</span>
         <span aria-hidden className="hidden border border-white/30 px-1.5 text-white/70 md:inline">Esc</span>
       </button>
     </div>
