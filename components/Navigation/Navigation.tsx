@@ -146,10 +146,12 @@ export function Navigation() {
               ))}
             </ul>
 
-            {/* The one action the nav is for. */}
-            <button
-              type="button"
-              onClick={go("contact")}
+            {/* The one action the nav is for: straight into a WhatsApp chat. */}
+            <a
+              href={site.whatsapp}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Let's talk on WhatsApp"
               data-cursor="cta"
               className="group hidden items-center gap-2 rounded-control border border-line px-4 py-2 text-small tracking-[-0.01em] text-bone transition-colors duration-300 hover:border-bone/45 hover:bg-bone/5 md:inline-flex"
             >
@@ -160,7 +162,7 @@ export function Navigation() {
               >
                 →
               </span>
-            </button>
+            </a>
 
             <div className="flex items-center gap-5">
               {/* A toggle rather than a nav item: there is nothing to scroll

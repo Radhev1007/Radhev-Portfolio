@@ -28,6 +28,8 @@ export const site = {
   availabilityLabel: "Available for selected projects",
   email: "radhev1999@gmail.com",
   phone: "+91 808 982 1700",
+  /** The nav's "Let's talk" opens a WhatsApp chat with this number. */
+  whatsapp: "https://wa.me/918089821700",
   /** Hosted on Drive, so the CV can be updated without a deploy. */
   resume: "https://drive.google.com/file/d/1FGt65CDoKoxUXWIjAgswC5341gIOfaFl/view?usp=sharing",
   location: "Kollam, Kerala",
