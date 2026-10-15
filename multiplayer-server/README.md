@@ -49,6 +49,19 @@ localhost. The LiveKit URL is never configured in the browser: the server return
 
 ## Deploy
 
+**Quickest path (Render + Vercel + LiveKit Cloud):**
+
+1. Render → **New → Blueprint** → connect this GitHub repo. It reads `render.yaml` at the repo root, builds
+   `multiplayer-server/Dockerfile`, and asks for `ALLOWED_ORIGINS` (your portfolio origin, e.g.
+   `https://your-site.vercel.app`), `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` (from LiveKit
+   Cloud → Settings → API Keys). Deploy, then open `https://<service>.onrender.com/health`: `"voice": true`.
+2. Vercel → your portfolio project → Settings → Environment Variables →
+   `NEXT_PUBLIC_RC_MULTIPLAYER_URL = wss://<service>.onrender.com` → redeploy.
+3. Render's free plan sleeps after ~15 minutes without traffic; the first player then waits up to a minute for
+   it to wake. A paid instance stays awake.
+
+**Any other host:**
+
 1. **Multiplayer server** — any host that keeps a Node process running and allows WebSockets (Render, Railway,
    Fly.io, a VPS). Vercel/Netlify static hosting and serverless functions cannot: they don't hold connections.
    Build from this folder's `Dockerfile` (or `npm ci --omit=dev && npm start`), set the variables above, and

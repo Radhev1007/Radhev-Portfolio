@@ -1,0 +1,28 @@
+# Render Blueprint for the RC Crawler multiplayer server (multiplayer-server/).
+# Render → New → Blueprint → pick this repository. It builds multiplayer-server/Dockerfile and asks for the
+# values marked `sync: false` (typed into Render, never committed). The portfolio itself stays on Vercel.
+services:
+  - type: web
+    name: rc-crawler-multiplayer
+    runtime: docker
+    dockerfilePath: ./multiplayer-server/Dockerfile
+    dockerContext: ./multiplayer-server
+    plan: free                 # one instance: rooms live in memory, so do not scale this service out
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - multiplayer-server/**
+    envVars:
+      - key: MAX_PLAYERS
+        value: "20"
+      - key: RECONNECT_SECONDS
+        value: "30"
+      - key: ALLOWED_ORIGINS   # your portfolio's origin, e.g. https://your-site.vercel.app (comma-separate several)
+        sync: false
+      - key: LIVEKIT_URL       # wss://<project>.livekit.cloud
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
