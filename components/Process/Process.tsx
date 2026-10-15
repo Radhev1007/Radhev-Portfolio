@@ -75,8 +75,8 @@ function HorizontalProcess() {
 
         <div className="absolute inset-x-[var(--gutter)] bottom-10 flex items-center gap-6">
           <span className="label !text-bone/80">Discover</span>
-          <div className="h-0.5 flex-1 rounded-full bg-bone/15">
-            <motion.div className="h-0.5 rounded-full bg-accent" style={{ width: bar }} />
+          <div className="h-0.5 flex-1 bg-bone/15">
+            <motion.div className="h-0.5 bg-accent" style={{ width: bar }} />
           </div>
           <span className="label !text-bone/80">Refine</span>
         </div>

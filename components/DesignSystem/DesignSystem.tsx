@@ -125,8 +125,8 @@ function LayerImage({ src, alt, label }: { src: string; alt: string; label: stri
           >
             <div className="absolute inset-6 flex flex-col gap-4 md:inset-10">
               <div className="h-1/2 w-3/5 rounded-inner bg-bone/5" />
-              <div className="h-3 w-2/5 rounded-full bg-bone/5" />
-              <div className="h-3 w-1/4 rounded-full bg-bone/5" />
+              <div className="h-3 w-2/5 bg-bone/5" />
+              <div className="h-3 w-1/4 bg-bone/5" />
             </div>
             <div className="absolute inset-0 animate-[shimmer_1.6s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-bone/[0.07] to-transparent" />
             <span className="label absolute bottom-6 left-6 md:bottom-10 md:left-10">Loading {label}</span>

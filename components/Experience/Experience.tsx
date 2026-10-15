@@ -81,7 +81,7 @@ export function Experience() {
 
             {/* Proportional timeline: one segment per role, gaps left empty. */}
             <div className="border-t border-line pt-6">
-              <div className="relative h-2 overflow-hidden rounded-full bg-ink-3" aria-hidden>
+              <div className="relative h-2 overflow-hidden bg-ink-3" aria-hidden>
                 {experience.map((role, i) => {
                   const left = ((toMonth(role.from) - start) / span) * 100;
                   const width = ((toMonth(role.to) + (role.to === "Present" ? 1 : 0) - toMonth(role.from)) / span) * 100;
