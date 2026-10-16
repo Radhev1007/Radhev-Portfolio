@@ -256,20 +256,25 @@ export class UI {
     seg('s-dof', 'v', s.dof, 'dof');
     seg('s-fps', 'v', s.fps, 'fps');
     seg('s-amb', 'v', s.ambience || 'on', 'ambience');
-    // drag brake: on / off plus a strength, in the instrument cluster and in Settings (kept in step); the slider
-    // rests (dimmed) while it is off
+    // drag brake, on the instrument cluster: the button shows the strength. With the full cluster it switches the
+    // drag brake on / off and the slider sets the strength; the compact (phone) cluster has no room for a slider,
+    // so there a tap steps 100 -> 75 -> 50 -> 25 -> off -> 100
     let dragOn = s.dragBrake !== 'off', dragPct = s.dragPct ?? 100;
+    const compact = matchMedia('(max-width: 720px), (orientation: landscape) and (max-height: 500px)');
     const drag = () => {
-      for (const [sl, lb] of [['#s-drag', '#s-dragv'], ['#t-drag', '#t-dragv']]) { $(sl).value = dragPct; $(sl).disabled = !dragOn; $(lb).textContent = dragOn ? `${dragPct}%` : 'OFF'; }
-      $$('#s-dragon button').forEach((x) => x.classList.toggle('on', x.dataset.v === (dragOn ? 'on' : 'off')));
+      $('#t-drag').value = dragPct; $('#t-drag').disabled = !dragOn;
+      $('#b-drag').textContent = dragOn ? `DRAG ${dragPct}%` : 'DRAG OFF';
       $('#b-drag').classList.toggle('on', dragOn);
     };
-    const setOn = (on) => { dragOn = on; drag(); this.emit('dragBrake', on ? 'on' : 'off'); };
-    const setPct = (v) => { dragPct = v; drag(); this.emit('dragPct', v); };
+    const set = (on, pct) => { const was = dragOn; dragOn = on; dragPct = pct; drag(); if (was !== on) this.emit('dragBrake', on ? 'on' : 'off'); this.emit('dragPct', pct); };
     drag();
-    $$('#s-dragon button').forEach((b) => { b.onclick = () => setOn(b.dataset.v === 'on'); });
-    $('#b-drag').onclick = () => setOn(!dragOn);
-    for (const sl of ['#s-drag', '#t-drag']) $(sl).oninput = (e) => setPct(+e.target.value);
+    $('#b-drag').onclick = () => {
+      if (!compact.matches) return set(!dragOn, dragOn || dragPct ? dragPct : 100);
+      if (!dragOn) return set(true, 100);
+      const steps = [100, 75, 50, 25], i = steps.indexOf(dragPct);
+      if (i < 0 || i === steps.length - 1) set(i < 0 ? true : false, i < 0 ? 100 : dragPct); else set(true, steps[i + 1]);
+    };
+    $('#t-drag').oninput = (e) => set(dragOn, +e.target.value);
     $('#t-drag').onchange = (e) => e.target.blur();   // hand the arrow keys back to driving
     $('#s-vol').value = s.volume;
     $('#s-vol').oninput = (e) => this.emit('volume', +e.target.value);
