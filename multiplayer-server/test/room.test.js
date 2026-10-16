@@ -141,6 +141,34 @@ test('direct-voice signalling is relayed only between players on direct voice', 
   await a.leave(); await b.leave();
 });
 
+test('relayed voice audio reaches only the targeted players on direct voice', async () => {
+  const a = await new Client(URL).create('rc', { name: 'A', guestId: gid() });
+  const b = await new Client(URL).joinById(a.roomId, { name: 'B', guestId: gid() });
+  const c = await new Client(URL).joinById(a.roomId, { name: 'C', guestId: gid() });
+  const gotB = [], gotC = [];
+  b.onMessage('va', (m) => gotB.push(m)); c.onMessage('va', (m) => gotC.push(m));
+  for (const r of [a, b, c]) r.onMessage('*', () => {});
+  await sleep(150);
+  const slot = (r, sid) => r.state.players.get(sid).slot;
+  const frame = (mask, len = 323) => { const f = new Uint8Array(6 + len); f[0] = mask & 255; f[1] = (mask >>> 8) & 255; f[4] = 7; f[6] = 42; return f; };
+  const toB = 1 << slot(a, b.sessionId), toC = 1 << slot(a, c.sessionId);
+  a.sendBytes('va', frame(toB));                                          // A is not on direct voice yet
+  await sleep(150);
+  assert.equal(gotB.length, 0);
+  a.send('voice', { on: true, via: 'p2p' }); b.send('voice', { on: true, via: 'p2p' });   // C stays out of voice
+  await sleep(250);
+  a.sendBytes('va', frame(toB | toC));
+  a.sendBytes('va', frame(0));                                            // no targets
+  a.sendBytes('va', frame(toB, 2000));                                    // larger than any audio frame
+  await sleep(250);
+  assert.equal(gotB.length, 1, 'B gets exactly the one valid frame');
+  assert.equal(gotC.length, 0, 'C is not on voice, so gets nothing');
+  const m = new Uint8Array(gotB[0]);
+  assert.equal(m[0], slot(a, a.sessionId), 'stamped with the sender slot');
+  assert.equal(m[1], 7); assert.equal(m[3], 42); assert.equal(m.length, 3 + 323);
+  await a.leave(); await b.leave(); await c.leave();
+});
+
 test('race: gate order, timing and recovery teleports are validated', async () => {
   const host = await new Client(URL).create('rc', { name: 'H', guestId: gid() });
   let notice = null; host.onMessage('notice', (m) => (notice = m)); host.onMessage('*', () => {});

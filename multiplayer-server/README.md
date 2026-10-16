@@ -128,9 +128,13 @@ order) · Co-op Off-Road (the team takes the gates together; anyone can take the
 - *Direct* (no LiveKit keys, or the browser cannot reach LiveKit — then it stops trying for 10 minutes): every
   pair of players on direct voice gets its own WebRTC connection. The game server only relays the setup
   messages (offer, answer, ICE candidates) between two players who are both on direct voice, with size and rate
-  limits; the audio goes browser to browser. Public STUN finds each player's address; players behind strict
-  NATs or some mobile carriers need a TURN relay (`TURN_URLS`). Each player uploads one ~24 kbps stream per
-  listener, so it suits small groups best. The lobby shows "· direct" and flags a player with no route.
+  limits; the audio goes browser to browser. Public STUN finds each player's address. If a pair's browsers
+  can't reach each other within 6 s (strict NATs, some mobile carriers), that pair's audio goes through the
+  game server instead: compressed in the browser's audio thread (16 kHz ADPCM, 40 ms frames, ~64 kbps while
+  talking, nothing while silent), relayed only to the players who need it, and played through a 120 ms jitter
+  buffer. A pair switches back to the direct route if it connects later. A TURN server (`TURN_URLS`) is
+  optional and keeps more pairs direct. Each player uploads one ~24 kbps stream per direct listener, so it
+  suits small groups best. The lobby shows "· direct", and "via server" next to a relayed player.
 
 The microphone is requested only when a player turns it on. Modes: muted, open mic, push-to-talk (default key
 **T**, configurable; on-screen hold button in game). Speaker mute, per-player mute and volume, speaking and mic
@@ -142,7 +146,7 @@ driving.
 ```bash
 npm test                    # real server + real clients: rooms, codes, capacity 20, duplicates, movement
                             # validation, reconnection, host hand-over, race validation, voice token scope,
-                            # direct-voice fallback and signalling relay
+                            # direct-voice fallback, signalling relay and audio relay
 npm run bots -- CODE 18     # fill a room with 18 simulated drivers (load testing)
 ```
 
@@ -156,9 +160,11 @@ players and a synthetic microphone signal: audio measured on the received track,
 publish refused by the token, recovery from a dropped signal connection, leaving voice, and permission-denied
 and no-microphone handling — 20/20 checks. The same checks pass on direct voice, both with no LiveKit keys and
 with wrong keys against LiveKit Cloud (it falls back on its own), and a working LiveKit setup still uses LiveKit.
+With the direct route blocked in both browsers (as between two strict NATs), voice switches to the server relay
+and passes the same checks plus the switch itself — 22/22, with the browsers' normal autoplay rules.
 
 Not covered yet: LiveKit Cloud with valid keys (same protocol as the self-hosted server), mobile devices, and
-direct voice between players on different networks (strict NATs need TURN).
+two players on different real networks (simulated above by blocking the direct route).
 
 ## Files
 
@@ -167,4 +173,4 @@ direct voice between players on different networks (strict NATs need TURN).
 - `scripts/vendor-client.mjs` copies the Colyseus / LiveKit browser builds and the codec into
   `public/rc-crawler/vendor/net/` (run `npm run vendor` after upgrading them) · `scripts/bots.mjs` load test
 - Game side: `public/rc-crawler/src/net/` (connection, remote trucks, modes, `voice.js` voice controls and
-  LiveKit, `p2pVoice.js` direct voice) and `src/ui/mpUI.js`
+  LiveKit, `p2pVoice.js` direct voice, `voiceRelay.js` + `voiceWorklet.js` the server relay) and `src/ui/mpUI.js`

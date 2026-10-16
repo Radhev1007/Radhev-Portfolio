@@ -223,7 +223,7 @@ export class MpUI {
       return `<li data-sid="${sid}" class="${p.connected ? '' : 'off'} ${v?.speaking ? 'talk' : ''}">
         <i class="mp-dot" style="background:${liveryCss(p.color)}"></i>
         <span class="mp-pn">${p.host ? `<b class="mp-crown" title="Host">${ICON.crown}</b>` : ''}${esc(p.name)}${self ? ' <em>(you)</em>' : ''}<small>SCX30 · ${esc(LIVERIES[p.color]?.[0] || '')}${p.connected ? (p.ping ? ` · ${p.ping} ms` : '') : ' · reconnecting…'}</small></span>
-        <span class="mp-v ${v?.speaking ? 'talk' : ''}">${micIcon}</span>${v?.reach === 'failed' ? '<span class="mp-tag" title="No direct route to this player">no route</span>' : v?.reach === 'connecting' && !self ? '<span class="mp-tag">connecting</span>' : ''}${ctl}${badge}</li>`;
+        <span class="mp-v ${v?.speaking ? 'talk' : ''}">${micIcon}</span>${v?.reach === 'relay' ? '<span class="mp-tag" title="No direct route to this player: voice goes through the game server">via server</span>' : v?.reach === 'failed' ? '<span class="mp-tag" title="No direct route to this player">no route</span>' : v?.reach === 'connecting' && !self ? '<span class="mp-tag">connecting</span>' : ''}${ctl}${badge}</li>`;
     });
     // keep a volume slider usable while it is being dragged
     if (!$('#mp-players').contains(document.activeElement) || document.activeElement.type !== 'range') $('#mp-players').innerHTML = rows.join('');

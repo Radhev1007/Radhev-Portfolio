@@ -7,11 +7,16 @@
 // The player with the smaller session id always makes the offer, so two players never offer at once.
 // Speaking indicators come from a level meter on each incoming stream and on our own microphone.
 //
-// Limits: needs a direct route between browsers. Public STUN finds most home connections; strict NATs and
-// some mobile carriers need a TURN relay (TURN_URLS on the server). Upload grows with each listener (~24 kbps).
+// When two browsers cannot reach each other (strict NATs, some mobile carriers, no TURN relay configured), that
+// pair's audio goes through the game server instead (voiceRelay.js), so voice works on any network the game
+// itself works on. A pair switches back to the direct route as soon as it connects. Upload grows with each
+// direct listener (~24 kbps each); relayed audio is uploaded once.
+import { VoiceRelay } from './voiceRelay.js';
+
 const BITRATE = 24000;           // per outgoing stream, bits/s
 const SPEAK_LEVEL = 0.018;       // RMS above which someone counts as speaking
 const SPEAK_HOLD = 350;          // ms the indicator stays on after the level drops
+const RELAY_AFTER = 6000;        // ms a direct connection gets before that pair falls back to the server relay
 
 export class P2PVoice {
   constructor(mp, onChange) {
@@ -26,7 +31,19 @@ export class P2PVoice {
     this.lastLoud = new Map();
     this.buf = new Float32Array(1024);
     this.volumes = new Map();    // sid -> effective volume 0..1 (0 = muted)
-    this.blocked = false;        // autoplay blocked until the next click
+    this.elBlocked = false;      // an audio element's autoplay was refused until the next click
+    this.relay = new VoiceRelay(mp, () => this.audioCtx());
+  }
+
+  // autoplay blocked: an element refused to play, or the audio context is still waiting for a click
+  get blocked() { return this.elBlocked || this.ctx?.state === 'suspended'; }
+
+  audioCtx() {
+    if (!this.ctx) {
+      this.ctx = new AudioContext();
+      this.ctx.onstatechange = () => this.onChange();
+    }
+    return this.ctx;
   }
 
   me() { return this.mp.room?.sessionId; }
@@ -45,6 +62,7 @@ export class P2PVoice {
     if (this.mic) { this.mic.stop(); this.mic = null; }
     this.micSrc = null; this.micAnalyser = null;
     this.micLive = false;
+    this.relay.stop();
     this.speaking.clear();
   }
 
@@ -140,10 +158,10 @@ export class P2PVoice {
     if (!p.el) { p.el = new Audio(); p.el.autoplay = true; p.el.playsInline = true; }
     p.el.srcObject = stream;
     this.applyVolume(sid);
-    p.el.play().then(() => { this.blocked = false; }, () => { this.blocked = true; this.onChange(); });
+    p.el.play().then(() => { this.elBlocked = false; }, () => { this.elBlocked = true; this.onChange(); });
     // level meter for the speaking indicator (the element plays the audio; this only listens)
     try {
-      const ctx = this.ctx || (this.ctx = new AudioContext());
+      const ctx = this.audioCtx();
       p.src = ctx.createMediaStreamSource(stream);
       p.analyser = ctx.createAnalyser(); p.analyser.fftSize = 1024;
       p.src.connect(p.analyser);
@@ -158,19 +176,39 @@ export class P2PVoice {
     if (p.el) { p.el.srcObject = null; p.el.remove?.(); }
     try { p.src?.disconnect(); } catch { /* gone */ }
     this.peers.delete(sid);
+    this.relay.close(sid);
     this.speaking.delete(sid);
+    if (p.relay) this.updateRelay();
     this.onChange();
+  }
+
+  // ---------- server relay for pairs without a direct route
+  slot(sid) { return this.mp.state?.players.get(sid)?.slot; }
+
+  updateRelay() {
+    let mask = 0;
+    for (const [sid, p] of this.peers) { const s = this.slot(sid); if (p.relay && s !== undefined) mask |= 1 << s; }
+    this.relay.setSending(this.micLive, mask >>> 0, this.mic).catch((e) => console.warn('[voice] relay', e));
+  }
+
+  // audio relayed by the server: [sender slot u8][seq u16][frame]
+  relayIn(bytes) {
+    if (!this.active || !bytes || !bytes.length) return;
+    let from = null;
+    for (const [sid, q] of this.mp.state?.players || []) if (q.slot === bytes[0]) { from = sid; break; }
+    if (from && from !== this.me()) this.relay.receive(bytes, from).catch((e) => console.warn('[voice] relay', e));
   }
 
   // ---------- microphone: asked for only when it first goes live
   async setMicLive(on) {
+    if (on) this.ctx?.resume().catch(() => {});   // going live is a click or key press: let audio start
     if (on && !this.mic) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       this.mic = stream.getAudioTracks()[0];
       this.mic.onended = () => { this.mic = null; this.micLive = false; this.onChange(); };
       for (const p of this.peers.values()) { const tr = p.pc.getTransceivers()[0]; if (tr) { if (tr.direction !== 'sendrecv') tr.direction = 'sendrecv'; await tr.sender.replaceTrack(this.mic); } }
       try {
-        const ctx = this.ctx || (this.ctx = new AudioContext());
+        const ctx = this.audioCtx();
         this.micSrc = ctx.createMediaStreamSource(new MediaStream([this.mic]));
         this.micAnalyser = ctx.createAnalyser(); this.micAnalyser.fftSize = 1024;
         this.micSrc.connect(this.micAnalyser);
@@ -178,6 +216,7 @@ export class P2PVoice {
     }
     if (this.mic) this.mic.enabled = on;           // muting keeps the permission and the connection, sends silence
     this.micLive = on && !!this.mic;
+    this.updateRelay();
     return this.micLive;
   }
 
@@ -185,12 +224,14 @@ export class P2PVoice {
     // the microphone went away (unplugged): drop it; the next "live" asks for the current default device
     if (this.mic) { this.mic.stop(); this.mic = null; }
     this.micLive = false;
+    this.updateRelay();
   }
 
   // ---------- listening
   setVolume(sid, v) {
     this.volumes.set(sid, v);
     this.applyVolume(sid);
+    this.relay.setVolume(sid, v);
   }
   applyVolume(sid) {
     const p = this.peers.get(sid);
@@ -203,7 +244,7 @@ export class P2PVoice {
     try { await this.ctx?.resume(); } catch { /* ignore */ }
     let ok = true;
     for (const p of this.peers.values()) if (p.el) await p.el.play().catch(() => { ok = false; });
-    this.blocked = !ok;
+    this.elBlocked = !ok;
   }
 
   meter() {
@@ -216,7 +257,17 @@ export class P2PVoice {
       const on = live && now - (this.lastLoud.get(sid) || 0) < SPEAK_HOLD;
       if (on !== this.speaking.has(sid)) { on ? this.speaking.add(sid) : this.speaking.delete(sid); changed = true; }
     };
-    for (const [sid, p] of this.peers) check(sid, p.analyser, p.state === 'connected' && (this.volumes.get(sid) ?? 1) > 0);
+    // a pair whose direct connection hasn't come up in time uses the server relay until it does
+    let relayChanged = false;
+    for (const [sid, p] of this.peers) {
+      const relay = p.state !== 'connected' && now - p.born > RELAY_AFTER;
+      if (relay !== !!p.relay) { p.relay = relay; relayChanged = changed = true; if (!relay) this.relay.close(sid); }
+    }
+    if (relayChanged) this.updateRelay();
+    for (const [sid, p] of this.peers) {
+      const viaServer = p.relay || this.relay.active(sid);
+      check(sid, viaServer ? this.relay.analyser(sid) : p.analyser, (viaServer || p.state === 'connected') && (this.volumes.get(sid) ?? 1) > 0);
+    }
     const me = this.me();
     if (me) check(me, this.micAnalyser, this.micLive);
     if (changed) this.onChange();
@@ -226,8 +277,8 @@ export class P2PVoice {
     if (sid === this.me()) return { inVoice: true, reach: 'connected' };
     const p = this.peers.get(sid);
     if (!p) return { inVoice: false };
-    return { inVoice: true, reach: p.state };
+    return { inVoice: true, reach: p.relay ? 'relay' : p.state };
   }
 
-  stream(sid) { return this.peers.get(sid)?.stream || null; }
+  stream(sid) { const p = this.peers.get(sid); return p?.relay ? this.relay.stream(sid) : p?.stream || null; }
 }

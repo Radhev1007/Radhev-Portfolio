@@ -126,6 +126,7 @@ export class Multiplayer {
     room.onMessage('notice', (m) => this.emit('notice', m.text));
     room.onMessage('voiceToken', (m) => this.emit('voiceToken', m));
     room.onMessage('rtc', (m) => this.emit('rtc', m));
+    room.onMessage('va', (b) => this.emit('va', b));
     room.onStateChange(() => this.onState());
     room.onError((code, msg) => { console.warn('[mp] room error', code, msg); this.setError(friendly({ code, message: msg })); });
     room.onLeave((code) => this.onLeave(code));

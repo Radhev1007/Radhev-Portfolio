@@ -33,11 +33,15 @@ export class Voice {
     this.audioBox = document.createElement('div'); this.audioBox.hidden = true; document.body.appendChild(this.audioBox);
     mp.on('voiceToken', (m) => this._tokenReply?.(m));
     mp.on('rtc', (m) => this.p2p?.signal(m));
+    mp.on('va', (b) => this.p2p?.relayIn(b));
     mp.on('change', () => this.p2p?.sync());
     this.via = '';                   // 'lk' | 'p2p' while connected
     addEventListener('keydown', (e) => { if (this.status === 'on' && this.micMode === 'ptt' && e.key.toLowerCase() === this.pttKey && !e.repeat && !isTyping(e)) this.setPtt(true); });
     addEventListener('keyup', (e) => { if (e.key.toLowerCase() === this.pttKey) this.setPtt(false); });
     addEventListener('blur', () => this.setPtt(false));
+    // the browser held voices back until a click: any click or key press in the game lets them play
+    const kick = () => { if (this.needsGesture) this.unlockAudio(); };
+    addEventListener('pointerdown', kick, true); addEventListener('keydown', kick, true);
     navigator.mediaDevices?.addEventListener?.('devicechange', () => { if (this.p2p) this.onDevicesChanged(); });
   }
 

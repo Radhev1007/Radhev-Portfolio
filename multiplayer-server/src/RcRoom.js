@@ -78,6 +78,7 @@ export class RcRoom extends Room {
       p.vmode = p.voice ? (m.via === 'p2p' ? 'p2p' : 'lk') : '';
     });
     this.onMessage('rtc', (client, m) => this.onRtc(client, m));
+    this.onMessage('va', (client, bytes) => this.onVoiceAudio(client, bytes));
     this.onMessage('voiceToken', (client) => this.onVoiceToken(client));
     this.onMessage('*', (client, type) => console.warn(`[${this.roomId}] unknown message ${String(type).slice(0, 20)} from ${client.sessionId}`));
 
@@ -447,5 +448,23 @@ export class RcRoom extends Room {
       out.sdp = m.sdp;
     }
     target.send('rtc', out);
+  }
+
+  // Relayed voice: when two players on direct voice cannot reach each other (strict NATs, mobile carriers), their
+  // audio comes through here instead, already compressed by the browser (16 kHz ADPCM, ~64 kbps while talking).
+  // In:  [target slots u32 LE][seq u16 LE][audio frame]
+  // Out: [sender slot u8][seq u16 LE][audio frame], only to the targeted players who are on direct voice too.
+  onVoiceAudio(client, bytes) {
+    const p = this.player(client);
+    if (!p || !p.voice || p.vmode !== 'p2p' || !bytes || bytes.length < 9 || bytes.length > 1200 || !this.allow(client, 'va', 60)) return;
+    const mask = (bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24)) >>> 0;
+    if (!mask) return;
+    const out = new Uint8Array(bytes.length - 3);
+    out[0] = p.slot; out.set(bytes.subarray(4), 1);
+    for (const c of this.clients) {
+      if (c === client) continue;
+      const q = this.state.players.get(c.sessionId);
+      if (q && q.connected && q.voice && q.vmode === 'p2p' && (mask >>> q.slot) & 1) c.sendBytes('va', out);
+    }
   }
 }
