@@ -19,7 +19,7 @@ const GRADIENTS = {
 // ---------- instrument cluster: analogue dials drawn once as SVG; only the needles and arcs move
 // A dial sweeps 240 degrees clockwise from lower-left (150 deg) to lower-right (390 deg), like a car's speedometer.
 const DIAL0 = 150, DIAL = 240;
-const SPEED_MAX = 6;           // km/h on the dial (scale speed; high range tops out around 4.5-5 on the flat)
+const SPEED_MAX = 6;           // km/h on the dial (scale speed; high range tops out around 2.5-3 on the flat)
 const RPM_MAX = 30;            // x1000 motor rpm; red line from 27.5 (top speed in either range sits just below it)
 const polar = (cx, cy, r, deg) => [cx + r * Math.cos(deg * Math.PI / 180), cy + r * Math.sin(deg * Math.PI / 180)];
 const arcPath = (cx, cy, r, a0, a1) => {
