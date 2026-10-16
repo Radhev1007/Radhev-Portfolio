@@ -149,6 +149,7 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
   const box = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [turned, setTurned] = useState(false);
   const [view, setView] = useState<{ w: number; h: number } | null>(null);
 
@@ -159,11 +160,22 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Leaving ends the drive (and any multiplayer room), so it asks first. Escape opens the question, and
+  // closes it again while it is open; only the Leave button exits.
+  const keepDriving = () => {
+    setConfirming(false);
+    frame.current?.contentWindow?.focus();
+  };
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onExit();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      if (confirming) keepDriving();
+      else setConfirming(true);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onExit]);
+  }, [confirming]);
 
   useEffect(() => {
     const onMessage = async (e: MessageEvent) => {
@@ -247,7 +259,7 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
           the game's HUD holds all four corners there. */}
       <button
         type="button"
-        onClick={onExit}
+        onClick={() => setConfirming(true)}
         aria-label="Back to portfolio"
         data-cursor="hover"
         className="absolute left-3 top-3 z-10 flex size-10 items-center justify-center gap-3 whitespace-nowrap border border-white/25 bg-black/60 font-mono text-caption uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors duration-300 hover:border-accent hover:bg-accent md:left-1/2 md:top-4 md:size-auto md:-translate-x-1/2 md:px-4 md:py-2"
@@ -256,6 +268,44 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
         <span className="hidden md:inline">Back to portfolio</span>
         <span aria-hidden className="hidden border border-white/30 px-1.5 text-white/70 md:inline">Esc</span>
       </button>
+      {confirming && (
+        <div className="absolute inset-0 z-20 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onClick={keepDriving}>
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="rc-leave-title"
+            aria-describedby="rc-leave-desc"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm border border-white/15 bg-[#141414] p-6 text-white"
+          >
+            <p id="rc-leave-title" className="font-mono text-caption uppercase tracking-[0.18em]">
+              Leave the game?
+            </p>
+            <p id="rc-leave-desc" className="mt-3 text-sm leading-relaxed text-white/65">
+              Your drive ends here, and you&apos;ll leave any multiplayer room you&apos;re in.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                autoFocus
+                onClick={keepDriving}
+                data-cursor="hover"
+                className="flex-1 border border-white/25 px-4 py-2.5 font-mono text-caption uppercase tracking-[0.12em] transition-colors duration-300 hover:border-white/60"
+              >
+                Keep driving
+              </button>
+              <button
+                type="button"
+                onClick={onExit}
+                data-cursor="hover"
+                className="flex-1 border border-accent bg-accent px-4 py-2.5 font-mono text-caption uppercase tracking-[0.12em] text-white transition-colors duration-300 hover:bg-accent-inverse"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
