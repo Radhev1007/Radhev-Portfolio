@@ -15,12 +15,12 @@ export const VEHICLES = [
   {
     id: 'bronco', name: '2022 Ford Bronco', short: 'BRONCO', file: 'assets/vehicles/bronco.glb', paint: /Pintura/i, lamps: /Refletor_Farol/i, exact: true,   // as modelled
     wheels: { front: 1.611, rear: -1.264, y: 0.425, x: 0.84, r: 0.425 },
-    credit: { title: '2022 Ford Bronco', author: 'tonielpro520', changes: 'its wheels moved onto the RC hubs', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+    credit: { title: '2022 Ford Bronco', author: 'tonielpro520', changes: 'its wheels moved onto the RC hubs, tyres and alloys in black', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
   {
     id: 'cruiser', name: 'Toyota Land Cruiser 80', short: 'LAND CRUISER', file: 'assets/vehicles/cruiser.glb', paint: null,   // a photo scan: its paint is in the photos
     wheels: { front: 1.63, rear: -1.23, y: 0.44, x: 0.81, r: 0.44 },
-    credit: { title: 'Older Matte Land Cruiser', author: 'jtressle', changes: 'wheels removed, simplified', url: 'https://sketchfab.com/3d-models/older-matte-land-cruiser-6fc05e37e8174446884981282dbc7a0d', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+    credit: { title: 'Older Matte Land Cruiser', author: 'jtressle', changes: 'wheels removed, simplified, underside darkened', url: 'https://sketchfab.com/3d-models/older-matte-land-cruiser-6fc05e37e8174446884981282dbc7a0d', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
 ];
 export const VEHICLE_IDS = VEHICLES.map((v) => v.id);
@@ -73,9 +73,20 @@ function fit(scene, v) {
     if (!o.isMesh) return;
     o.castShadow = true; o.receiveShadow = true;
     const ms = Array.isArray(o.material) ? o.material : [o.material];
-    for (const m of ms) { m.envMapIntensity = 1; if (m.transparent) o.castShadow = false; }
+    for (const m of ms) { m.envMapIntensity = 1; darkInside(m); if (m.transparent) o.castShadow = false; }
   });
   return holder;
+}
+
+// The inside of the shell renders dark: from below (on its side, cresting a rock, through the arches) a body shows
+// a dark underbody instead of the white inside of its panels. Every shell surface is drawn from both sides for that.
+function darkInside(m) {
+  m.side = THREE.DoubleSide;
+  m.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if (!gl_FrontFacing) gl_FragColor.rgb *= 0.08;');
+  };
+  m.customProgramCacheKey = () => 'body-dark-inside';
+  return m;
 }
 
 // mount (or remove) a body on a crawler model; returns once it is in place. `color` repaints a body that has paint.
@@ -99,7 +110,7 @@ export async function mountBody(model, id, color) {
     const swap = (m) => {
       const list = v.paint?.test(m.name || '') ? model.extraPaint : v.lamps?.test(m.name || '') ? model.extraLamps : null;
       if (!list) return m;
-      const c = m.clone(); list.push(c);
+      const c = darkInside(m.clone()); list.push(c);   // (a clone doesn't keep the shader tweak)
       if (list === model.extraLamps) c.emissive.setHex(0xfff1dc);
       else c.userData.ownHex = m.color.getHex();   // the model's own paint, kept for the default white livery
       return c;

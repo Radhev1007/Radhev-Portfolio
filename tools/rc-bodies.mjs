@@ -77,7 +77,7 @@ function grabTriangles(take) {
   }
   return out;
 }
-let wheelSource = null;
+let wheelSource = null, spareSource = null;
 
 // ---------------------------------------------------------------- wheels out, wheel positions recorded
 let wheels = null;   // world space: { front: z, rear: z, y, x (half track), r }
@@ -97,7 +97,8 @@ if (id === 'gladiator') {
 } else if (id === 'bronco') {
   // kept exactly as modelled (EXACT below). Its road wheels (tyre, rim and brake materials at the wheel
   // positions) come off the body: one of them, the front left, is saved on its own as the node RCWheel, centred on
-  // its hub, and the game turns a copy on each RC hub. The spare on the tailgate stays on the body.
+  // its hub, and the game turns a copy on each RC hub. The spare on the tailgate comes off too and goes back as its
+  // own node (Spare), so both take the black tyre and alloy below.
   const rx = /^Carro_(Pneu|Freio|Freio_Disco|Cromado|Metal_Preto_1)$/;   // tyre, brake, disc, rim, rim face
   const disc = [];
   for (const n of root.listNodes()) for (const p of n.getMesh()?.listPrimitives() || []) if (/Freio_Disco/.test(p.getMaterial()?.getName() || '')) { const m = n.getWorldMatrix(), a = p.getAttribute('POSITION'), e = [0, 0, 0]; for (let i = 0; i < a.getCount(); i++) { a.getElement(i, e); disc.push(mul(m, e[0], e[1], e[2])); } }
@@ -108,6 +109,9 @@ if (id === 'gladiator') {
   const inFL = (c) => c[0] > 0.5 && (c[2] - front) ** 2 + (c[1] - wy) ** 2 < (wr * 1.05) ** 2;
   wheelSource = grabTriangles((c, mat) => rx.test(mat) && inFL(c));
   cutTriangles((c, mat) => rx.test(mat) && Math.abs(c[0]) > 0.5 && [front, rear].some((z) => (c[2] - z) ** 2 + (c[1] - wy) ** 2 < (wr * 1.05) ** 2));
+  const inSpare = (c) => c[2] < -1.95 && Math.hypot(c[0] - 0.005, c[1] - 0.985) < 0.44;   // hanging on the tailgate
+  spareSource = grabTriangles((c, mat) => rx.test(mat) && inSpare(c));
+  cutTriangles((c, mat) => rx.test(mat) && inSpare(c));
 } else if (id === 'cruiser') {
   // a photogrammetry scan: the tyres are part of the body mesh, so cut out every triangle inside a tyre cylinder
   wheels = { front: 1.63, rear: -1.23, y: 0.44, x: 0.81, r: 0.44 };
@@ -130,6 +134,40 @@ if (!EXACT) {
   });
 }
 
+// ---------------------------------------------------------------- the scan's underside, darkened
+// The scan has no real underside: its lowest band and the surfaces facing the ground picked up the floor it stood on
+// (light concrete), which shows from low angles. Vertex colours darken them like a dirty underbody: fully below the
+// sill, fading out just above it, and on surfaces that face down.
+if (id === 'cruiser') {
+  const SILL = 0.47, FADE = 0.13, buf = root.listBuffers()[0];
+  for (const n of root.listNodes()) { const mesh = n.getMesh(); if (!mesh) continue; const m = n.getWorldMatrix();
+    for (const p of mesh.listPrimitives()) {
+      // the scan's own normals mostly point inward, against its (outward) triangle winding: rebuild them from the
+      // winding, area-weighted, so light and the facing-down test below read the surface the right way round
+      { const pa = p.getAttribute('POSITION'), idx = p.getIndices(), acc = new Float32Array(pa.getCount() * 3), A = [0, 0, 0], B = [0, 0, 0], C = [0, 0, 0];
+        for (let k = 0; k + 2 < idx.getCount(); k += 3) {
+          const i0 = idx.getScalar(k), i1 = idx.getScalar(k + 1), i2 = idx.getScalar(k + 2);
+          pa.getElement(i0, A); pa.getElement(i1, B); pa.getElement(i2, C);
+          const u = [B[0] - A[0], B[1] - A[1], B[2] - A[2]], v = [C[0] - A[0], C[1] - A[1], C[2] - A[2]];
+          const f = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+          for (const i of [i0, i1, i2]) for (let q = 0; q < 3; q++) acc[i * 3 + q] += f[q];
+        }
+        for (let i = 0; i < pa.getCount(); i++) { const l = Math.hypot(acc[i * 3], acc[i * 3 + 1], acc[i * 3 + 2]) || 1; for (let q = 0; q < 3; q++) acc[i * 3 + q] /= l; }
+        p.setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(acc).setBuffer(buf)); }
+      const pos = p.getAttribute('POSITION'), nor = p.getAttribute('NORMAL'), e = [0, 0, 0], col = new Float32Array(pos.getCount() * 3);
+      for (let i = 0; i < pos.getCount(); i++) {
+        pos.getElement(i, e);
+        const up = Math.min(1, Math.max(0, (mul(m, e[0], e[1], e[2])[1] - SILL) / FADE));   // 0 below the sill .. 1 above
+        let down = 0;
+        if (nor) { nor.getElement(i, e); const w = [m[0] * e[0] + m[4] * e[1] + m[8] * e[2], m[1] * e[0] + m[5] * e[1] + m[9] * e[2], m[2] * e[0] + m[6] * e[1] + m[10] * e[2]]; const ny = w[1] / (Math.hypot(...w) || 1); down = Math.min(1, Math.max(0, (-ny - 0.25) / 0.45)); }
+        const c = 0.12 + 0.88 * up * (1 - 0.85 * down);
+        col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = c;
+      }
+      p.setAttribute('COLOR_0', doc.createAccessor().setType('VEC3').setArray(col).setBuffer(buf));
+    }
+  }
+}
+
 // ---------------------------------------------------------------- materials the game can draw cheaply
 for (const mat of root.listMaterials()) {
   // transmission needs an extra render pass: plain tinted transparency instead
@@ -147,23 +185,36 @@ const ratio = Math.min(1, target / Math.max(1, before));
 if (ratio < 0.98 && !EXACT) await doc.transform(simplify({ simplifier: MeshoptSimplifier, ratio, error: 0.004 }), weld(), prune());
 console.log('  tris', before, '->', tris(), 'meshes', root.listMeshes().length, 'materials', root.listMaterials().length);
 
-// ---------------------------------------------------------------- the saved wheel, centred on its hub
+// ---------------------------------------------------------------- the saved wheel (centred on its hub) and the spare
+// both in black: a rubber tyre, and a satin black alloy for the rim, its trim and the brake behind it
 if (wheelSource) {
-  const buf = root.listBuffers()[0], all = [...wheelSource.values()].flatMap((o) => o.pos.filter((_, i) => i % 3 === 0));
-  const hub = [(Math.min(...all) + Math.max(...all)) / 2, wheels.y, wheels.front];   // x: middle of the wheel's width
-  const mesh = doc.createMesh('RCWheel');
-  for (const [mat, o] of wheelSource) {
-    const pos = new Float32Array(o.pos.map((v, i) => v - hub[i % 3]));
-    const prim = doc.createPrimitive().setMaterial(mat)
-      .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(pos).setBuffer(buf))
-      .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(o.nor)).setBuffer(buf))
-      .setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(new Float32Array(o.uv)).setBuffer(buf));
-    mesh.addPrimitive(prim);
-  }
-  root.listScenes()[0].addChild(doc.createNode('RCWheel').setMesh(mesh));
+  const buf = root.listBuffers()[0];
+  const TYRE = doc.createMaterial('Wheel_Tyre').setBaseColorFactor([0.018, 0.018, 0.018, 1]).setMetallicFactor(0).setRoughnessFactor(0.9).setDoubleSided(true);
+  const ALLOY = doc.createMaterial('Wheel_Alloy').setBaseColorFactor([0.022, 0.022, 0.024, 1]).setMetallicFactor(0.65).setRoughnessFactor(0.35).setDoubleSided(true);
+  const xs = []; for (const o of wheelSource.values()) for (let i = 0; i < o.pos.length; i += 3) xs.push(o.pos[i]);
+  const hub = [(Math.min(...xs) + Math.max(...xs)) / 2, wheels.y, wheels.front];   // x: middle of the wheel's width
+  const node = (name, source, offset) => {
+    const parts = new Map();   // tyre / alloy -> triangles
+    for (const [mat, o] of source) {
+      const to = /Pneu/.test(mat?.getName() || '') ? TYRE : ALLOY;
+      if (!parts.has(to)) parts.set(to, { pos: [], nor: [], uv: [] });
+      const d = parts.get(to);
+      for (let i = 0; i < o.pos.length; i++) d.pos.push(o.pos[i] - offset[i % 3]);
+      for (const v of o.nor) d.nor.push(v);
+      for (const v of o.uv) d.uv.push(v);
+    }
+    const mesh = doc.createMesh(name);
+    for (const [mat, d] of parts) mesh.addPrimitive(doc.createPrimitive().setMaterial(mat)
+      .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(new Float32Array(d.pos)).setBuffer(buf))
+      .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(d.nor)).setBuffer(buf))
+      .setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(new Float32Array(d.uv)).setBuffer(buf)));
+    root.listScenes()[0].addChild(doc.createNode(name).setMesh(mesh));
+    return [...source.values()].reduce((t, o) => t + o.pos.length / 9, 0);
+  };
+  const wt = node('RCWheel', wheelSource, hub), st = spareSource ? node('Spare', spareSource, [0, 0, 0]) : 0;
   await doc.transform(weld(), dedup());   // index the copied triangles (identical vertices only: the look is unchanged)
   wheels.wheelX = hub[0];
-  console.log('  saved wheel RCWheel:', [...wheelSource.values()].reduce((n, o) => n + o.pos.length / 9, 0), 'triangles, hub', hub.map((v) => +v.toFixed(3)));
+  console.log('  saved wheel RCWheel:', wt, 'triangles, hub', hub.map((v) => +v.toFixed(3)), '| spare:', st, 'triangles');
 }
 
 // ---------------------------------------------------------------- textures, compression

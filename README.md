@@ -39,10 +39,11 @@ Settings; other players see it in multiplayer). Tyres, axles and handling are id
 | `assets/vehicles/bronco.glb` | [“2022 Ford Bronco”](https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f) by tonielpro520 | CC BY 4.0 |
 | `assets/vehicles/cruiser.glb` | [“Older Matte Land Cruiser”](https://sketchfab.com/3d-models/older-matte-land-cruiser-6fc05e37e8174446884981282dbc7a0d) by jtressle | CC BY 4.0 |
 
-Both are adapted: the Bronco is kept as modelled, its own wheels turning on the RC hubs; the Land Cruiser
-loses its wheels and running gear and is simplified. Geometry and textures are recompressed. The game credits them in
-Settings and Controls. `tools/rc-bodies.mjs` rebuilds a body from the downloaded model (usage at the top of the
-file); its wheel positions go into `public/rc-crawler/src/vehicles/bodies.js`.
+Both are adapted: the Bronco is kept as modelled, its own wheels (tyres and alloys in black) turning on the RC
+hubs; the Land Cruiser loses its wheels and running gear, is simplified and has its underside darkened. Geometry
+and textures are recompressed. The game credits them in Settings and Controls. `tools/rc-bodies.mjs` rebuilds a
+body from the downloaded model (usage at the top of the file); its wheel positions go into
+`public/rc-crawler/src/vehicles/bodies.js`.
 
 ## RC Crawler forest
 
