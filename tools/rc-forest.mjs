@@ -124,7 +124,9 @@ const mountain = await io.read(mountainFile);
     return kids(l[Math.floor(l.length / 2)].n);
   };
   for (const [name, rx] of [['pine2', /^Material\.003$/], ['slim2', /^05ade0e/], ['spruce', /^cc24eba/]]) {
-    const [first, ...rest] = pickGroup(rx);
+    // (not the pine's card of dead twigs low on its trunk: at the game's tree sizes they hang at the camera as
+    // big dark claws)
+    const [first, ...rest] = pickGroup(rx).filter((c) => !/^16dde607/.test(matOf(c)));
     keep.push(...standAlone(mountain, first, name, rest));
   }
   for (const n of root.listNodes()) if (!keep.includes(n)) n.dispose();
@@ -141,6 +143,13 @@ mergeDocuments(forest, mountain);
   const buffers = root.listBuffers(); for (const b of buffers.slice(1)) { for (const a of root.listAccessors()) if (a.getBuffer() === b) a.setBuffer(buffers[0]); b.dispose(); }
 }
 await forest.transform(weld(), dedup(), prune());
+// the road forest's atlas holds all its plants side by side, thin trunks included: encoded with full-resolution
+// colour (the default halves it, which smeared those trunks into violet fringes and stepped edges)
+{
+  const atlas = forest.getRoot().listMaterials().find((m) => m.getName() === 'Material')?.getBaseColorTexture();
+  const img = await sharp(Buffer.from(atlas.getImage())).resize(1024, 1024, { fit: 'inside' }).webp({ quality: 88, alphaQuality: 100, smartSubsample: true, effort: 6 }).toBuffer();
+  atlas.setImage(new Uint8Array(img)).setMimeType('image/webp').setURI('');
+}
 await forest.transform(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1024, 1024], quality: 85, formats: /png|jpeg/ }));   // (not the WebPs again)
 await forest.transform(quantize(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
 forest.getRoot().getAsset().extras = { credits: [

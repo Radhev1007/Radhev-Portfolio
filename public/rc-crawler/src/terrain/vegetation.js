@@ -236,13 +236,15 @@ export class Vegetation {
     };
     // trees: tall pines, slender pines and young firs and spruces, from both forests, mixed. The young ones are
     // shorter (YOUNG of the planted height) and branched to the ground, so they only go where their lowest branches
-    // stay clear of the trail; elsewhere a tall pine stands instead
+    // stay clear of the trail, and the slender ones are flat photo cards, so they keep CARD_ROOM back from it where
+    // the camera can't come close; elsewhere a tall pine (a real trunk) stands instead
     const tint = (it, c) => { const h = Math.sin(it.x * 12.9898 + it.z * 78.233) * 43758.5453, r = h - Math.floor(h); return c.setRGB(0.88 + r * 0.2, 0.9 + r * 0.14, 0.86 + (1 - r) * 0.16); };
-    const TREES = ['pine', 'pine2', 'slim', 'slim2', 'fir', 'spruce'], YOUNG = 0.55;
+    const TREES = ['pine', 'pine2', 'slim', 'slim2', 'fir', 'spruce'], YOUNG = 0.55, CARD_ROOM = 10;
     const kinds = TREES.map(() => []);
     this.trees.forEach((t, i) => {
       let v = [0, 1, 0, 1, 2, 3, 4, 5][i % 8];
-      if (v >= 4 && this.roomAt && this.roomAt(t.x, t.z) < t.s * YOUNG * 0.38 + 3) v = i % 2;   // no room: a tall pine
+      const room = this.roomAt ? this.roomAt(t.x, t.z) : Infinity;
+      if ((v >= 4 && room < t.s * YOUNG * 0.38 + 3) || ((v === 2 || v === 3) && room < CARD_ROOM)) v = i % 2;   // a tall pine
       kinds[v].push(t);
     });
     TREES.forEach((n, v) => inst(n, kinds[v], { chunk: 40, tint, scale: v >= 4 ? (it, s) => s.setScalar(it.s * YOUNG) : null }));
@@ -258,8 +260,8 @@ export class Vegetation {
     root.add(this._inst(yuccaGeometry(12), yMat, this.yucca, true, null, 30));
     const brMat = new THREE.MeshStandardMaterial({ map: this.bark, color: 0x9a8a7a, roughness: 0.95 });
     root.add(this._inst(branchGeometry(21), brMat, this.branches, true, null, 30));
-    if (this.roots.length) {
-      const m = new THREE.Mesh(mergeGeometries(this.roots), new THREE.MeshStandardMaterial({ map: this.bark, color: 0x8a7258, roughness: 0.9 }));
+    if (this.roots.length) {   // in the kit trunks' reddish-brown bark (the old dark tone read as black slabs)
+      const m = new THREE.Mesh(mergeGeometries(this.roots), new THREE.MeshStandardMaterial({ map: this.bark, color: 0xc4977a, roughness: 0.9 }));
       m.castShadow = m.receiveShadow = true; root.add(m);
     }
     // logs: the log model stretched to each log's length and thickness, placed and tilted like the collision log
