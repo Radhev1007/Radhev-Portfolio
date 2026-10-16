@@ -29,7 +29,7 @@ import { LIVERIES, liveryCss } from './net/config.js';
 // ------------------------------------------------------------ settings
 const SET_KEY = 'rccrawler.settings.v1';
 const isTouch = matchMedia('(pointer: coarse)').matches;
-const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, level: 'creek' };
+const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, ambience: 'on', level: 'creek' };
 let settings = { ...defaults };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || '{}')); } catch { /* ignore */ }
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch { /* ignore */ } };
@@ -282,6 +282,7 @@ ui.on('title', () => { ui.closeMenu(); placeAtSpawn(); setState('title'); });
 ui.on('challenge', (id) => { audio.uiClick(); challenges.select(challenges.active?.id === id ? null : id); ui.refreshChallenges(challenges); ui.closeMenu(); setState('play'); });
 ui.on('quality', (q) => { settings.quality = q; saveSettings(); rebuildForQuality(); });
 ui.on('volume', (v) => { settings.volume = v; saveSettings(); audio.setMasterVolume(v / 100); });
+ui.on('ambience', (v) => { settings.ambience = v; saveSettings(); audio.setAmbience(v === 'on'); });
 ui.on('touch', (v) => { settings.touch = v; saveSettings(); updateTouchVisibility(); });
 ui.on('dof', (v) => { settings.dof = v; saveSettings(); });
 ui.on('fps', (v) => { settings.fps = v; saveSettings(); ui.showFps(v === 'on'); });
@@ -327,6 +328,7 @@ function recover() {
   }
 }
 
+audio.setAmbience(settings.ambience !== 'off');
 const unlockAudio = () => { audio.start().then(() => { audio.setMasterVolume(settings.volume / 100); if (level) audio.setEnvironment({ biome: level.def.biome, weather: settings.preset }); }); };
 addEventListener('pointerdown', unlockAudio, { once: true });
 addEventListener('keydown', unlockAudio, { once: true });
@@ -608,8 +610,10 @@ function mapSource() {
 minimap = new Minimap(mapSource);
 if (level) minimap.setLevel(level);
 voice.on('change', () => mp.onState());   // speaking / mic indicators on name tags follow voice right away
+// while another player talks, the game's own sound dips so their voice comes through
+voice.on('change', () => { const me = mp.room?.sessionId; audio.setDuck([...(voice.speaking || [])].some((s) => s !== me) ? 0.45 : 1); });
 mp.on('joined', () => { audio.start(); if (level) placeAtSpawn(); });
-mp.on('left', () => { modes.teardown(); voice.leave(); myLivery = null; applyLivery(); });
+mp.on('left', () => { modes.teardown(); voice.leave(); myLivery = null; applyLivery(); audio.setDuck(1); });
 
 // In a room, this truck wears the livery the player picked, exactly as everyone else sees it; white again solo.
 // (The last livery is kept through a reconnect, so the paint doesn't flash white.)
@@ -626,7 +630,7 @@ else loadLevel(settings.level).then(async () => {
   if (code && mp.available) { mpUI.show(); document.getElementById('mp-code').value = code.toUpperCase().slice(0, 5); }
 });
 window.__game = {
-  mp, modes, voice, mpUI, minimap,
+  mp, modes, voice, mpUI, minimap, audio,
   get phys() { return phys; }, get level() { return level; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
   step(n, inp, dt = 1 / 60) { for (let i = 0; i < n; i++) tick(dt, inp); },
   // dev: save the current frame to assets/previews/<name>.jpg (localhost only)

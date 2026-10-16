@@ -254,6 +254,7 @@ export class UI {
     seg('s-touch', 'v', s.touch, 'touch');
     seg('s-dof', 'v', s.dof, 'dof');
     seg('s-fps', 'v', s.fps, 'fps');
+    seg('s-amb', 'v', s.ambience || 'on', 'ambience');
     $('#s-vol').value = s.volume;
     $('#s-vol').oninput = (e) => this.emit('volume', +e.target.value);
     this.showFps(s.fps === 'on');

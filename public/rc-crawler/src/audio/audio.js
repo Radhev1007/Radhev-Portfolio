@@ -68,6 +68,8 @@ export class AudioEngine {
     this._startPromise = null;
     this._volume = 0.8;
     this._muted = false;
+    this._ambient = true;   // background sounds (wind, leaves, birds, insects, water, drips): a setting
+    this._duck = 1;         // master is dipped while another player talks
     this._envSpec = { biome: 'menu', weather: 'morning' };
     this._env = this._computeEnv(this._envSpec);
     this._voices = 0;
@@ -137,6 +139,22 @@ export class AudioEngine {
     try {
       this._volume = clamp(num(v, this._volume));
       this._applyMaster(0.05);
+    } catch (e) { /* */ }
+  }
+
+  // background sounds on / off (the truck, impacts and UI sounds stay)
+  setAmbience(on) {
+    try {
+      this._ambient = !!on;
+      if (this.ctx && this.ambBus) this._set(this.ambBus.gain, this._ambient ? 1 : 0, 0.12);
+    } catch (e) { /* */ }
+  }
+
+  // 1 = full volume; less while someone talks on voice chat, so they're easier to hear
+  setDuck(f) {
+    try {
+      this._duck = clamp(num(f, 1));
+      this._applyMaster(0.15);
     } catch (e) { /* */ }
   }
 
@@ -340,7 +358,7 @@ export class AudioEngine {
     this.preLP.connect(this.comp).connect(this.master).connect(c.destination);
 
     this.sfxBus = this._gain(1, this.preLP);
-    this.ambBus = this._gain(1, this.preLP);
+    this.ambBus = this._gain(this._ambient ? 1 : 0, this.preLP);
     this.birdBus = this._gain(1, this.ambBus);
 
     // shared echo (canyon walls / distance)
@@ -547,7 +565,7 @@ export class AudioEngine {
 
   _applyMaster(tc) {
     if (!this.ctx || !this.master) return;
-    this._set(this.master.gain, this._muted ? 0 : this._volume, tc);
+    this._set(this.master.gain, this._muted ? 0 : this._volume * this._duck, tc);
   }
 
   _computeEnv({ biome, weather }) {

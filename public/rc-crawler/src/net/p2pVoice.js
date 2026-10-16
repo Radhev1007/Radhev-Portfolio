@@ -17,6 +17,8 @@ const BITRATE = 24000;           // per outgoing stream, bits/s
 const SPEAK_LEVEL = 0.018;       // RMS above which someone counts as speaking
 const SPEAK_HOLD = 350;          // ms the indicator stays on after the level drops
 const RELAY_AFTER = 6000;        // ms a direct connection gets before that pair falls back to the server relay
+const MIC_GAIN = 2.5;            // outgoing voice boost, after the browser's echo cancelling and auto gain; a limiter
+                                 // after it keeps loud voices from clipping
 
 export class P2PVoice {
   constructor(mp, onChange) {
@@ -59,9 +61,7 @@ export class P2PVoice {
     this.active = false;
     clearInterval(this.timer);
     for (const sid of [...this.peers.keys()]) this.close(sid);
-    if (this.mic) { this.mic.stop(); this.mic = null; }
-    this.micSrc = null; this.micAnalyser = null;
-    this.micLive = false;
+    this.dropMic();
     this.relay.stop();
     this.speaking.clear();
   }
@@ -201,16 +201,16 @@ export class P2PVoice {
 
   // ---------- microphone: asked for only when it first goes live
   async setMicLive(on) {
-    if (on) this.ctx?.resume().catch(() => {});   // going live is a click or key press: let audio start
+    // going live is a click or key press: create / wake the audio context now, while the browser allows it
+    if (on) { try { this.audioCtx().resume().catch(() => {}); } catch { /* no Web Audio */ } }
     if (on && !this.mic) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
-      this.mic = stream.getAudioTracks()[0];
-      this.mic.onended = () => { this.mic = null; this.micLive = false; this.onChange(); };
+      this.rawMic = stream.getAudioTracks()[0];
+      this.rawMic.onended = () => { this.dropMic(); this.onChange(); };
+      this.mic = this.boost(this.rawMic);           // the track everyone hears
       for (const p of this.peers.values()) { const tr = p.pc.getTransceivers()[0]; if (tr) { if (tr.direction !== 'sendrecv') tr.direction = 'sendrecv'; await tr.sender.replaceTrack(this.mic); } }
       try {
-        const ctx = this.audioCtx();
-        this.micSrc = ctx.createMediaStreamSource(new MediaStream([this.mic]));
-        this.micAnalyser = ctx.createAnalyser(); this.micAnalyser.fftSize = 1024;
+        this.micAnalyser = this.audioCtx().createAnalyser(); this.micAnalyser.fftSize = 1024;
         this.micSrc.connect(this.micAnalyser);
       } catch { /* no indicator for ourselves */ }
     }
@@ -220,10 +220,34 @@ export class P2PVoice {
     return this.micLive;
   }
 
+  // microphone -> gain -> limiter -> a new track to send (the raw microphone if Web Audio isn't available)
+  boost(raw) {
+    try {
+      const ctx = this.audioCtx();
+      const src = ctx.createMediaStreamSource(new MediaStream([raw]));
+      const gain = ctx.createGain(); gain.gain.value = MIC_GAIN;
+      const lim = ctx.createDynamicsCompressor();
+      lim.threshold.value = -12; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.15;
+      const dest = ctx.createMediaStreamDestination();
+      src.connect(gain).connect(lim).connect(dest);
+      this.micSrc = src; this.micChain = [src, gain, lim, dest];
+      return dest.stream.getAudioTracks()[0];
+    } catch {
+      return raw;
+    }
+  }
+
+  dropMic() {
+    if (this.mic) this.mic.stop();
+    if (this.rawMic && this.rawMic !== this.mic) this.rawMic.stop();
+    for (const n of this.micChain || []) { try { n.disconnect(); } catch { /* gone */ } }
+    this.mic = null; this.rawMic = null; this.micChain = null; this.micSrc = null; this.micAnalyser = null;
+    this.micLive = false;
+  }
+
   async switchMic() {
     // the microphone went away (unplugged): drop it; the next "live" asks for the current default device
-    if (this.mic) { this.mic.stop(); this.mic = null; }
-    this.micLive = false;
+    this.dropMic();
     this.updateRelay();
   }
 
