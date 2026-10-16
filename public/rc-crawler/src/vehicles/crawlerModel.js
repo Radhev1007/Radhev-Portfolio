@@ -16,6 +16,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries, mergeVertices, toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 
+const DEFAULT_PAINT = 0xf1f1ee;   // Axial SCX30 JLU, gloss white (the first livery)
+
 export const CRAWLER_DIMS = {
   wheelBase: 1.12,
   track: 0.68,
@@ -1867,7 +1869,7 @@ function ackermann(s) {
 // =============================================================================
 export function createCrawler(opts = {}) {
   QS = QUALITY[opts.quality] || QUALITY.high;
-  const bodyColor = opts.bodyColor ?? 0xf1f1ee;   // Axial SCX30 JLU, gloss white
+  const bodyColor = opts.bodyColor ?? DEFAULT_PAINT;
 
   const dirtU = { uDust: { value: 0 }, uMud: { value: 0 }, uWet: { value: 0 } };
   const mats = makeMaterials(bodyColor, dirtU);
@@ -2192,7 +2194,11 @@ export function createCrawler(opts = {}) {
   // repaint the body (a multiplayer livery); only the paint changes, the black and red parts stay
   const extraPaint = [];   // paint materials of a mounted body shell (bodies.js)
   let paintHex = bodyColor;
-  function setBodyColor(hex) { paintHex = hex; mats.paint.color.setHex(hex); for (const m of extraPaint) m.color.setHex(hex); }
+  // (a mounted body in the default white keeps its own white)
+  function setBodyColor(hex) {
+    paintHex = hex; mats.paint.color.setHex(hex);
+    for (const m of extraPaint) m.color.setHex(hex === DEFAULT_PAINT && m.userData.ownHex !== undefined ? m.userData.ownHex : hex);
+  }
   // hide the SCX30 shell while another body is mounted; the chassis, axles and wheels stay
   function setShellVisible(v) { for (const m of shellMeshes) m.visible = v; }
   // a longer body's nose is ahead of the SCX30 lamps: start the beams there, or they light its bumper from behind

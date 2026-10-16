@@ -32,6 +32,29 @@ const mul = (m, x, y, z) => [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + 
 const tris = () => { let n = 0; for (const mesh of root.listMeshes()) for (const p of mesh.listPrimitives()) n += (p.getIndices() ? p.getIndices().getCount() : p.getAttribute('POSITION').getCount()) / 3; return Math.round(n); };
 console.log(id, 'in: tris', tris(), 'meshes', root.listMeshes().length, 'materials', root.listMaterials().length);
 
+// EXACT: keep the model as it is (no simplifying, no extra cuts, full-size textures), only its road wheels go
+const EXACT = id === 'bronco';
+// drop every triangle whose world-space centroid (and material name) matches
+function cutTriangles(drop) {
+  let cut = 0, kept = 0;
+  for (const n of root.listNodes()) { const mesh = n.getMesh(); if (!mesh) continue; const m = n.getWorldMatrix();
+    for (const p of mesh.listPrimitives()) {
+      const pos = p.getAttribute('POSITION'), idx = p.getIndices(), e = [0, 0, 0], mat = p.getMaterial()?.getName() || '';
+      const at = (i) => { pos.getElement(i, e); return mul(m, e[0], e[1], e[2]); };
+      const count = idx ? idx.getCount() : pos.getCount(), get = (k) => (idx ? idx.getScalar(k) : k), keep = [];
+      for (let k = 0; k + 2 < count; k += 3) {
+        const a = at(get(k)), b = at(get(k + 1)), c = at(get(k + 2));
+        if (drop([(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3], mat)) { cut++; continue; }
+        keep.push(get(k), get(k + 1), get(k + 2)); kept++;
+      }
+      if (!keep.length) { p.dispose(); continue; }
+      if (keep.length === count) continue;
+      p.setIndices(doc.createAccessor().setType('SCALAR').setArray(pos.getCount() > 65535 ? new Uint32Array(keep) : new Uint16Array(keep)).setBuffer(root.listBuffers()[0]));
+    }
+  }
+  console.log('  cut', cut, 'triangles, kept', kept);
+}
+
 // ---------------------------------------------------------------- wheels out, wheel positions recorded
 let wheels = null;   // world space: { front: z, rear: z, y, x (half track), r }
 const box = (pts) => { const b = { min: [1e9, 1e9, 1e9], max: [-1e9, -1e9, -1e9] }; for (const p of pts) for (let k = 0; k < 3; k++) { b.min[k] = Math.min(b.min[k], p[k]); b.max[k] = Math.max(b.max[k], p[k]); } return b; };
@@ -48,49 +71,36 @@ if (id === 'gladiator') {
   wheels = { front: (fr.min[2] + fr.max[2]) / 2, rear: (rr.min[2] + rr.max[2]) / 2, y: (fr.min[1] + fr.max[1]) / 2, x: (fl.min[0] + fl.max[0]) / 2, r: (fr.max[1] - fr.min[1]) / 2 };
   for (const n of parts) n.dispose();
 } else if (id === 'bronco') {
-  // tyres, rims and brake discs are separate materials; the spare on the tailgate goes too
-  const rx = /^Carro_(Pneu|Freio|Freio_Disco)$/;
+  // kept exactly as modelled (EXACT below) except the four road wheels: their tyres, rims and brake discs are
+  // separate materials, removed where they sit at the wheel positions; the spare on the tailgate stays
+  const rx = /^Carro_(Pneu|Freio|Freio_Disco|Cromado|Metal_Preto_1)$/;   // tyre, brake, disc, rim, rim face
   const disc = [];
   for (const n of root.listNodes()) for (const p of n.getMesh()?.listPrimitives() || []) if (/Freio_Disco/.test(p.getMaterial()?.getName() || '')) { const m = n.getWorldMatrix(), a = p.getAttribute('POSITION'), e = [0, 0, 0]; for (let i = 0; i < a.getCount(); i++) { a.getElement(i, e); disc.push(mul(m, e[0], e[1], e[2])); } }
   const road = disc.filter((p) => Math.abs(p[0]) > 0.5);
   const f = box(road.filter((p) => p[2] > 0)), r = box(road.filter((p) => p[2] < 0));
   wheels = { front: (f.min[2] + f.max[2]) / 2, rear: (r.min[2] + r.max[2]) / 2, y: (f.min[1] + f.max[1]) / 2, x: 0.84, r: 0.425 };
-  for (const mesh of root.listMeshes()) for (const p of mesh.listPrimitives()) if (rx.test(p.getMaterial()?.getName() || '')) p.dispose();
+  const { front, rear, y: wy, r: wr } = wheels;
+  cutTriangles((c, mat) => rx.test(mat) && Math.abs(c[0]) > 0.5 && [front, rear].some((z) => (c[2] - z) ** 2 + (c[1] - wy) ** 2 < (wr * 1.05) ** 2));
 } else if (id === 'cruiser') {
   // a photogrammetry scan: the tyres are part of the body mesh, so cut out every triangle inside a tyre cylinder
   wheels = { front: 1.63, rear: -1.23, y: 0.44, x: 0.81, r: 0.44 };
 }
 
-// ---------------------------------------------------------------- one geometric cut for every model
+// ---------------------------------------------------------------- one geometric cut (all but the EXACT models)
 // (sizes relative to the model's own wheel radius r, since the models come in different units)
 //  - inside each wheel cylinder: rims, hubs, brakes (and the scan's tyres)
 //  - the running gear between the wheels below axle height: axles, driveshafts, arms (the RC chassis has its own)
 //  - the scan only: anything below the tyres' bottoms (ground picked up by the scan)
-{
+if (!EXACT) {
   const { front, rear, y: wy, x: wx, r } = wheels, scan = id === 'cruiser';
   const RC = r * (scan ? 1.14 : 1.12), XW = r * 0.8;
-  const drop = (p) => {
+  cutTriangles((p) => {
     const ax = Math.abs(p[0]);
     if (Math.abs(ax - wx) < XW) for (const z of [front, rear]) if ((p[2] - z) ** 2 + (p[1] - wy) ** 2 < RC * RC) return true;
     if (ax < wx - 0.45 * r && p[1] < wy + 0.15 * r && p[2] > rear - 1.0 * r && p[2] < front + 1.0 * r) return true;
     if (scan && p[1] < wy - 0.82 * r) return true;
     return false;
-  };
-  let cut = 0, kept = 0;
-  for (const n of root.listNodes()) { const mesh = n.getMesh(); if (!mesh) continue; const m = n.getWorldMatrix();
-    for (const p of mesh.listPrimitives()) {
-      const pos = p.getAttribute('POSITION'), idx = p.getIndices(), e = [0, 0, 0], at = (i) => { pos.getElement(i, e); return mul(m, e[0], e[1], e[2]); };
-      const count = idx ? idx.getCount() : pos.getCount(), get = (k) => (idx ? idx.getScalar(k) : k), keep = [];
-      for (let k = 0; k + 2 < count; k += 3) {
-        const a = at(get(k)), b = at(get(k + 1)), c = at(get(k + 2));
-        if (drop([(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3])) { cut++; continue; }
-        keep.push(get(k), get(k + 1), get(k + 2)); kept++;
-      }
-      if (!keep.length) { p.dispose(); continue; }
-      p.setIndices(doc.createAccessor().setType('SCALAR').setArray(pos.getCount() > 65535 ? new Uint32Array(keep) : new Uint16Array(keep)).setBuffer(root.listBuffers()[0]));
-    }
-  }
-  console.log('  cut', cut, 'triangles (wheels, running gear' + (scan ? ', ground' : '') + '), kept', kept);
+  });
 }
 
 // ---------------------------------------------------------------- materials the game can draw cheaply
@@ -103,17 +113,18 @@ for (const mat of root.listMaterials()) {
 for (const ext of root.listExtensionsUsed()) if (['KHR_materials_transmission', 'KHR_materials_unlit'].includes(ext.extensionName)) ext.dispose();
 
 // ---------------------------------------------------------------- geometry
-await doc.transform(prune(), flatten(), join({ keepNamed: false }), weld(), dedup(), prune());
+// (EXACT: parts merged by material only; vertices, normals and triangles untouched)
+await doc.transform(prune(), flatten(), join({ keepNamed: false }), ...(EXACT ? [] : [weld()]), dedup(), prune());
 const before = tris();
 const ratio = Math.min(1, target / Math.max(1, before));
-if (ratio < 0.98) await doc.transform(simplify({ simplifier: MeshoptSimplifier, ratio, error: 0.004 }), weld(), prune());
+if (ratio < 0.98 && !EXACT) await doc.transform(simplify({ simplifier: MeshoptSimplifier, ratio, error: 0.004 }), weld(), prune());
 console.log('  tris', before, '->', tris(), 'meshes', root.listMeshes().length, 'materials', root.listMaterials().length);
 
 // ---------------------------------------------------------------- textures, compression
-const texSize = id === 'cruiser' ? [2048, 2048] : [1024, 1024];
+const texSize = id === 'cruiser' || EXACT ? [2048, 2048] : [1024, 1024];
 await doc.transform(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: texSize, quality: 82 }));
 const bounds = getBounds(root.listScenes()[0]);
-await doc.transform(quantize(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+await doc.transform(quantize(), meshopt({ encoder: MeshoptEncoder, level: EXACT ? 'high' : 'medium' }));
 doc.getRoot().getAsset().extras = { ...(doc.getRoot().getAsset().extras || {}), rcBody: { wheels, bounds: { min: bounds.min, max: bounds.max } } };
 await io.write(outFile, doc);
 console.log('  wheels', JSON.stringify(wheels), 'bounds', JSON.stringify({ min: bounds.min, max: bounds.max }));

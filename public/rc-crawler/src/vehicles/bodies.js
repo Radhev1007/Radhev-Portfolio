@@ -13,14 +13,14 @@ import { CRAWLER_DIMS } from './crawlerModel.js';
 export const VEHICLES = [
   { id: 'scx30', name: 'SCX30 Jeep Wrangler JLU', short: 'WRANGLER' },
   {
-    id: 'bronco', name: '2022 Ford Bronco', short: 'BRONCO', file: 'assets/vehicles/bronco.glb', paint: /Pintura/i, lamps: /Refletor_Farol/i,
+    id: 'bronco', name: '2022 Ford Bronco', short: 'BRONCO', file: 'assets/vehicles/bronco.glb', paint: /Pintura/i, lamps: /Refletor_Farol/i, exact: true,   // as modelled
     wheels: { front: 1.611, rear: -1.264, y: 0.425, x: 0.84, r: 0.425 },
-    credit: { title: '2022 Ford Bronco', author: 'tonielpro520', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+    credit: { title: '2022 Ford Bronco', author: 'tonielpro520', changes: 'road wheels removed', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
   {
     id: 'cruiser', name: 'Toyota Land Cruiser 80', short: 'LAND CRUISER', file: 'assets/vehicles/cruiser.glb', paint: null,   // a photo scan: its paint is in the photos
     wheels: { front: 1.63, rear: -1.23, y: 0.44, x: 0.81, r: 0.44 },
-    credit: { title: 'Older Matte Land Cruiser', author: 'jtressle', url: 'https://sketchfab.com/3d-models/older-matte-land-cruiser-6fc05e37e8174446884981282dbc7a0d', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+    credit: { title: 'Older Matte Land Cruiser', author: 'jtressle', changes: 'wheels removed, simplified', url: 'https://sketchfab.com/3d-models/older-matte-land-cruiser-6fc05e37e8174446884981282dbc7a0d', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
 ];
 export const VEHICLE_IDS = VEHICLES.map((v) => v.id);
@@ -45,10 +45,11 @@ function template(v) {
 }
 
 // scale by wheelbase, centre between the axles, wheel centres just above the RC hubs, a touch wider if its track is
-// narrower than the RC track (so the tyres sit under the flares rather than outside them)
+// narrower than the RC track (so the tyres sit under the flares rather than outside them); an `exact` body keeps
+// its own proportions
 function fit(scene, v) {
   const w = v.wheels, s = WB / (w.front - w.rear);
-  const sx = Math.min(1.12, Math.max(0.96, HALF_TRACK / (w.x * s)));
+  const sx = v.exact ? 1 : Math.min(1.12, Math.max(0.96, HALF_TRACK / (w.x * s)));
   const holder = new THREE.Group();
   holder.name = `Body:${v.id}`;
   scene.scale.set(s * sx, s, s);
@@ -88,11 +89,12 @@ export async function mountBody(model, id, color) {
       if (!list) return m;
       const c = m.clone(); list.push(c);
       if (list === model.extraLamps) c.emissive.setHex(0xfff1dc);
+      else c.userData.ownHex = m.color.getHex();   // the model's own paint, kept for the default white livery
       return c;
     };
     o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
   });
-  for (const m of model.extraPaint) m.color.setHex(color ?? model.paintHex);
+  model.setBodyColor(color ?? model.paintHex);
   model.group.add(body);
   model._body = body; model._bodyId = v.id;
   model.setShellVisible(false);
