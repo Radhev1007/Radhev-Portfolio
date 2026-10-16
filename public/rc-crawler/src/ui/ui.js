@@ -256,15 +256,21 @@ export class UI {
     seg('s-dof', 'v', s.dof, 'dof');
     seg('s-fps', 'v', s.fps, 'fps');
     seg('s-amb', 'v', s.ambience || 'on', 'ambience');
-    // drag brake: on / off plus a strength; the slider rests (dimmed) while it is off
-    const drag = (on, pct) => { $('#s-drag').value = pct; $('#s-drag').disabled = !on; $('#s-dragv').textContent = on ? `${pct}%` : 'OFF'; };
+    // drag brake: on / off plus a strength, in the instrument cluster and in Settings (kept in step); the slider
+    // rests (dimmed) while it is off
     let dragOn = s.dragBrake !== 'off', dragPct = s.dragPct ?? 100;
-    drag(dragOn, dragPct);
-    $$('#s-dragon button').forEach((b) => {
-      b.classList.toggle('on', b.dataset.v === (dragOn ? 'on' : 'off'));
-      b.onclick = () => { $$('#s-dragon button').forEach((x) => x.classList.toggle('on', x === b)); dragOn = b.dataset.v === 'on'; drag(dragOn, dragPct); this.emit('dragBrake', b.dataset.v); };
-    });
-    $('#s-drag').oninput = (e) => { dragPct = +e.target.value; drag(dragOn, dragPct); this.emit('dragPct', dragPct); };
+    const drag = () => {
+      for (const [sl, lb] of [['#s-drag', '#s-dragv'], ['#t-drag', '#t-dragv']]) { $(sl).value = dragPct; $(sl).disabled = !dragOn; $(lb).textContent = dragOn ? `${dragPct}%` : 'OFF'; }
+      $$('#s-dragon button').forEach((x) => x.classList.toggle('on', x.dataset.v === (dragOn ? 'on' : 'off')));
+      $('#b-drag').classList.toggle('on', dragOn);
+    };
+    const setOn = (on) => { dragOn = on; drag(); this.emit('dragBrake', on ? 'on' : 'off'); };
+    const setPct = (v) => { dragPct = v; drag(); this.emit('dragPct', v); };
+    drag();
+    $$('#s-dragon button').forEach((b) => { b.onclick = () => setOn(b.dataset.v === 'on'); });
+    $('#b-drag').onclick = () => setOn(!dragOn);
+    for (const sl of ['#s-drag', '#t-drag']) $(sl).oninput = (e) => setPct(+e.target.value);
+    $('#t-drag').onchange = (e) => e.target.blur();   // hand the arrow keys back to driving
     $('#s-vol').value = s.volume;
     $('#s-vol').oninput = (e) => this.emit('volume', +e.target.value);
     this.showFps(s.fps === 'on');
