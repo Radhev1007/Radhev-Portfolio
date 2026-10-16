@@ -16,8 +16,56 @@ const GRADIENTS = {
   creek: 'linear-gradient(160deg,#7fa3a0,#2f4a3e 60%,#101a16)', ultimate: 'linear-gradient(160deg,#9a8f80,#3e3a33 60%,#141210)',
 };
 
+// ---------- instrument cluster: analogue dials drawn once as SVG; only the needles and arcs move
+// A dial sweeps 240 degrees clockwise from lower-left (150 deg) to lower-right (390 deg), like a car's speedometer.
+const DIAL0 = 150, DIAL = 240;
+const SPEED_MAX = 6;           // km/h on the dial (scale speed; the truck tops out around 3.5 in high range)
+const RPM_MAX = 30;            // x1000 motor rpm; red line from 25
+const polar = (cx, cy, r, deg) => [cx + r * Math.cos(deg * Math.PI / 180), cy + r * Math.sin(deg * Math.PI / 180)];
+const arcPath = (cx, cy, r, a0, a1) => {
+  const [x0, y0] = polar(cx, cy, r, a0), [x1, y1] = polar(cx, cy, r, a1);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+};
+function dialSVG(id, { max, major, minor, red, inner }) {
+  const ang = (v) => DIAL0 + DIAL * v / max;
+  let ticks = '', nums = '';
+  for (let v = 0; v <= max + 1e-6; v += minor) {
+    const big = Math.abs(v / major - Math.round(v / major)) < 1e-6, a = ang(v), hot = red !== undefined && v >= red - 1e-6;
+    const [x0, y0] = polar(100, 100, 86, a), [x1, y1] = polar(100, 100, big ? 73 : 79, a);
+    ticks += `<line x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${x1.toFixed(2)}" y2="${y1.toFixed(2)}" class="${big ? 'tk-major' : 'tk-minor'}${hot ? ' tk-red' : ''}"/>`;
+    if (big) { const [tx, ty] = polar(100, 100, 60, a); nums += `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" class="${hot ? 'tk-red' : ''}">${Math.round(v)}</text>`; }
+  }
+  return `<svg viewBox="0 0 200 200" aria-hidden="true">
+    <defs><radialGradient id="${id}-face" cx="50%" cy="42%" r="60%"><stop offset="0" stop-color="#202124"/><stop offset="1" stop-color="#0a0a0b"/></radialGradient>
+      <linearGradient id="${id}-bezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a6c70"/><stop offset=".5" stop-color="#26272a"/><stop offset="1" stop-color="#4a4c50"/></linearGradient></defs>
+    <circle cx="100" cy="100" r="96" fill="url(#${id}-face)" stroke="url(#${id}-bezel)" stroke-width="5"/>
+    ${red !== undefined ? `<path d="${arcPath(100, 100, 82, ang(red), ang(max))}" class="redzone"/>` : ''}
+    ${inner ? `<path d="${arcPath(100, 100, 50, DIAL0, DIAL0 + DIAL)}" class="inner-track"/><path d="${arcPath(100, 100, 50, DIAL0, DIAL0 + DIAL)}" class="inner-fill" pathLength="100" stroke-dasharray="0 100"/>` : ''}
+    <g class="ticks">${ticks}</g><g class="nums">${nums}</g>
+    <g class="needle" style="transform:rotate(${DIAL0}deg)"><path d="M100 97.2 L186 100 L100 102.8 L84 100 Z"/></g>
+    <circle cx="100" cy="100" r="9" class="hub"/>
+  </svg>`;
+}
+// small 120-degree gauge (battery: E..F, motor temperature: C..H) with an icon and a needle
+function miniSVG(id, lo, hi, icon, redHigh) {
+  const a0 = 210, a1 = 330, cx = 50, cy = 50, r = 38;
+  const tick = (a, big) => { const [x0, y0] = polar(cx, cy, r, a), [x1, y1] = polar(cx, cy, r - (big ? 8 : 5), a); return `<line x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${x1.toFixed(2)}" y2="${y1.toFixed(2)}" class="${big ? 'tk-major' : 'tk-minor'}"/>`; };
+  let t = ''; for (let i = 0; i <= 4; i++) t += tick(a0 + (a1 - a0) * i / 4, i % 2 === 0);
+  const [lx, ly] = polar(cx, cy, r + 9, a0), [hx, hy] = polar(cx, cy, r + 9, a1);
+  return `<svg viewBox="0 0 100 62" aria-hidden="true">
+    <path d="${arcPath(cx, cy, r + 2, redHigh ? a1 - 24 : a0, redHigh ? a1 : a0 + 24)}" class="redzone thin"/>
+    ${t}<text x="${lx.toFixed(1)}" y="${(ly + 3).toFixed(1)}" class="mini-end">${lo}</text><text x="${hx.toFixed(1)}" y="${(hy + 3).toFixed(1)}" class="mini-end">${hi}</text>
+    <g transform="translate(43 30) scale(.58)" class="mini-ico">${icon}</g>
+    <g class="needle" style="transform:rotate(${a0}deg);transform-origin:50px 50px"><path d="M50 48.6 L86 50 L50 51.4 L44 50 Z"/></g>
+    <circle cx="50" cy="50" r="4.5" class="hub"/>
+  </svg>`;
+}
+const ICON_BAT = '<rect x="1" y="4" width="20" height="12" rx="2"/><path d="M5 2v2M17 2v2M5 10h4M13 10h4M15 8v4"/>';
+const ICON_TEMP = '<path d="M11 2v11"/><circle cx="11" cy="16" r="4"/><path d="M15 5h4M15 9h4"/>';
+
 export class UI {
   constructor() {
+    this.buildCluster();
     this.handlers = {};
     $('#btn-start').onclick = () => this.emit('start');
     $$('#weather button').forEach((b) => (b.onclick = () => this.emit('preset', b.dataset.p)));
@@ -99,20 +147,37 @@ export class UI {
   setCamLabel(n) { $('#b-cam-l').textContent = n.toUpperCase(); }
 
   // ---------- HUD
+  buildCluster() {
+    const set = (sel, html) => { const el = $(sel); if (el) el.insertAdjacentHTML('afterbegin', html); };
+    set('#g-speedo', dialSVG('gs', { max: SPEED_MAX, major: 1, minor: 0.5 }));
+    set('#g-tach', dialSVG('gt', { max: RPM_MAX, major: 5, minor: 2.5, red: 25, inner: true }));
+    set('#g-bat', miniSVG('gb', 'E', 'F', ICON_BAT, false));
+    set('#g-temp', miniSVG('gc', 'C', 'H', ICON_TEMP, true));
+    this.needle = {
+      speed: $('#g-speedo .needle'), rpm: $('#g-tach .needle'), throttle: $('#g-tach .inner-fill'),
+      bat: $('#g-bat .needle'), temp: $('#g-temp .needle'),
+    };
+  }
+
   hud(d) {
+    const turn = (el, deg) => { if (el) el.style.transform = `rotate(${deg.toFixed(1)}deg)`; };
+    const k = (v) => Math.max(0, Math.min(1, v));
     $('#t-speed').textContent = d.speed.toFixed(1);
+    turn(this.needle.speed, DIAL0 + DIAL * k(d.speed / SPEED_MAX));
+    turn(this.needle.rpm, DIAL0 + DIAL * k(d.rpm));
+    this.needle.throttle?.setAttribute('stroke-dasharray', `${(k(d.throttle) * 100).toFixed(1)} 100`);
+    turn(this.needle.bat, 210 + 120 * k(d.battery));
+    turn(this.needle.temp, 210 + 120 * k((d.temp - 15) / 70));
     $('#t-gear').textContent = d.gear;
-    $('#t-gearbar').style.width = (d.rpm * 100).toFixed(0) + '%';
-    $('#t-dir').textContent = d.dir;
+    if (d.dir !== this._dir) { this._dir = d.dir; for (const i of $('#t-dir').children) i.classList.toggle('on', i.dataset.d === d.dir); }
     this.drivetrain(d);
-    $('#t-thr').style.width = (d.throttle * 100).toFixed(0) + '%';
-    $('#t-bat').style.width = (d.battery * 100).toFixed(0) + '%';
-    $('#t-bat').style.background = d.battery < 0.2 ? '#e5483a' : '';
     $('#t-batv').textContent = Math.round(d.battery * 100) + '%';
-    $('#t-trac').style.width = (d.traction * 100).toFixed(0) + '%';
-    $('#t-trac').style.background = d.traction < 0.45 ? '#f6b51e' : '';
-    $('#t-temp').style.width = Math.min(100, (d.temp - 15) / 70 * 100).toFixed(0) + '%';
+    $('#t-tracv').textContent = Math.round(d.traction * 100) + '%';
     $('#t-tempv').textContent = Math.round(d.temp) + '°';
+    // warning lights, as on a dash: lit only while the condition holds
+    $('#l-slip').classList.toggle('on', d.traction < 0.45 && d.throttle > 0.2);
+    $('#l-bat').classList.toggle('on', d.battery < 0.2);
+    $('#l-hot').classList.toggle('on', d.temp > 70);
     $('#h-surface').textContent = d.surface.toUpperCase();
     $('#recover').classList.toggle('hidden', !d.rolled);
   }
@@ -131,6 +196,9 @@ export class UI {
     $('#t-difflbl').textContent = d.diff === 'LOCKED' ? 'F+R LOCKED' : d.diff === 'FRONT OPEN' ? 'F OPEN · R LOCK' : 'F+R OPEN';
     $('#t-difflbl').classList.toggle('open', d.diff !== 'LOCKED');
     $('#t-range').textContent = d.gear === 'L' ? 'LOW' : 'HIGH';
+    $('#l-low').classList.toggle('on', d.gear === 'L');
+    $('#l-lock').classList.toggle('on', d.diff !== 'OPEN');
+    $('#l-dig').classList.toggle('on', d.dig);
     $('#b-diff').classList.toggle('amber', d.diff !== 'LOCKED');
     $('#b-dig').classList.toggle('on', d.dig);
     $('#tc-range').textContent = d.gear === 'L' ? 'LOW' : 'HIGH';

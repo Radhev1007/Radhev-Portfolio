@@ -67,12 +67,23 @@
       </div>
     </div>
     <div class="telemetry" id="telemetry">
-      <div class="speed"><b id="t-speed">0.0</b><span>km/h</span></div>
-      <div class="row"><label>GEAR</label><b id="t-gear" class="gearval">L</b><div class="bar"><i id="t-gearbar"></i></div><span id="t-dir">N</span></div>
-      <div class="row"><label>THROTTLE</label><div class="bar"><i id="t-thr"></i></div></div>
-      <div class="row"><label>BATTERY</label><div class="bar"><i id="t-bat"></i></div><span id="t-batv">100%</span></div>
-      <div class="row"><label>TRACTION</label><div class="bar"><i id="t-trac"></i></div></div>
-      <div class="row"><label>MOTOR</label><div class="bar"><i id="t-temp"></i></div><span id="t-tempv">25°</span></div>
+      <!-- instrument cluster: tachometer + speedometer dials (drawn by ui.js), battery and temperature gauges either side of
+           a small display (range, direction, traction), warning lights -->
+      <div class="cluster">
+        <div class="gauge tach" id="g-tach"><div class="readout"><small>RPM &times;1000</small></div></div>
+        <div class="gauge speedo" id="g-speedo"><div class="readout"><b id="t-speed">0.0</b><small>km/h</small></div></div>
+      </div>
+      <div class="dash">
+        <div class="mini" id="g-bat" title="Battery"><span id="t-batv">100%</span></div>
+        <div class="lcd">
+          <div class="gearsel" title="Range and direction"><b id="t-gear" class="gearval">L</b><span class="dirs" id="t-dir"><i data-d="R">R</i><i data-d="N">N</i><i data-d="F">F</i></span></div>
+          <div class="lcd-row" title="Traction"><span>TRAC</span><b id="t-tracv">100%</b></div>
+        </div>
+        <div class="mini" id="g-temp" title="Motor temperature"><span id="t-tempv">25&deg;</span></div>
+      </div>
+      <div class="lamps" aria-label="Warning lights">
+        <i id="l-low" class="lamp green" title="Low range">LOW</i><i id="l-lock" class="lamp amber" title="Diff locks">LOCK</i><i id="l-dig" class="lamp red" title="Dig: rear wheels locked">DIG</i><i id="l-slip" class="lamp amber" title="Wheel slip">SLIP</i><i id="l-bat" class="lamp red" title="Battery low">BATT</i><i id="l-hot" class="lamp red" title="Motor hot">HOT</i>
+      </div>
       <div class="fwd">
         <svg viewBox="0 0 40 44" class="axle" id="t-4wd">
           <rect x="3" y="4" width="8" height="12" rx="2"/><rect x="29" y="4" width="8" height="12" rx="2"/>

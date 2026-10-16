@@ -98,14 +98,50 @@ kbd { display: inline-block; min-width: 20px; padding: 1px 6px; margin: 0 2px; b
 .ch-desc { font-size: 12.5px; color: var(--dim); margin-top: 2px; }
 .ch-state { font: 600 12px var(--cond); letter-spacing: 1.5px; margin-top: 6px; color: var(--txt); text-transform: uppercase; }
 
-.telemetry { position: absolute; right: 18px; top: 50%; transform: translateY(-40%); width: 200px; padding: 14px 16px; border-radius: 10px; background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.08); font-family: var(--cond); }
-.telemetry .speed { text-align: center; margin-bottom: 8px; }
-.telemetry .speed b { font: 700 40px var(--cond); font-variant-numeric: tabular-nums; }
-.telemetry .speed span { margin-left: 6px; font: 600 13px var(--cond); color: var(--dim); }
-.telemetry .row { display: grid; grid-template-columns: 62px auto 1fr auto; align-items: center; gap: 6px; height: 24px; font-size: 12px; letter-spacing: .8px; }
-.telemetry .row label { color: var(--dim); font-weight: 600; }
-.telemetry .row:not(:nth-child(2)) { grid-template-columns: 62px 1fr auto; }
-.telemetry .row span { min-width: 30px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.telemetry { position: absolute; right: 18px; top: 50%; transform: translateY(-40%); width: 300px; padding: 14px 12px 12px; border-radius: 10px; background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.08); font-family: var(--cond); }
+/* instrument cluster (dials drawn in ui.js): tachometer + speedometer, battery / temperature gauges, a small display, warning lights */
+.cluster { display: flex; align-items: flex-end; justify-content: center; gap: 4px; }
+.gauge { position: relative; flex: none; }
+.gauge svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.gauge.speedo { width: 160px; height: 160px; }
+.gauge.tach { width: 120px; height: 120px; margin-bottom: 6px; }
+.gauge .readout { position: absolute; left: 0; right: 0; bottom: 17%; text-align: center; line-height: 1; pointer-events: none; }
+.gauge .readout b { display: block; font: 700 26px var(--cond); font-variant-numeric: tabular-nums; color: #fff; }
+.gauge .readout small { display: block; margin-top: 2px; font: 600 10px var(--cond); letter-spacing: 1px; color: var(--dim); }
+.gauge.tach .readout { bottom: 20%; }
+.gauge .tk-major { stroke: #ece9e2; stroke-width: 3; stroke-linecap: round; }
+.gauge .tk-minor { stroke: rgba(236,233,226,.5); stroke-width: 1.6; stroke-linecap: round; }
+.gauge .tk-red { stroke: #ff4d3a; fill: #ff4d3a; }
+.gauge .nums text { font: 700 17px var(--cond); fill: #ece9e2; text-anchor: middle; dominant-baseline: central; }
+.gauge .nums text.tk-red { fill: #ff4d3a; }
+.gauge .redzone { fill: none; stroke: rgba(229,72,58,.85); stroke-width: 7; }
+.gauge .redzone.thin { stroke-width: 3; }
+.gauge .inner-track { fill: none; stroke: rgba(255,255,255,.07); stroke-width: 5; stroke-linecap: round; }
+.gauge .inner-fill { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; transition: stroke-dasharray .12s linear; }
+.gauge .needle, .mini .needle { transform-origin: 100px 100px; transition: transform .12s linear; }
+.gauge .needle path, .mini .needle path { fill: #ff5a26; filter: drop-shadow(0 0 2px rgba(255,90,38,.6)); }
+.gauge .hub, .mini .hub { fill: #1b1c1f; stroke: #5c5e63; stroke-width: 2; }
+.dash { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 6px; margin-top: 2px; }
+.mini { position: relative; text-align: center; }
+.mini svg { display: block; width: 100%; height: auto; overflow: visible; }
+.mini .tk-major { stroke: #ece9e2; stroke-width: 2.2; stroke-linecap: round; }
+.mini .tk-minor { stroke: rgba(236,233,226,.5); stroke-width: 1.4; stroke-linecap: round; }
+.mini .mini-end { font: 700 11px var(--cond); fill: var(--dim); text-anchor: middle; }
+.mini .mini-ico { fill: none; stroke: var(--dim); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mini span { display: block; margin-top: -4px; font: 600 12px var(--cond); font-variant-numeric: tabular-nums; }
+.lcd { min-width: 86px; padding: 6px 8px; border-radius: 7px; background: linear-gradient(#0c0d0e, #15171a); border: 1px solid rgba(255,255,255,.08); box-shadow: inset 0 1px 6px rgba(0,0,0,.6); font-family: var(--cond); }
+.gearsel { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.gearsel .gearval { width: auto; font-size: 20px; line-height: 1; }
+.dirs { display: flex; gap: 5px; font: 700 14px var(--cond); }
+.dirs i { font-style: normal; color: rgba(255,255,255,.25); }
+.dirs i.on { color: #fff; text-shadow: 0 0 6px rgba(255,255,255,.6); }
+.lcd-row { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; letter-spacing: 1px; color: var(--dim); }
+.lcd-row b { color: var(--txt); font-variant-numeric: tabular-nums; }
+.lamps { display: flex; justify-content: center; gap: 4px; margin-top: 8px; }
+.lamp { padding: 2px 5px; border-radius: 3px; font: 700 9.5px var(--cond); font-style: normal; letter-spacing: .8px; color: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.08); transition: color .15s, box-shadow .15s, border-color .15s; }
+.lamp.on.green { color: #6ff07f; border-color: rgba(73,194,90,.6); box-shadow: 0 0 8px rgba(73,194,90,.45); }
+.lamp.on.amber { color: #ffc93a; border-color: rgba(246,181,30,.6); box-shadow: 0 0 8px rgba(246,181,30,.45); }
+.lamp.on.red { color: #ff6a55; border-color: rgba(229,72,58,.7); box-shadow: 0 0 8px rgba(229,72,58,.5); }
 .gearval { font-size: 15px; width: 14px; color: var(--accent); }
 .bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
 .bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--green); transition: width .12s; }
@@ -204,7 +240,7 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
   .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .cards:not(.grid) .card:nth-child(n+4) .img { height: 60px; }
   .weather button { width: 70px; }
-  .telemetry { width: 170px; transform: scale(.92) translateY(-40%); transform-origin: right center; }
+  .telemetry { transform: scale(.85) translateY(-40%); transform-origin: right center; }
 }
 @media (max-width: 720px) {
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; left: 10px; right: 10px; bottom: 10px; }
@@ -248,11 +284,13 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
 @media (max-width: 720px), (orientation: landscape) and (max-height: 500px) {
   .weather.compact { display: none; }
 
-  .telemetry { top: 12px; right: 12px; width: auto; min-width: 104px; padding: 8px 12px; transform: none; }
-  .telemetry .speed { margin-bottom: 2px; }
-  .telemetry .speed b { font-size: 26px; }
-  .telemetry .row, .telemetry .dt-btns, .telemetry .axle { display: none; }
-  .telemetry .fwd { margin-top: 2px; padding-top: 6px; justify-content: center; }
+  .telemetry { top: 12px; right: 12px; width: auto; min-width: 0; padding: 6px 8px 7px; transform: none; }
+  .telemetry .tach, .telemetry .dash, .telemetry .lamps, .telemetry .dt-btns, .telemetry .axle { display: none; }
+  .telemetry .gauge.speedo { width: 92px; height: 92px; }
+  .telemetry .gauge .readout b { font-size: 17px; }
+  .telemetry .gauge .readout small { font-size: 8px; margin-top: 1px; }
+  .telemetry .gauge .nums text { font-size: 24px; }
+  .telemetry .fwd { margin-top: 3px; padding-top: 4px; justify-content: center; }
   #t-difflbl { margin-left: 8px; }
 
   .touch-on .hud-br button { min-width: 0; width: 44px; height: 44px; padding: 0; justify-content: center; }
@@ -418,7 +456,7 @@ body:has(#hud.touch-on) .mm:not(.big) [data-a="in"], body:has(#hud.touch-on) .mm
 body:has(#hud.touch-on) .mm:not(.big) .mm-ctl button { width: 22px; height: 22px; }
 @media (max-width: 720px) {
   /* portrait: top-right, under the speed card */
-  body:has(#hud.touch-on) .mm:not(.big), body:has(#hud.touch-on) .mm-show { left: auto; right: 12px; bottom: auto; top: 100px; }
+  body:has(#hud.touch-on) .mm:not(.big), body:has(#hud.touch-on) .mm-show { left: auto; right: 12px; bottom: auto; top: 150px; }
   body:has(#hud.touch-on) .mm:not(.big) .mm-box { width: 112px; height: 112px; }
 }
 @media (orientation: landscape) and (max-height: 500px) {
