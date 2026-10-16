@@ -61,6 +61,12 @@ export function Cursor() {
       setVisible(true);
     };
     const onOver = (e: PointerEvent) => {
+      // Over an embedded page (the garage's game) the pointer belongs to that
+      // page and its own cursor; this one would only freeze at the frame's edge.
+      if ((e.target as Element | null)?.tagName === "IFRAME") {
+        setVisible(false);
+        return;
+      }
       const el = (e.target as Element | null)?.closest<HTMLElement>("[data-cursor], a, button, [role='button']");
       const next = (el?.dataset.cursor as CursorState | undefined) ?? (el ? "hover" : "default");
       setState(next);
@@ -101,8 +107,9 @@ export function Cursor() {
       // The cursor lives outside every section, so it cannot follow a
       // section's palette. The dot and ring invert against what is under
       // them instead; the labelled bubble is accent-filled, which reads on
-      // both the black and the white sections.
-      className={`pointer-events-none fixed left-0 top-0 z-[100] ${filled ? "" : "mix-blend-difference"}`}
+      // both the black and the white sections. It sits above every layer,
+      // the full-screen garage included.
+      className={`pointer-events-none fixed left-0 top-0 z-[300] ${filled ? "" : "mix-blend-difference"}`}
       style={{ transform: "translate3d(-100px,-100px,0)" }}
     >
       <motion.div
