@@ -5,6 +5,7 @@ import { Heightfield, SURF } from '../terrain/heightfield.js';
 import { Simplex2, Rng, clamp, smoothstep, lerp } from '../core/noise.js';
 import { RockField } from '../terrain/rocks.js';
 import { Vegetation } from '../terrain/vegetation.js';
+import { loadForestKit } from '../terrain/forestKit.js';
 import { createTerrainMaterial, createRockMaterial, sharedTerrainUniforms } from '../terrain/terrainMaterial.js';
 import { createWaterMesh, createWaterfall } from '../terrain/water.js';
 import { buildActivities } from './activities.js';
@@ -310,6 +311,9 @@ const _n = new THREE.Vector3();
 // ---------------------------------------------------------------- Build
 export async function buildLevel(def, quality, onProgress = () => {}) {
   const ctx = new LevelContext(def, quality);
+  // every terrain but the desert is dressed with the forest kit (real tree, plant and log models); loaded first,
+  // since its log is also the logs' collision shape
+  if (def.biome !== 'desert') ctx.veg.kit = await loadForestKit();
   onProgress(0.05, 'Shaping terrain');
   await yieldFrame();
   // level-specific terrain + layout
@@ -397,6 +401,9 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   const rockMat = createRockMaterial({ quality });
   group.add(ctx.rocks.buildMeshes(rockMat));
   await yieldFrame();
+  // room around each tree: distance to the nearest trail centreline (the kit's firs need it)
+  const trailPts = ctx.paths.flatMap((p) => p.pts);
+  ctx.veg.roomAt = (x, z) => { let d = Infinity; for (const p of trailPts) d = Math.min(d, (p.x - x) ** 2 + (p.z - z) ** 2); return Math.sqrt(d); };
   group.add(ctx.veg.build());
   for (const w of ctx.water) group.add(createWaterMesh(hf, w, quality === 'low' ? 0.5 : 0.25));
   for (const wf of ctx.waterfalls) group.add(createWaterfall(wf.x, wf.y0, wf.y1, wf.z, wf.width, wf.yaw));

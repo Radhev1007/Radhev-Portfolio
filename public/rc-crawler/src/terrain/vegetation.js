@@ -19,7 +19,10 @@ function colorize(g, fn) {
 }
 
 function windMaterial(opts, strength = 1, kind = 'tree') {
-  const m = new THREE.MeshStandardMaterial(opts);
+  return addWind(new THREE.MeshStandardMaterial(opts), strength, kind);
+}
+// sway a material's vertices in the shared wind (more toward the top)
+function addWind(m, strength = 1, kind = 'tree') {
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, windUniforms);
     sh.vertexShader = sh.vertexShader
@@ -37,7 +40,7 @@ function windMaterial(opts, strength = 1, kind = 'tree') {
             : 'float k = max(0., position.y - 0.25); k *= k; transformed.x += (sin(uTime * 0.9 + ph) * 0.6 + sin(uTime * 2.3 + ph) * 0.15) * k * 0.025 * uWind * ' + strength.toFixed(3) + '; transformed.z += sin(uTime * 0.7 + ph * 1.3) * k * 0.015 * uWind * ' + strength.toFixed(3) + ';'}
         }`);
   };
-  m.customProgramCacheKey = () => 'wind-' + kind + strength;
+  m.customProgramCacheKey = () => 'wind-' + kind + strength + (m.alphaTest > 0 ? '-cut' : '');
   return m;
 }
 
@@ -76,7 +79,9 @@ export class Vegetation {
     this.detail = quality === 'low' ? 1 : 2;
     this.bark = makeBarkTexture();
     this.trees = []; this.bushes = []; this.grass = []; this.dryGrass = []; this.yucca = []; this.branches = []; this.farTrees = [];
-    this.logs = []; this.roots = [];
+    this.logs = []; this.logSpecs = []; this.roots = [];
+    this.kit = null;   // forest kit (forestKit.js): when set, trees, bushes, grass and logs come from it
+    this.roomAt = null;   // (x, z) -> distance to the nearest trail, for the kit's low-branched firs
   }
 
   addTree(x, y, z, height, yaw = 0) { this.trees.push({ x, y, z, s: height, yaw }); }
@@ -88,6 +93,15 @@ export class Vegetation {
 
   // log geometry is built per-instance (unique lengths) & returned for rasterization
   makeLog(x, y, z, length, radius, yaw, pitch = 0) {
+    // with the forest kit: the log model itself, stretched to this length and thickness, is what the truck climbs
+    if (this.kit) {
+      const parts = this.kit.log.map((p) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', p.geometry.attributes.position.clone()); g.setIndex(p.geometry.index.clone()); return g; });
+      const g = parts.length > 1 ? mergeGeometries(parts) : parts[0];
+      const k = radius / this.kit.log.radius;
+      g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y + radius * 0.75, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, pitch, 'YXZ')), new THREE.Vector3(length, k, k)));
+      this.logSpecs.push({ x, y: y + radius * 0.75, z, length, radius, yaw, pitch });
+      return g;
+    }
     const g = new THREE.CylinderGeometry(radius * 0.92, radius, length, 12, 4, false);
     g.rotateZ(Math.PI / 2);
     const p = g.attributes.position;
@@ -98,6 +112,7 @@ export class Vegetation {
     const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y + radius * 0.75, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, pitch, 'YXZ')), new THREE.Vector3(1, 1, 1));
     g.applyMatrix4(m);
     this.logs.push(g);
+    this.logSpecs.push({ x, y: y + radius * 0.75, z, length, radius, yaw, pitch });
     return g;
   }
 
@@ -135,6 +150,7 @@ export class Vegetation {
   }
 
   build() {
+    if (this.kit) return this.buildKit();
     const root = new THREE.Group();
     const d = this.detail;
     // pines: 3 variants
@@ -201,6 +217,64 @@ export class Vegetation {
     if (this.roots.length) {
       const rg = mergeGeometries(this.roots);
       const m = new THREE.Mesh(rg, new THREE.MeshStandardMaterial({ map: this.bark, color: 0x8a7258, roughness: 0.9 })); m.castShadow = m.receiveShadow = true; root.add(m);
+    }
+    return root;
+  }
+
+  // the forest kit (real tree, plant and log models) in place of the procedural pines, bushes, grass and logs;
+  // branches, roots and desert plants stay procedural. Same positions, sizes and keep-clear areas as before.
+  buildKit() {
+    const root = new THREE.Group(), K = this.kit, mats = new Map();
+    // one wind-swayed copy of each kit material per sway kind
+    const matFor = (m, strength, kind) => {
+      const key = m.uuid + kind + strength;
+      if (!mats.has(key)) mats.set(key, addWind(m.clone(), strength, kind));
+      return mats.get(key);
+    };
+    const inst = (name, list, opts = {}) => {
+      for (const p of K[name]) root.add(this._inst(p.geometry, opts.wind === false ? p.material : matFor(p.material, opts.strength ?? 1, opts.kind || 'tree'), list, opts.shadow ?? true, opts.scale, opts.chunk ?? 30, opts.tint));
+    };
+    // trees: tall pines, slender pines and young firs, mixed. A fir is shorter (FIR of the planted height) and
+    // branched to the ground, so it only goes where its lowest branches stay clear of the trail
+    const tint = (it, c) => { const h = Math.sin(it.x * 12.9898 + it.z * 78.233) * 43758.5453, r = h - Math.floor(h); return c.setRGB(0.88 + r * 0.2, 0.9 + r * 0.14, 0.86 + (1 - r) * 0.16); };
+    const FIR = 0.55, kinds = [[], [], []];
+    this.trees.forEach((t, i) => {
+      let v = [0, 0, 1, 2][i % 4];
+      if (v === 2 && this.roomAt && this.roomAt(t.x, t.z) < t.s * FIR * 0.36 + 3) v = i % 2;   // no room: a pine
+      kinds[v].push(t);
+    });
+    inst('pine', kinds[0], { chunk: 40, tint });
+    inst('slim', kinds[1], { chunk: 40, tint });
+    inst('fir', kinds[2], { chunk: 40, tint, scale: (it, s) => s.setScalar(it.s * FIR) });
+    // bushes (green and dry alike) and grass tufts, sized like the shapes they replace
+    const shrubTint = (it, c) => { const h = Math.sin(it.x * 91.7 + it.z * 37.3) * 43758.5453, r = h - Math.floor(h); return it.dry ? c.setRGB(0.95 + r * 0.15, 0.9 + r * 0.1, 0.72 + r * 0.1) : c.setRGB(0.85 + r * 0.25, 0.9 + r * 0.15, 0.82 + (1 - r) * 0.18); };
+    inst('bush', this.bushes, { scale: (it, s) => s.setScalar(it.s * 1.3), tint: shrubTint, strength: 1.5, kind: 'bush' });
+    const patch = (it, c) => { const p = Math.sin(it.x * 0.17 + Math.sin(it.z * 0.11) * 2) * 0.5 + Math.sin(it.z * 0.23 - it.x * 0.07) * 0.5; return it.dry ? c.setRGB(1.05 + p * 0.08, 0.98 + p * 0.04, 0.8) : c.setRGB(0.9 + p * 0.1, 0.98 + p * 0.06, 0.85 - p * 0.08); };
+    const tufts = this.grass.map((t) => ({ ...t, dry: false })).concat(this.dryGrass.map((t) => ({ ...t, dry: true })));
+    inst('tuft', tufts, { scale: (it, s) => s.setScalar(it.s * 1.1), tint: patch, shadow: this.quality === 'ultra', chunk: 16, kind: 'grass' });
+    // far trees, yucca, branches, roots: as before
+    if (this.farTrees.length) root.add(this._inst(farTreeGeometry(), createFarTreeMaterial(), this.farTrees, false, null, 120));
+    const yMat = windMaterial({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide }, 1.5, 'bush');
+    root.add(this._inst(yuccaGeometry(12), yMat, this.yucca, true, null, 30));
+    const brMat = new THREE.MeshStandardMaterial({ map: this.bark, color: 0x9a8a7a, roughness: 0.95 });
+    root.add(this._inst(branchGeometry(21), brMat, this.branches, true, null, 30));
+    if (this.roots.length) {
+      const m = new THREE.Mesh(mergeGeometries(this.roots), new THREE.MeshStandardMaterial({ map: this.bark, color: 0x8a7258, roughness: 0.9 }));
+      m.castShadow = m.receiveShadow = true; root.add(m);
+    }
+    // logs: the log model stretched to each log's length and thickness, placed and tilted like the collision log
+    if (this.logSpecs.length) {
+      const kr = K.log.radius, mtx = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3();
+      for (const part of K.log) {
+        const mesh = new THREE.InstancedMesh(part.geometry, part.material, this.logSpecs.length);
+        this.logSpecs.forEach((L, i) => {
+          q.setFromEuler(e.set(0, L.yaw, L.pitch, 'YXZ'));
+          mesh.setMatrixAt(i, mtx.compose(p.set(L.x, L.y, L.z), q, s.set(L.length, L.radius / kr, L.radius / kr)));
+        });
+        mesh.castShadow = mesh.receiveShadow = true;
+        mesh.computeBoundingSphere();
+        root.add(mesh);
+      }
     }
     return root;
   }

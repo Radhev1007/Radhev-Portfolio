@@ -44,6 +44,20 @@ loses its wheels and running gear and is simplified. Geometry and textures are r
 Settings and Controls. `tools/rc-bodies.mjs` rebuilds a body from the downloaded model (usage at the top of the
 file); its wheel positions go into `public/rc-crawler/src/vehicles/bodies.js`.
 
+## RC Crawler forest
+
+Every terrain except Desert Ridge is dressed with real tree, plant and log models instead of procedural ones:
+pines, young firs, bushes, grass tufts and fallen logs, placed where the game always placed its vegetation.
+The log model is also the logs' collision shape, so the truck climbs what you see.
+
+| Asset | Model | Licence |
+| --- | --- | --- |
+| `assets/forest/kit.glb` (trees, plants) | [“a forest (3) with a road at night for game”](https://sketchfab.com/3d-models/a-forest-3-with-a-road-at-night-for-game-61f8c7817fe6457fb26e4814cfc48a3f) by dasy444 | CC BY 4.0 |
+| `assets/forest/kit.glb` (log) | [“Logs”](https://sketchfab.com/3d-models/logs-54d0c962a0e24dadb2c01477fd4741f9) by Kathrin&Christian | CC BY 4.0 |
+
+Both are adapted: one of each repeated part taken out and instanced, textures recompressed. The game credits them
+in Controls. `tools/rc-forest.mjs` rebuilds the kit from the downloaded models (usage at the top of the file).
+
 ## Replacing the content
 
 All copy lives in **`lib/content.ts`**. Content is populated from the owner's CV: name, role, contact, projects, skills and about copy all live in `site`, `projects`, `skills` and `about`. The nav initials, footer and page title all follow it.
