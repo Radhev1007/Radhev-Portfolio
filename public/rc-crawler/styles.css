@@ -367,3 +367,15 @@ html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
   .tc-modes { position: static; flex-direction: column; }
   body:has(#hud.touch-on) .mp-vhud { left: 18px; top: 50%; }
 }
+
+/* ---------- phones: turn sideways (src/ui/landscape.js) */
+.rotate { display: none; position: fixed; inset: 0; z-index: 40; place-items: center; padding: 24px; background: rgba(8,8,8,.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-align: center; }
+@media (orientation: portrait) { html.phone.playing:not(.portrait-ok) .rotate { display: grid; } }
+.rotate-card { max-width: 300px; }
+.rotate-card h3 { margin: 18px 0 8px; font: italic 800 26px var(--cond); letter-spacing: .5px; text-transform: uppercase; }
+.rotate-card p { margin: 0 0 22px; font-size: 14px; line-height: 1.45; color: var(--dim); }
+.rotate-ico { width: 84px; height: 84px; fill: none; stroke: var(--txt); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; animation: rotate-turn 2.4s ease-in-out infinite; }
+.rotate-ico .rotate-arc { stroke: var(--accent); }
+@keyframes rotate-turn { 0%, 25% { transform: rotate(0); } 55%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .rotate-ico { animation: none; transform: rotate(-90deg); } }
+.rotate-btn { padding: 11px 18px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.06); font: 700 14px var(--cond); letter-spacing: 1.5px; color: var(--dim); }

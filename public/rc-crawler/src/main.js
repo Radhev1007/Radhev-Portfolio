@@ -22,6 +22,7 @@ import { Multiplayer } from './net/multiplayer.js';
 import { Modes } from './net/modes.js';
 import { Voice } from './net/voice.js';
 import { MpUI } from './ui/mpUI.js';
+import { Landscape } from './ui/landscape.js';
 
 // ------------------------------------------------------------ settings
 const SET_KEY = 'rccrawler.settings.v1';
@@ -191,7 +192,10 @@ function disposeGroup(g) {
   });
 }
 
+const landscape = new Landscape();
 function setState(s) {
+  if (s === 'play' && state === 'title') landscape.request();   // starting to drive is a tap: phones turn sideways
+  landscape.setPlaying(s === 'play');
   state = s;
   ui.setState(s);
   rig.intro = s === 'title';

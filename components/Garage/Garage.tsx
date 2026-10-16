@@ -123,14 +123,23 @@ function RcIcon() {
   );
 }
 
+type LockableOrientation = ScreenOrientation & { lock?: (o: "landscape") => Promise<void>; unlock?: () => void };
+
 /**
  * The game in a full-screen frame with a way back out.
  *
  * The frame takes keyboard focus once it loads so the driving keys work
  * straight away. Escape works while focus is on this page; once the game has
  * it, the "Back to portfolio" button is always on top.
+ *
+ * On phones the game asks, as driving starts, to be turned sideways. Browsers
+ * only lock the orientation in full screen, so this page puts the whole frame
+ * — game and back button — in full screen and locks it to landscape. Where
+ * that isn't allowed (iPhone Safari) the game asks the player to turn the
+ * phone instead.
  */
 function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
+  const box = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -140,8 +149,27 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onExit]);
 
+  useEffect(() => {
+    const onMessage = async (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.source !== frame.current?.contentWindow) return;
+      if (e.data?.type !== "rc:landscape" || !box.current) return;
+      try {
+        if (!document.fullscreenElement) await box.current.requestFullscreen({ navigationUI: "hide" });
+        await (screen.orientation as LockableOrientation).lock?.("landscape");
+      } catch {
+        // not allowed on this browser: the game shows its "turn your phone" card
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      (screen.orientation as LockableOrientation | undefined)?.unlock?.();
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-[100] bg-[#0b0b0c]" role="dialog" aria-modal="true" aria-label="RC Crawler game">
+    <div ref={box} className="fixed inset-0 z-[100] bg-[#0b0b0c]" role="dialog" aria-modal="true" aria-label="RC Crawler game">
       {!ready && (
         <div className="absolute inset-0 grid place-items-center text-white">
           <div className="text-center">
