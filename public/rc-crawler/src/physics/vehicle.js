@@ -82,10 +82,10 @@ export const DIFF_MODES = [
 ];
 
 // wmax: free-running wheel speed (rad/s); tstall: torque at stall; fric: drivetrain friction per rad/s.
-// Low range is the crawler gear (~1.3 km/h scale speed). High range is the trail gear: ~2.5-3 km/h on the flat.
+// Low range is the crawler gear (~1.3 km/h scale speed). High range is the trail gear: 2.7-2.9 km/h on the flat.
 export const GEARS = {
   LOW: { name: 'L', wmax: 22, tstall: 14, fric: 0.15 },
-  HIGH: { name: 'H', wmax: 52, tstall: 12, fric: 0.08 },
+  HIGH: { name: 'H', wmax: 56, tstall: 12, fric: 0.08 },
 };
 
 export class CrawlerPhysics {
