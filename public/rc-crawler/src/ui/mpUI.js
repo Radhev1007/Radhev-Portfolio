@@ -100,11 +100,15 @@ export class MpUI {
     const hud = document.createElement('div');
     hud.id = 'mp-hud'; hud.className = 'mp-hud hidden';
     hud.innerHTML = `<div class="mp-strip"><span id="mh-code"></span><span id="mh-net" class="mp-bars"><i></i><i></i><i></i></span><span id="mh-ms" class="mp-dim"></span><span id="mh-session"></span><button id="mh-open" class="mp-chip">ROOM</button></div>
-      <ol id="mh-board" class="mp-board"></ol>
-      <div id="mh-voice" class="mp-vhud hidden"><button id="mh-mic" title="Microphone"></button><button id="mh-ptt" class="mp-ptt" title="Hold to talk">HOLD TO TALK</button><button id="mh-spk" title="Speaker"></button></div>`;
+      <ol id="mh-board" class="mp-board"></ol>`;
     document.body.appendChild(hud);
+    // voice buttons down the left edge; outside the strip, whose centring transform would anchor them to it
+    const vhud = document.createElement('div');
+    vhud.id = 'mh-voice'; vhud.className = 'mp-vhud hidden';
+    vhud.innerHTML = '<button id="mh-mic" title="Microphone"></button><button id="mh-ptt" class="mp-ptt" title="Hold to talk"><span><span class="ptt-x">HOLD TO </span>TALK<span id="mh-pttkey" class="ptt-k"></span></span></button><button id="mh-spk" title="Speaker"></button>';
+    document.body.appendChild(vhud);
     const cd = document.createElement('div'); cd.id = 'mp-countdown'; cd.className = 'mp-countdown hidden'; document.body.appendChild(cd);
-    this.hud = hud; this.cd = cd;
+    this.hud = hud; this.vhud = vhud; this.cd = cd;
 
     // liveries
     $('#mp-liveries').innerHTML = LIVERIES.map(([n], i) => `<button data-c="${i}" title="${esc(n)}" style="background:${liveryCss(i)}"></button>`).join('');
@@ -291,6 +295,7 @@ export class MpUI {
   renderHud() {
     const st = this.mp.state, me = this.mp.me, active = this.mp.active || this.mp.status === 'reconnecting';
     this.hud.classList.toggle('hidden', !active || !this.game.driving());
+    this.vhud.classList.toggle('hidden', !active || !this.game.driving() || this.voice.status !== 'on');
     if (!active) { this.cd.classList.add('hidden'); return; }
     const q = this.mp.connectionQuality();
     $('#mh-code').textContent = st ? `${st.code} · ${[...st.players.values()].filter((p) => p.connected).length}/20` : 'RECONNECTING';
@@ -325,12 +330,11 @@ export class MpUI {
     this.lastPhase = st?.phase;
     // voice buttons
     const v = this.voice;
-    $('#mh-voice').classList.toggle('hidden', v.status !== 'on');
     $('#mh-mic').innerHTML = v.micLive ? ICON.mic : ICON.micOff;
     $('#mh-mic').classList.toggle('on', v.micLive);
     $('#mh-mic').title = v.micMode === 'open' ? 'Mute microphone' : 'Open microphone';
     $('#mh-spk').innerHTML = v.speakerMuted ? ICON.spkOff : ICON.spk;
-    $('#mh-ptt').textContent = `HOLD TO TALK (${v.pttKey.toUpperCase()})`;
+    $('#mh-pttkey').textContent = ` (${v.pttKey.toUpperCase()})`;
     $('#mh-ptt').classList.toggle('on', v.micMode === 'ptt' && v.micLive);
   }
 }

@@ -331,10 +331,11 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
 .mp-board:empty { display: none; }
 .mp-board li { display: flex; align-items: center; gap: 6px; } .mp-board li.me { color: var(--accent); } .mp-board span { width: 14px; color: var(--dim); }
 .mp-board .mp-dot { width: 10px; height: 10px; }
-.mp-vhud { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; gap: 8px; }
+.mp-vhud { position: fixed; left: 18px; top: 50%; transform: translateY(-50%); z-index: 8; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .mp-vhud button { height: 44px; min-width: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 22px; background: var(--glass-2); display: grid; place-items: center; font: 700 13px var(--cond); letter-spacing: 1px; touch-action: none; }
 .mp-vhud button.on { border-color: var(--green); color: var(--green); }
 .mp-ptt.on { background: rgba(73,194,90,.3); }
+body:has(#hud.touch-on) .ptt-k { display: none; }   /* no keyboard on touch screens */
 .mp-countdown { position: fixed; left: 50%; top: 36%; transform: translate(-50%, -50%); z-index: 9; font: 900 140px var(--cond); font-style: italic; color: #fff; text-shadow: 0 8px 40px rgba(0,0,0,.6); pointer-events: none; }
 html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
 @media (max-width: 760px) {
@@ -343,6 +344,10 @@ html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
   .mp-liveries { grid-template-columns: repeat(10, 1fr); gap: 4px; }
   .mp-strip { font-size: 12px; gap: 6px; max-width: calc(100vw - 140px); overflow: hidden; }
   .mp-hud { top: auto; bottom: 228px; }
-  .mp-vhud { bottom: 210px; }
   .mp-players input[type=range] { width: 52px; }
+}
+@media (max-width: 720px) {
+  /* phones: the recover / camera / lights / menu buttons hold the left edge, so voice sits just beside them */
+  body:has(#hud.touch-on) .mp-vhud { left: 66px; top: 42%; }
+  body:has(#hud.touch-on) .ptt-x { display: none; }
 }
