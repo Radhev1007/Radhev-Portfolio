@@ -24,7 +24,7 @@ import { Voice } from './net/voice.js';
 import { MpUI } from './ui/mpUI.js';
 import { Landscape } from './ui/landscape.js';
 import { Minimap } from './ui/minimap.js';
-import { liveryCss } from './net/config.js';
+import { LIVERIES, liveryCss } from './net/config.js';
 
 // ------------------------------------------------------------ settings
 const SET_KEY = 'rccrawler.settings.v1';
@@ -294,7 +294,7 @@ async function rebuildForQuality() {
   applyQuality();
   scene.remove(model.group); model.dispose();
   model = createCrawler({ quality: settings.quality });
-  scene.add(model.group); model.setLights(lightsOn);
+  scene.add(model.group); model.setLights(lightsOn); applyLivery();
   const wasPlaying = state === 'play' || state === 'paused';
   const pose = phys ? { p: phys.pos.clone(), yaw: phys.yaw } : null;
   await loadLevel(settings.level, { keepState: true });
@@ -609,7 +609,13 @@ minimap = new Minimap(mapSource);
 if (level) minimap.setLevel(level);
 voice.on('change', () => mp.onState());   // speaking / mic indicators on name tags follow voice right away
 mp.on('joined', () => { audio.start(); if (level) placeAtSpawn(); });
-mp.on('left', () => { modes.teardown(); voice.leave(); });
+mp.on('left', () => { modes.teardown(); voice.leave(); myLivery = null; applyLivery(); });
+
+// In a room, this truck wears the livery the player picked, exactly as everyone else sees it; white again solo.
+// (The last livery is kept through a reconnect, so the paint doesn't flash white.)
+let myLivery = null;
+function applyLivery() { model.setBodyColor((LIVERIES[myLivery ?? 0] || LIVERIES[0])[1]); }
+mp.on('change', () => { const c = mp.me?.color; if (c !== undefined && c !== myLivery) { myLivery = c; applyLivery(); } });
 
 // ------------------------------------------------------------ boot
 requestAnimationFrame(frame);

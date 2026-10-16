@@ -2185,6 +2185,8 @@ export function createCrawler(opts = {}) {
     brake = Math.min(1, Math.max(0, amount || 0));
     applyLightState();
   }
+  // repaint the body (a multiplayer livery); only the paint changes, the black and red parts stay
+  function setBodyColor(hex) { mats.paint.color.setHex(hex); }
   function setDirt({ dust, mud, wet } = {}) {
     const c = (v, prev) => (v === undefined || v === null ? prev : Math.min(1, Math.max(0, v)));
     dirtU.uDust.value = c(dust, dirtU.uDust.value);
@@ -2219,6 +2221,7 @@ export function createCrawler(opts = {}) {
     update,
     setLights,
     setBrake,
+    setBodyColor,
     setDirt,
     bodyMeshes,
     dispose,
