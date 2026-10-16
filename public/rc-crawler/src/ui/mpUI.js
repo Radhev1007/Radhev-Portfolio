@@ -127,8 +127,8 @@ export class MpUI {
     $('#mp-leave').onclick = async () => { await this.voice.leave(); await this.mp.leave(); this.status('You left the room'); this.render(); };
     $('#mp-ready').onclick = () => { const me = this.mp.me; if (me) this.mp.room.send('ready', { ready: !me.ready }); };
     $('#mp-start').onclick = () => this.start();
-    $('#mp-copycode').onclick = () => this.copy(this.mp.code, 'Room code copied');
-    $('#mp-copylink').onclick = () => this.copy(this.mp.inviteLink(), 'Invite link copied');
+    $('#mp-copycode').onclick = (e) => this.copy(this.mp.code, 'Room code copied', e.currentTarget);
+    $('#mp-copylink').onclick = (e) => this.copy(this.mp.inviteLink(), 'Invite link copied', e.currentTarget);
     $('#mp-map').innerHTML = this.game.levels.map((l) => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
     $('#mp-mode').innerHTML = Object.entries(MODE_INFO).map(([k, v]) => `<option value="${k}">${esc(v.name)}</option>`).join('');
     $('#mp-map').onchange = (e) => this.config({ map: e.target.value });
@@ -149,13 +149,21 @@ export class MpUI {
 
   flushName() { const n = $('#mp-name').value.trim().slice(0, 16); if (n !== this.mp.profile.name) this.mp.saveProfile({ name: n }); }
 
-  async copy(text, ok) {
-    try { await navigator.clipboard.writeText(text); this.status(ok); }
+  // copy to the clipboard; the button itself confirms it ("✓ Copied" in green for a moment)
+  async copy(text, ok, btn) {
+    let done = false;
+    try { await navigator.clipboard.writeText(text); done = true; }
     catch {
       const i = document.createElement('textarea'); i.value = text; document.body.appendChild(i); i.select();
-      const done = document.execCommand?.('copy'); i.remove();
-      this.status(done ? ok : `Copy this: ${text}`);
+      done = !!document.execCommand?.('copy'); i.remove();
     }
+    this.status(done ? ok : `Copy this: ${text}`, !done);
+    if (!btn) return;
+    btn.dataset.label ||= btn.textContent;
+    clearTimeout(btn._copyT);
+    btn.textContent = done ? '✓ Copied' : 'Copy failed';
+    btn.classList.toggle('copied', done); btn.classList.toggle('copyfail', !done);
+    btn._copyT = setTimeout(() => { btn.textContent = btn.dataset.label; btn.classList.remove('copied', 'copyfail'); }, 1800);
   }
 
   status(t, err = false) { const s = $('#mp-status'); s.textContent = t || ''; s.classList.toggle('err', !!err && !!t); }
