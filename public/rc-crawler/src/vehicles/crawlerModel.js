@@ -64,7 +64,9 @@ const QUALITY = {
 };
 
 // Materials whose meshes are too small to be worth a shadow-map pass.
-const NO_SHADOW = new Set(['bolt', 'trim', 'headLens', 'barLens', 'tailLens', 'brakeLens', 'amber', 'headDome']);
+const NO_SHADOW = new Set(['bolt', 'trim', 'headLens', 'barLens', 'tailLens', 'brakeLens', 'amber', 'headDome', 'reflector', 'podCup', 'decalBar']);
+// Lamp interiors are lit through their lenses: a shadow from the roof rack would only turn them grey.
+const NO_RECEIVE = new Set(['headLens', 'barLens', 'headDome', 'reflector', 'podCup']);
 
 // Active quality settings while building (createCrawler is synchronous).
 let QS = QUALITY.high;
@@ -140,6 +142,12 @@ const cylX = (r, len, seg, r2) => cyl(r, len, seg, r2).rotateZ(PI / 2);
 const cylZ = (r, len, seg, r2) => cyl(r, len, seg, r2).rotateX(PI / 2);
 const torus = (R, r, rs = 8, ts = QS.cylSeg) => new THREE.TorusGeometry(R, r, rs, ts);
 const sphere = (r, ws = QS.cylSeg, hs = Math.max(6, QS.cylSeg >> 1)) => new THREE.SphereGeometry(r, ws, hs);
+/** Concave lamp reflector opening toward +Z (rim at z = 0); profile listed rim -> centre so its inside faces out. */
+function bowlGeo(r, depth, seg) {
+  const pts = [];
+  for (let i = 10; i >= 0; i--) { const t = i / 10; pts.push(new THREE.Vector2(Math.max(1e-4, r * t), -depth * (1 - t * t))); }
+  return new THREE.LatheGeometry(pts, seg).rotateX(PI / 2);
+}
 
 /** Cylinder (or box) spanning two points. */
 function rodGeo(a, b, r, seg = QS.cylSeg) {
@@ -244,7 +252,7 @@ class Bin {
       const mesh = new THREE.Mesh(geo, mat);
       mesh.name = key;
       mesh.castShadow = !NO_SHADOW.has(key);
-      mesh.receiveShadow = true;
+      mesh.receiveShadow = !NO_RECEIVE.has(key);
       parent.add(mesh);
       meshes.push(mesh);
     }
@@ -508,6 +516,7 @@ function makeMaterials(bodyColor, dirtU) {
     steel: std({ color: 0x1d1e20, metalness: 0.35, roughness: 0.5, bumpMap: grain || null, bumpScale: 0.25 }), // black powder-coated steel
     trim: std({ color: 0x070707, metalness: 0.0, roughness: 0.9 }),              // rubber seals, panel gaps
     chrome: std({ color: 0xd8dade, metalness: 1.0, roughness: 0.12 }),
+    reflector: std({ color: 0xe6e8ea, metalness: 0.92, roughness: 0.2, side: THREE.DoubleSide }),   // lamp reflector bowls
     alu: std({ color: 0x2e3033, metalness: 0.35, roughness: 0.55 }),            // dark moulded/anodised underbody parts (SCX30)
     grilleTrim: std({ color: 0x5f6368, metalness: 0.45, roughness: 0.42 }),       // grey slot frames
     gunmetal: std({ color: 0x4b4f54, metalness: 0.7, roughness: 0.32 }),         // headlamp bezels
@@ -541,7 +550,9 @@ function makeMaterials(bodyColor, dirtU) {
     }),
     rim: std({ color: 0x1c1d1f, metalness: 0.35, roughness: 0.55 }),
     headLens: std({ color: 0xc4cad0, metalness: 0.75, roughness: 0.12, emissive: 0xfff3e2, emissiveIntensity: 0 }),
-    barLens: std({ color: 0xcfd6db, metalness: 0.3, roughness: 0.1, emissive: 0xf4f8ff, emissiveIntensity: 0 }),
+    barLens: std({ color: 0xffffff, metalness: 0.0, roughness: 0.22, transparent: true, opacity: 0.32, depthWrite: false, emissive: 0xf4f8ff, emissiveIntensity: 0 }),   // lightly frosted LED lenses
+    podCup: std({ color: 0xe9ecef, metalness: 0.55, roughness: 0.3, side: THREE.DoubleSide }),   // metallised plastic reflector cups (light bar)
+    decalBar: std({ map: makeOutlineDecal('axial', '#56595e', null), transparent: true, alphaTest: 0.25, roughness: 0.6, metalness: 0.0, polygonOffset: true, polygonOffsetFactor: -2, depthWrite: false }),
     tailLens: std({ color: 0x5a0805, metalness: 0.1, roughness: 0.15, emissive: 0xff1a0a, emissiveIntensity: 0 }),
     brakeLens: std({ color: 0x5a0805, metalness: 0.1, roughness: 0.15, emissive: 0xff1a0a, emissiveIntensity: 0 }),
     amber: std({ color: 0x8a4a06, metalness: 0.1, roughness: 0.15, emissive: 0xff8a10, emissiveIntensity: 0 }),
@@ -893,7 +904,7 @@ function buildBody(B) {
 
   // ------------------------------------------- Grille + headlamps ------------
   // From the front photo: 7 full-height slots between two large round lamps at the grille's outer edges,
-  // each slot ringed in silver; small slatted vents under the lamps; body-colour surround.
+  // each slot ringed in silver; black slatted vents tucked under the inner half of each lamp; body-colour surround.
   {
     const gy0 = 0.074, gy1 = 0.218, gw = 0.242;
     const curve = 0.32, rake = 0.13;          // face wraps back toward the corners
@@ -940,7 +951,8 @@ function buildBody(B) {
       panel.lineTo(-gw, gy0 + rb);
       panel.bezierCurveTo(-gw, gy0 + rb * 0.4, -gb + rb * 0.35, gy0, -gb + rb, gy0);
     }
-    const lampX = 0.19, lampY = 0.158, lampR = 0.043;
+    const lampX = 0.19, lampY = 0.166, lampR = 0.043;
+    const ventX = 0.168, ventCY = 0.108, ventHX = 0.025, ventHY = 0.0125;   // slatted vent under each lamp
     const pocketY = lampY, pocketR = lampR + 0.0035;                 // thin dark recess ring around each lamp
     const slotW = 0.026, slotY0 = 0.09, slotY1 = 0.206, pitch = 0.0385;
     const sx = (i) => (i - 3) * pitch;
@@ -962,6 +974,7 @@ function buildBody(B) {
         let d = dOut, r = ROUT;
         for (let i = 0; i < 7; i++) { const di = sdRound(x - sx(i), y - slotCY, slotHX, slotHY, 0.009); if (di < d) { d = di; r = RIN; } }
         for (const s2 of sides) { const di = Math.hypot(x - s2 * lampX, y - pocketY) - pocketR; if (di < d) { d = di; r = RIN; } }
+        for (const s2 of sides) { const di = sdRound(x - s2 * ventX, y - ventCY, ventHX, ventHY, 0.006); if (di < d) { d = di; r = RIN; } }
         return [d, r];
       };
       const cell = QS.detail >= 2 ? 0.0014 : QS.detail >= 1 ? 0.002 : 0.003;
@@ -1008,29 +1021,29 @@ function buildBody(B) {
     // dark cavity behind the openings
     B.add('trim', rbox(0.47, 0.15, 0.008, 0.01), M(0, 0.148, zNose - 0.058));
     B.add('trim', box(0.47, 0.006, 0.05), M(0, gTop, zNose - 0.035));
-    // headlamps (JL LED style, as in the photo): bright chrome bezel, dark gloss housing with horizontal chrome
-    // reflector blades, central projector in a chrome cup, LED halo ring, clear domed lens
+    // headlamps (JL LED style, as in the photo): satin silver bezel, a bright silver reflector bowl behind clear
+    // glass, and one horizontal LED capsule across the middle (it glows with the lights); a faint DRL halo
     const lean = -Math.atan(rake);
+    const capsuleShape = (w, h) => { const sh = new THREE.Shape(), r = h / 2; sh.absarc(w / 2 - r, 0, r, -PI / 2, PI / 2, false); sh.absarc(-w / 2 + r, 0, r, PI / 2, PI * 1.5, false); return sh; };
+    const ledW = (lampR - 0.006) * 1.5, ledH = 0.0118;
+    const ledFrame = capsuleShape(ledW + 0.005, ledH + 0.005);
+    ledFrame.holes.push(new THREE.Path(capsuleShape(ledW, ledH).getPoints(24)));
     for (const s2 of sides) {
       const x = s2 * lampX, z = faceZ(x, lampY);
       const yaw = s2 * Math.atan(2 * curve * lampX);
       const L = (geo, dz) => B.add(geo[0], geo[1], M(x, lampY, z + dz, lean, yaw, 0));
       B.add('trim', cylZ(pocketR, 0.03), M(x, pocketY, faceZ(x, pocketY) - 0.038, lean, yaw, 0));   // recess behind the housing
-      L(['silver', torus(lampR - 0.0015, 0.0052, 10, QS.cylSeg + 12)], -0.005);          // chrome bezel
+      L(['silver', torus(lampR - 0.0015, 0.0052, 10, QS.cylSeg + 12)], -0.005);          // satin silver bezel
       L(['trim', torus(lampR - 0.0075, 0.0016, 6, QS.cylSeg + 12)], -0.006);             // dark gap inside the bezel
-      L(['trim', cylZ(lampR - 0.006, 0.004, QS.cylSeg + 8)], -0.02);                      // deep black housing
-      // stacked chrome reflector blades, clipped to the round housing, each tilted to catch the light
-      const inner = lampR - 0.01;
-      for (const dy of [-0.021, -0.0105, 0.0105, 0.021]) {
-        const w = 2 * Math.sqrt(Math.max(0, inner * inner - dy * dy)) * (Math.abs(dy) > 0.015 ? 0.86 : 0.5);
-        const gx = Math.abs(dy) > 0.015 ? 0 : s2 * 0.012;                                   // middle blades sit beside the projector
-        L(['chrome', rbox(w, 0.0048, 0.003, 0.0014).rotateX(dy > 0 ? 0.35 : -0.35).translate(gx, dy, 0)], -0.0165);
-      }
-      // projector: chrome cup + lens (glows with the lights)
-      L(['chrome', torus(0.0095, 0.0022, 6, QS.cylSeg + 4).translate(-s2 * 0.009, 0, 0)], -0.0145);
-      L(['headLens', cylZ(0.0085, 0.004, QS.cylSeg).translate(-s2 * 0.009, 0, 0)], -0.0155);
-      L(['headLens', torus(lampR - 0.0095, 0.0011, 6, QS.cylSeg + 8)], -0.012);          // LED halo ring
+      L(['reflector', bowlGeo(lampR - 0.0062, 0.016, QS.cylSeg + 8)], -0.0085);             // reflector bowl
+      L(['chrome', new THREE.ExtrudeGeometry(ledFrame, { depth: 0.0035, bevelEnabled: false, curveSegments: 8 })], -0.0145);   // LED capsule frame
+      L(['headLens', new THREE.ExtrudeGeometry(capsuleShape(ledW, ledH), { depth: 0.002, bevelEnabled: false, curveSegments: 8 })], -0.0135);  // LED diffuser
+      L(['headLens', torus(lampR - 0.0085, 0.0008, 5, QS.cylSeg + 8)], -0.0095);         // DRL halo
       L(['headDome', sphere(lampR - 0.006, QS.cylSeg + 6, 10).scale(1, 1, 0.22)], -0.009);
+      // black slatted vent below the lamp: dark recess plus three thin horizontal louvres
+      const vx = s2 * ventX;
+      B.add('trim', rbox(ventHX * 2 + 0.004, ventHY * 2 + 0.004, 0.01, 0.004), M(vx, ventCY, faceZ(vx, ventCY) - 0.016, lean, 0, 0));
+      for (const k of [-1, 0, 1]) B.add('black', rbox(ventHX * 2 - 0.004, 0.0032, 0.007, 0.0012), M(vx, ventCY + k * 0.0072, faceZ(vx, ventCY) - 0.009, lean + 0.35, 0, 0));
     }
     B.add('black', rbox(0.44, 0.022, 0.03, 0.008), M(0, 0.07, zNose - 0.03));
     // black fender corners either side of the grille, with clear marker strips underneath
@@ -1436,19 +1449,22 @@ function buildBody(B) {
     const fz0 = zf, fy0 = y0 + 0.012, fz1 = 0.175, fy1 = yWinTop + 0.03;
     const fLen = Math.hypot(fz1 - fz0, fy1 - fy0), fAng = Math.atan2(fy0 - fy1, fz1 - fz0);
     B.add('black', rbox(0.5, 0.008, fLen, 0.004), M(0, (fy0 + fy1) / 2, (fz0 + fz1) / 2, fAng));
-    B.add('black', rbox(0.52, 0.04, 0.012, 0.004), M(0, fy1 + 0.008, fz1 + 0.002));
+    B.add('black', rbox(0.52, 0.056, 0.012, 0.004), M(0, fy1 + 0.016, fz1 + 0.002));      // front plate, logo strip above the pods
+    if (D >= 1) B.add('decalBar', new THREE.PlaneGeometry(0.135, 0.022), M(-0.14, fy1 + 0.031, fz1 + 0.0085));   // moulded "axial" logo
     for (const sx2 of sides) B.add('black', rodGeo(V(sx2 * 0.27, yWinTop - 0.01, 0.15), V(sx2 * 0.245, fy1, fz1 - 0.005), 0.005));
     // 8 large round pods nearly touching, spanning the windshield width (as in the front photo)
     const podR = 0.0285, podSeg = QS.cylSeg + 8;
     for (let i = 0; i < 8; i++) {
       const x = -0.21 + i * 0.06, y = fy1 - 0.01, z = fz1 + 0.02;
-      B.add('black', cylZ(podR, 0.026, podSeg, podR * 0.85), M(x, y, z - 0.004));          // deep barrel housing
-      B.add('black', rbox(0.016, 0.022, 0.014, 0.004), M(x, y + podR + 0.004, z - 0.01));  // mount to the fairing
+      B.add('black', cylZ(podR, 0.016, podSeg, podR * 0.85), M(x, y, z - 0.012));          // barrel housing, closed behind the cup
+      B.add('black', new THREE.CylinderGeometry(podR, podR, 0.013, podSeg, 1, true).rotateX(PI / 2), M(x, y, z + 0.0025));   // open sleeve around the cup
       B.add('black', torus(podR - 0.002, 0.0042, 8, podSeg), M(x, y, z + 0.009));          // thick black bezel
-      B.add('barLens', cylZ(podR - 0.0055, 0.003, podSeg), M(x, y, z + 0.008));            // lens
-      B.add('chrome', torus(podR * 0.62, 0.0018, 6, podSeg), M(x, y, z + 0.0095));        // reflector ring
-      B.add('chrome', cylZ(podR * 0.25, 0.003, 12), M(x, y, z + 0.0098));                  // LED emitter
+      B.add('podCup', bowlGeo(podR - 0.006, 0.012, podSeg), M(x, y, z + 0.0085));          // metallised reflector cup
+      B.add('chrome', sphere(podR * 0.2, 10, 6).scale(1, 1, 0.6), M(x, y, z - 0.001));     // LED emitter at the cup's centre
+      B.add('barLens', cylZ(podR - 0.0055, 0.0015, podSeg), M(x, y, z + 0.0095));          // frosted lens over the cup
     }
+    // black ribs between the pods, as on the moulded bar
+    for (let i = 0; i < 7; i++) B.add('black', rbox(0.008, 0.03, 0.02, 0.002), M(-0.18 + i * 0.06, fy1 - 0.012, fz1 + 0.016));
 
     // Hi-Lift jack along the left rack edge: orange bar + rail, handle angled up at the rear
     const jx = xw + 0.052, jy = y0 - 0.002;
@@ -2079,7 +2095,7 @@ export function createCrawler(opts = {}) {
   if (opts.realLights !== false) for (const s of [1, -1]) {
     const spot = new THREE.SpotLight(0xffece0, 0, 14, 0.6, 0.6, 1.5);
     spot.castShadow = false;
-    spot.position.set(s * 0.19, 0.158, 0.74);
+    spot.position.set(s * 0.19, 0.166, 0.74);
     const target = new THREE.Object3D();
     target.position.set(s * 0.3, -0.9, 6.0);
     group.add(target);
