@@ -11,7 +11,7 @@
 //    each truck receives exactly one collision response (its owner's). See README "Authority".
 import { Room, ServerError } from '@colyseus/core';
 import { Player, RoomState } from './state.js';
-import { config, MAPS, MODES, MODE_LIMIT, PALETTE_SIZE } from './config.js';
+import { config, MAPS, MODES, MODE_LIMIT, PALETTE_SIZE, iceServers } from './config.js';
 import { decodeMove, encodeSnapshot, poseSane, FLAG } from '../shared/codec.js';
 import { voiceConfigured, voiceToken } from './voice.js';
 
@@ -71,7 +71,13 @@ export class RcRoom extends Room {
     this.onMessage('score', (client, m) => this.onScore(client, m));
     this.onMessage('ev', (client, m) => this.onEvent(client, m));
     this.onMessage('brk', (client, m) => this.onBreak(client, m));
-    this.onMessage('voice', (client, m) => { const p = this.player(client); if (p && m) { p.voice = !!m.on; p.mic = !!m.mic && !!m.on; } });
+    this.onMessage('voice', (client, m) => {
+      const p = this.player(client);
+      if (!p || !m) return;
+      p.voice = !!m.on; p.mic = !!m.mic && !!m.on;
+      p.vmode = p.voice ? (m.via === 'p2p' ? 'p2p' : 'lk') : '';
+    });
+    this.onMessage('rtc', (client, m) => this.onRtc(client, m));
     this.onMessage('voiceToken', (client) => this.onVoiceToken(client));
     this.onMessage('*', (client, type) => console.warn(`[${this.roomId}] unknown message ${String(type).slice(0, 20)} from ${client.sessionId}`));
 
@@ -122,7 +128,7 @@ export class RcRoom extends Room {
     const p = this.player(client);
     if (!p) return;
     p.connected = false;
-    p.voice = false; p.mic = false;
+    p.voice = false; p.mic = false; p.vmode = '';
     if (p.host) this.passHost(client.sessionId);
     if (!consented) {
       try {
@@ -407,16 +413,39 @@ export class RcRoom extends Room {
   }
 
   // ------------------------------------------------------------ voice
+  // LiveKit when configured (a short-lived token), otherwise direct voice (ICE servers only). The ICE servers
+  // ride along with a LiveKit token too, so a client that cannot reach LiveKit can fall back on its own.
   async onVoiceToken(client) {
     if (!this.allow(client, 'voiceToken', 1)) return client.send('voiceToken', { error: 'Too many requests, try again' });
-    if (!voiceConfigured()) return client.send('voiceToken', { error: 'Voice chat is not configured on this server' });
     const p = this.player(client);
     if (!p) return;
+    const ice = iceServers();
+    if (!voiceConfigured()) return client.send('voiceToken', { p2p: true, ice });
     try {
-      client.send('voiceToken', await voiceToken({ room: `rc-${this.roomId}`, identity: client.sessionId, name: p.name }));
+      client.send('voiceToken', { ...(await voiceToken({ room: `rc-${this.roomId}`, identity: client.sessionId, name: p.name })), ice });
     } catch (e) {
       console.error(`[${this.roomId}] voice token failed`, e);
-      client.send('voiceToken', { error: 'Could not create a voice token' });
+      client.send('voiceToken', { p2p: true, ice });
     }
+  }
+
+  // Direct voice signalling: offers, answers and ICE candidates between two players who are both on direct voice.
+  // Only relayed (audio never touches this server), size-checked and rate-limited.
+  onRtc(client, m) {
+    const p = this.player(client);
+    if (!p || p.vmode !== 'p2p' || !m || typeof m.to !== 'string' || !this.allow(client, 'rtc', 120)) return;
+    if (!['offer', 'answer', 'ice'].includes(m.kind)) return;
+    const q = this.state.players.get(m.to), target = this.clients.find((c) => c.sessionId === m.to);
+    if (!q || !target || q.vmode !== 'p2p' || m.to === client.sessionId) return;
+    const out = { from: client.sessionId, kind: m.kind };
+    if (m.kind === 'ice') {
+      const c = m.cand;
+      if (!c || typeof c.candidate !== 'string' || c.candidate.length > 1000) return;
+      out.cand = { candidate: c.candidate, sdpMid: typeof c.sdpMid === 'string' ? c.sdpMid.slice(0, 32) : null, sdpMLineIndex: Number.isInteger(c.sdpMLineIndex) ? c.sdpMLineIndex : null };
+    } else {
+      if (typeof m.sdp !== 'string' || m.sdp.length > 30000) return;
+      out.sdp = m.sdp;
+    }
+    target.send('rtc', out);
   }
 }

@@ -19,6 +19,15 @@ export const config = {
   },
 };
 
+// Direct (peer-to-peer) voice, used when LiveKit is not configured or a client cannot reach it. Public STUN finds
+// each player's address; a TURN relay (optional) also connects players behind strict NATs / mobile carriers.
+const list = (v) => (v || '').split(',').map((x) => x.trim()).filter(Boolean);
+export const iceServers = () => {
+  const out = [{ urls: list(env.STUN_URLS).length ? list(env.STUN_URLS) : ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+  if (list(env.TURN_URLS).length) out.push({ urls: list(env.TURN_URLS), username: (env.TURN_USERNAME || '').trim(), credential: (env.TURN_CREDENTIAL || '').trim() });
+  return out;
+};
+
 export const MAPS = ['canyon', 'forest', 'mud', 'desert', 'creek', 'ultimate'];
 export const MODES = ['free', 'race', 'timed', 'stunt', 'checkpoint', 'coop'];
 // session length per mode (ms); free roam is open-ended

@@ -219,7 +219,7 @@ export class MpUI {
       return `<li data-sid="${sid}" class="${p.connected ? '' : 'off'} ${v?.speaking ? 'talk' : ''}">
         <i class="mp-dot" style="background:${liveryCss(p.color)}"></i>
         <span class="mp-pn">${p.host ? `<b class="mp-crown" title="Host">${ICON.crown}</b>` : ''}${esc(p.name)}${self ? ' <em>(you)</em>' : ''}<small>SCX30 · ${esc(LIVERIES[p.color]?.[0] || '')}${p.connected ? (p.ping ? ` · ${p.ping} ms` : '') : ' · reconnecting…'}</small></span>
-        <span class="mp-v ${v?.speaking ? 'talk' : ''}">${micIcon}</span>${ctl}${badge}</li>`;
+        <span class="mp-v ${v?.speaking ? 'talk' : ''}">${micIcon}</span>${v?.reach === 'failed' ? '<span class="mp-tag" title="No direct route to this player">no route</span>' : v?.reach === 'connecting' && !self ? '<span class="mp-tag">connecting</span>' : ''}${ctl}${badge}</li>`;
     });
     // keep a volume slider usable while it is being dragged
     if (!$('#mp-players').contains(document.activeElement) || document.activeElement.type !== 'range') $('#mp-players').innerHTML = rows.join('');
@@ -273,7 +273,7 @@ export class MpUI {
 
   renderVoice() {
     const v = this.voice, on = v.status === 'on';
-    $('#mp-vstate').textContent = { off: '', connecting: '· connecting…', on: '· connected', reconnecting: '· reconnecting…', error: '' }[v.status] || '';
+    $('#mp-vstate').textContent = ({ off: '', connecting: '· connecting…', on: '· connected', reconnecting: '· reconnecting…', error: '' }[v.status] || '') + (v.status === 'on' && v.via === 'p2p' ? ' · direct' : '');
     const seg = (m, l) => `<button data-mic="${m}" class="${v.micMode === m ? 'on' : ''}">${l}</button>`;
     $('#mp-vbody').innerHTML = `
       <button id="mp-vjoin" class="mp-btn ${on ? 'mp-danger' : ''}">${on || v.status === 'reconnecting' ? 'LEAVE VOICE' : v.status === 'connecting' ? 'CONNECTING…' : 'JOIN VOICE'}</button>
@@ -282,6 +282,7 @@ export class MpUI {
       <div class="mp-vrow"><span>Your mic</span><b class="${v.micLive ? 'mp-live' : 'mp-dim'}">${v.micLive ? (v.speaking.has(this.mp.room?.sessionId) ? '● LIVE · speaking' : '● LIVE') : 'off'}</b></div>
       <div class="mp-vrow"><span>Speaker</span><button id="mp-spkbtn" class="mp-chip">${v.speakerMuted ? 'MUTED · unmute' : 'ON · mute all'}</button></div>
       ${v.needsGesture ? '<button id="mp-unlock" class="mp-btn">CLICK TO HEAR VOICES</button>' : ''}` : '<p class="mp-dim">Optional. Your microphone is only used once you switch it on. Nothing is recorded.</p>'}
+      ${v.status === 'on' && v.note ? `<p class="mp-dim">${esc(v.note)}</p>` : ''}
       ${v.error ? `<p class="mp-err">${esc(v.error)}</p>` : ''}`;
     $('#mp-vbody button#mp-vjoin').disabled = v.status === 'connecting' || !this.mp.active;
   }

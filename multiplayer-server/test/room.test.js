@@ -112,11 +112,33 @@ test('host passes on, reconnection keeps the seat, ready/start rules', async () 
   await g2.leave();
 });
 
-test('voice tokens are refused cleanly when voice is not configured', async () => {
+test('without LiveKit, voice falls back to direct voice with STUN servers', async () => {
   const a = await new Client(URL).create('rc', { name: 'V', guestId: gid() });
   const reply = await new Promise((res) => { a.onMessage('voiceToken', res); a.send('voiceToken'); });
-  assert.match(reply.error, /not configured/);
+  assert.equal(reply.p2p, true);
+  assert.ok(reply.ice[0].urls.some((u) => u.startsWith('stun:')));
+  assert.equal(reply.token, undefined);
   await a.leave();
+});
+
+test('direct-voice signalling is relayed only between players on direct voice', async () => {
+  const a = await new Client(URL).create('rc', { name: 'A', guestId: gid() });
+  const b = await new Client(URL).joinById(a.roomId, { name: 'B', guestId: gid() });
+  const got = []; b.onMessage('rtc', (m) => got.push(m)); a.onMessage('*', () => {}); b.onMessage('*', () => {});
+  await sleep(150);
+  a.send('rtc', { to: b.sessionId, kind: 'offer', sdp: 'v=0' });           // neither is on direct voice yet
+  await sleep(150);
+  assert.equal(got.length, 0);
+  a.send('voice', { on: true, via: 'p2p' }); b.send('voice', { on: true, via: 'p2p' });
+  await sleep(250);
+  a.send('rtc', { to: b.sessionId, kind: 'offer', sdp: 'v=0' });
+  a.send('rtc', { to: b.sessionId, kind: 'ice', cand: { candidate: 'candidate:1 1 udp 1 1.2.3.4 5 typ host', sdpMid: '0', sdpMLineIndex: 0 } });
+  a.send('rtc', { to: b.sessionId, kind: 'evil', sdp: 'x' });
+  a.send('rtc', { to: b.sessionId, kind: 'offer', sdp: 'x'.repeat(30500) });     // over the relay's 30 KB limit (under the 32 KB frame limit)
+  await sleep(250);
+  assert.deepEqual(got.map((m) => m.kind), ['offer', 'ice']);
+  assert.equal(got[0].from, a.sessionId);
+  await a.leave(); await b.leave();
 });
 
 test('race: gate order, timing and recovery teleports are validated', async () => {

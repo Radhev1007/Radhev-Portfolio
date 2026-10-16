@@ -125,6 +125,7 @@ export class Multiplayer {
     room.onMessage('correct', (m) => { this.game.placeAt(m.x, m.z, m.yaw); this.flagRecover(); this.emit('notice', 'Position corrected by the server'); });
     room.onMessage('notice', (m) => this.emit('notice', m.text));
     room.onMessage('voiceToken', (m) => this.emit('voiceToken', m));
+    room.onMessage('rtc', (m) => this.emit('rtc', m));
     room.onStateChange(() => this.onState());
     room.onError((code, msg) => { console.warn('[mp] room error', code, msg); this.setError(friendly({ code, message: msg })); });
     room.onLeave((code) => this.onLeave(code));

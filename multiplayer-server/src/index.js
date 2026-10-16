@@ -23,6 +23,6 @@ const gameServer = new Server({
 gameServer.define('rc', RcRoom);
 
 await gameServer.listen(config.port, config.host);
-console.log(`RC Crawler multiplayer listening on ${config.host}:${config.port} — max ${config.maxPlayers} per room, voice ${voiceConfigured() ? 'on' : 'off (LIVEKIT_* not set)'}`);
+console.log(`RC Crawler multiplayer listening on ${config.host}:${config.port} — max ${config.maxPlayers} per room, voice ${voiceConfigured() ? 'LiveKit' : 'direct (LIVEKIT_* not set)'}`);
 
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { console.log(`${sig}: shutting down`); gameServer.gracefullyShutdown().then(() => process.exit(0)); });

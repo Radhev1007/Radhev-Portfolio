@@ -23,12 +23,13 @@ export class Player extends Schema {
     this.runs = 0;
     this.voice = false;      // joined the voice room
     this.mic = false;        // microphone published and unmuted
+    this.vmode = '';         // voice transport: 'lk' (LiveKit) | 'p2p' (direct) | '' (not in voice)
   }
 }
 defineTypes(Player, {
   name: 'string', color: 'uint8', slot: 'uint8', ready: 'boolean', host: 'boolean', connected: 'boolean',
   joinedAt: 'number', ping: 'uint16', status: 'string', cp: 'int8', mask: 'uint32', score: 'number',
-  finish: 'number', best: 'number', runs: 'uint16', voice: 'boolean', mic: 'boolean',
+  finish: 'number', best: 'number', runs: 'uint16', voice: 'boolean', mic: 'boolean', vmode: 'string',
 });
 
 export class RoomState extends Schema {
