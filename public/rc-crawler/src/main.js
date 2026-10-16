@@ -23,6 +23,8 @@ import { Modes } from './net/modes.js';
 import { Voice } from './net/voice.js';
 import { MpUI } from './ui/mpUI.js';
 import { Landscape } from './ui/landscape.js';
+import { Minimap } from './ui/minimap.js';
+import { liveryCss } from './net/config.js';
 
 // ------------------------------------------------------------ settings
 const SET_KEY = 'rccrawler.settings.v1';
@@ -91,6 +93,7 @@ const dirt = { dust: 0.05, mud: 0, wet: 0 };
 // ------------------------------------------------------------ game state
 let state = 'loading';
 let level = null, phys = null;
+let minimap = null;   // created with the multiplayer objects below; reads them for other players and courses
 let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
 
@@ -116,6 +119,7 @@ async function loadLevel(id, { keepState = false } = {}) {
   applyLevelEnv();
   challenges.setLevel(level);
   setChallengeMarkers(null);
+  minimap?.setLevel(level);
   tracks.reset();
   // settle the suspension before showing
   for (let i = 0; i < 90; i++) phys.update(1 / 60, { throttle: 0, steer: 0, handbrake: true });
@@ -196,6 +200,7 @@ const landscape = new Landscape();
 function setState(s) {
   if (s === 'play' && state === 'title') landscape.request();   // starting to drive is a tap: phones turn sideways
   landscape.setPlaying(s === 'play');
+  minimap?.setVisible(s === 'play');
   state = s;
   ui.setState(s);
   rig.intro = s === 'title';
@@ -338,6 +343,9 @@ input.on('press', (k) => {
   if (k === 'x') ui.emit('diff');
   if (k === 'v') ui.emit('dig');
   if (k === 'm') audio.setMuted(!(audio._mutedFlag = !audio._mutedFlag));
+  if (k === 'n') minimap?.toggle();
+  if (k === '=' || k === '+') minimap?.zoomBy(1);
+  if (k === '-' || k === '_') minimap?.zoomBy(-1);
 });
 input.on('orbit', (dx, dy) => rig.orbit(dx, dy));
 input.on('zoom', (d) => rig.wheel(d));
@@ -475,6 +483,7 @@ function tick(dt, forced) {
   post.setDOF(rig.focusDist, dofAmt);
 
   if (state === 'play' || state === 'paused') updateHud(dt);
+  if (state === 'play') minimap?.update(dt);
   if (!NORENDER) post.render(dt);
 
   fpsAcc += dt; fpsN++;
@@ -568,6 +577,36 @@ const modes = new Modes(mp, game);
 const voice = new Voice(mp);
 const mpUI = new MpUI({ mp, voice, modes, game });
 mp.on('change', () => modes.sync());
+
+// ------------------------------------------------------------ minimap: what it draws each refresh
+const _camDir = new THREE.Vector3(), _fwd = new THREE.Vector3();
+function mapSource() {
+  if (!phys || !level) return null;
+  camera.getWorldDirection(_camDir);
+  const st = mp.active ? mp.state : null, mine = mp.room?.sessionId;
+  const me = { x: phys.pos.x, z: phys.pos.z, yaw: phys.yaw };
+  const others = [];
+  if (st) {
+    for (const [sid, p] of st.players) {
+      if (sid === mine || !p.connected) continue;
+      const t = mp.fleet.trucks.get(p.slot);
+      if (!t || !t.visible) continue;
+      const g = t.model?.group, pos = g ? g.position : t.pos;
+      _fwd.set(0, 0, 1).applyQuaternion(g ? g.quaternion : t.q);
+      others.push({ x: pos.x, z: pos.z, yaw: Math.atan2(_fwd.x, _fwd.z), color: liveryCss(p.color), name: p.name, talking: !!voice.speaking?.has(sid) });
+    }
+  }
+  // the course: a multiplayer session's gates or checkpoints, else the selected solo challenge
+  let gates = null, points = null;
+  const c = st && (st.phase === 'countdown' || st.phase === 'running') ? modes.course : null;
+  const mark = (list, next) => list.map((g, i) => (g.hidden ? null : { ...g, state: i < next ? 'done' : i === next ? 'next' : 'todo', last: i === list.length - 1 })).filter(Boolean);
+  if (c?.gates) gates = mark(c.gates, st.mode === 'coop' ? st.team : (mp.me?.cp ?? -1) + 1);
+  else if (c?.points) points = c.points.map((q, i) => ({ x: q.x, z: q.z, done: !!((mp.me?.mask || 0) & (1 << i)) }));
+  else if (!st && challenges.active) gates = mark(challenges.active.gates, challenges.state === 'running' ? challenges.next : 0);
+  return { me, camYaw: Math.atan2(_camDir.x, _camDir.z), others, gates, points };
+}
+minimap = new Minimap(mapSource);
+if (level) minimap.setLevel(level);
 voice.on('change', () => mp.onState());   // speaking / mic indicators on name tags follow voice right away
 mp.on('joined', () => { audio.start(); if (level) placeAtSpawn(); });
 mp.on('left', () => { modes.teardown(); voice.leave(); });
@@ -581,7 +620,7 @@ else loadLevel(settings.level).then(async () => {
   if (code && mp.available) { mpUI.show(); document.getElementById('mp-code').value = code.toUpperCase().slice(0, 5); }
 });
 window.__game = {
-  mp, modes, voice, mpUI,
+  mp, modes, voice, mpUI, minimap,
   get phys() { return phys; }, get level() { return level; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
   step(n, inp, dt = 1 / 60) { for (let i = 0; i < n; i++) tick(dt, inp); },
   // dev: save the current frame to assets/previews/<name>.jpg (localhost only)

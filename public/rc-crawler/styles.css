@@ -382,3 +382,48 @@ html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
 #b-orient { display: none; } html.phone #b-orient { display: flex; }   /* landscape / portrait switch, phones only */
 .rotate-btn { padding: 11px 18px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.06); font: 700 14px var(--cond); letter-spacing: 1.5px; color: var(--dim); }
 .rotate-main { display: block; margin: 0 auto 10px; border-color: var(--accent); color: var(--accent); }
+
+/* ---------- minimap (src/ui/minimap.js): bottom-left on desktop, top-right / top-centre on phones */
+.mm { position: fixed; left: 18px; bottom: 100px; z-index: 7; display: flex; flex-direction: column; }
+.mm-head, .mm-legend { display: none; }
+.mm-box { position: relative; width: 196px; height: 196px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.16); background: #1d1c1a; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+.mm-c { display: block; width: 100%; height: 100%; cursor: zoom-in; touch-action: manipulation; }
+.mm-n { position: absolute; left: 8px; top: 5px; font: 800 12px var(--cond); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.85); pointer-events: none; }
+.mm-ctl { position: absolute; right: 5px; top: 5px; display: flex; flex-direction: column; gap: 4px; }
+.mm-ctl button { width: 24px; height: 24px; padding: 0; display: grid; place-items: center; border-radius: 6px; border: 1px solid rgba(255,255,255,.14); background: rgba(10,10,10,.62); color: var(--txt); }
+.mm-ctl button:hover, .mm-show:hover { border-color: var(--accent); color: var(--accent); }
+.mm-ctl svg, .mm-show svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mm-show { position: fixed; left: 18px; bottom: 100px; z-index: 7; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--glass-2); color: var(--txt); }
+.mm-show svg { width: 20px; height: 20px; }
+.mm.big { left: 50%; top: 50%; bottom: auto; right: auto; transform: translate(-50%, -50%); z-index: 25; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(14,14,14,.84); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+.mm.big .mm-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 8px; font: 700 15px var(--cond); letter-spacing: 1.5px; }
+.mm.big .mm-name { color: var(--dim); font-weight: 500; letter-spacing: 1px; }
+.mm.big .mm-box { width: min(calc(100vh - 130px), calc(100vw - 48px), 760px); height: min(calc(100vh - 130px), calc(100vw - 48px), 760px); }
+.mm.big .mm-c { cursor: zoom-out; }
+.mm.big .mm-ctl { right: 8px; top: 8px; gap: 6px; }
+.mm.big .mm-ctl button { width: 32px; height: 32px; }
+.mm.big .mm-ctl svg { width: 16px; height: 16px; }
+.mm.big .mm-n { left: 10px; top: 8px; font-size: 14px; }
+.mm.big .mm-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 2px 0; font: 500 12px var(--sans); color: var(--dim); }
+.mm-legend i { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -2px; }
+.mm-legend .lg-me { background: var(--accent); clip-path: polygon(100% 50%, 0 0, 30% 50%, 0 100%); }
+.mm-legend .lg-pl { background: #3aa0ff; clip-path: polygon(100% 50%, 0 0, 30% 50%, 0 100%); }
+.mm-legend .lg-trail { height: 4px; vertical-align: 2px; background: #f0e2c4; border-radius: 2px; }
+.mm-legend .lg-act { border: 1.5px solid var(--accent); background: rgba(246,181,30,.2); }
+.mm-legend .lg-gate { height: 3px; vertical-align: 3px; background: var(--accent); }
+.mm-legend .lg-water { background: #3476a8; border-radius: 3px; }
+@media (max-height: 640px) { .mm:not(.big) .mm-box { width: 150px; height: 150px; } }
+/* phones: no keyboard, little room. The small map keeps only expand and hide; zoom lives on the large map. */
+body:has(#hud.touch-on) .mm:not(.big) [data-a="in"], body:has(#hud.touch-on) .mm:not(.big) [data-a="out"] { display: none; }
+body:has(#hud.touch-on) .mm:not(.big) .mm-ctl button { width: 22px; height: 22px; }
+@media (max-width: 720px) {
+  /* portrait: top-right, under the speed card */
+  body:has(#hud.touch-on) .mm:not(.big), body:has(#hud.touch-on) .mm-show { left: auto; right: 12px; bottom: auto; top: 100px; }
+  body:has(#hud.touch-on) .mm:not(.big) .mm-box { width: 112px; height: 112px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  /* landscape: top centre, over the sky, between the trail name and the side buttons */
+  body:has(#hud.touch-on) .mm:not(.big), body:has(#hud.touch-on) .mm-show { left: 50%; right: auto; bottom: auto; top: 8px; transform: translateX(-50%); }
+  body:has(#hud.touch-on) .mm:not(.big) .mm-box { width: 92px; height: 92px; }
+  .mm.big .mm-legend { display: none; }
+}

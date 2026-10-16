@@ -273,6 +273,7 @@ class LevelContext {
     const y = Math.min(this.hf.baseHeightAt(x + Math.sin(yaw) * length * 0.4, z + Math.cos(yaw) * length * 0.4), this.hf.baseHeightAt(x - Math.sin(yaw) * length * 0.4, z - Math.cos(yaw) * length * 0.4), this.hf.baseHeightAt(x, z));
     const g = this.veg.makeLog(x, y - radius * 0.35, z, length, radius, yaw - Math.PI / 2);
     this.logsPhys.push(g);
+    (this.logs ||= []).push({ x, z, length, radius, yaw });   // for the minimap
   }
 
   // rocky crack across the trail (deep groove to test articulation)

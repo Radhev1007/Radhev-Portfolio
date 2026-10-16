@@ -182,7 +182,7 @@ export class MpUI {
     if (b.id === 'mp-unlock') v.unlockAudio();
     if (b.id === 'mp-pttkey') {
       b.textContent = 'Press a key…';
-      const grab = (ev) => { ev.preventDefault(); ev.stopPropagation(); removeEventListener('keydown', grab, true); if (ev.key !== 'Escape' && ev.key.length === 1 && !'wasdgxvrclm '.includes(ev.key.toLowerCase())) { v.pttKey = ev.key.toLowerCase(); v.savePrefs(); } this.render(); };
+      const grab = (ev) => { ev.preventDefault(); ev.stopPropagation(); removeEventListener('keydown', grab, true); if (ev.key !== 'Escape' && ev.key.length === 1 && !'wasdgxvrclmn-=+ '.includes(ev.key.toLowerCase())) { v.pttKey = ev.key.toLowerCase(); v.savePrefs(); } this.render(); };
       addEventListener('keydown', grab, true);
     }
   }
