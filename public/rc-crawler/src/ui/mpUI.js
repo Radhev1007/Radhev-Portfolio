@@ -253,6 +253,8 @@ export class MpUI {
     $('#mp-start').textContent = st.phase === 'results' ? 'PLAY AGAIN' : 'START GAME';
     $('#mp-start').title = waiting ? `Waiting for ${waiting} player${waiting > 1 ? 's' : ''} to be ready` : '';
     $('#mp-lobbyback').classList.toggle('hidden', !host || st.phase === 'lobby');
+    // one call to action: beside START GAME, "drive" would only close the panel (the × does that)
+    $('#mp-drive').classList.toggle('hidden', host && !live);
     $('#mp-session').innerHTML = this.sessionHtml(st, me, waiting, host);
     this.renderVoice();
   }
