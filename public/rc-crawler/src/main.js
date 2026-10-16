@@ -270,6 +270,7 @@ ui.on('dig', () => {
   ui.toast(dtState.dig ? 'Dig engaged' : 'Dig off', dtState.dig ? 'Rear wheels held, steer + throttle to pivot' : 'Normal 4WD');
 });
 ui.on('menu', () => openMenu());
+ui.on('orient', () => landscape.toggle());
 ui.on('resume', () => { ui.closeMenu(); setState('play'); });
 ui.on('restart', () => { ui.closeMenu(); placeAtSpawn(); tracks.reset(); setState('play'); });
 ui.on('title', () => { ui.closeMenu(); placeAtSpawn(); setState('title'); });

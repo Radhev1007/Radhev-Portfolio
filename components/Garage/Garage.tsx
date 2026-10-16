@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 
 /**
@@ -123,7 +123,8 @@ function RcIcon() {
   );
 }
 
-type LockableOrientation = ScreenOrientation & { lock?: (o: "landscape") => Promise<void>; unlock?: () => void };
+type Orientation = "landscape" | "portrait";
+type LockableOrientation = ScreenOrientation & { lock?: (o: Orientation) => Promise<void>; unlock?: () => void };
 
 /**
  * The game in a full-screen frame with a way back out.
@@ -137,11 +138,26 @@ type LockableOrientation = ScreenOrientation & { lock?: (o: "landscape") => Prom
  * — game and back button — in full screen and locks it to landscape. Where
  * that isn't allowed (iPhone Safari) the game asks the player to turn the
  * phone instead.
+ *
+ * The game's rotate button switches between landscape and portrait. Where the
+ * orientation can't be locked, this page draws the frame sideways while the
+ * phone is upright, so the game sees a landscape screen; turning the phone
+ * then shows it the right way up. Touches inside a turned frame reach the game
+ * in its own coordinates, so its controls need nothing special.
  */
 function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
   const box = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
+  const [turned, setTurned] = useState(false);
+  const [view, setView] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    const onResize = () => setView({ w: window.innerWidth, h: window.innerHeight });
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onExit();
@@ -152,13 +168,28 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
   useEffect(() => {
     const onMessage = async (e: MessageEvent) => {
       if (e.origin !== window.location.origin || e.source !== frame.current?.contentWindow) return;
-      if (e.data?.type !== "rc:landscape" || !box.current) return;
+      if (e.data?.type !== "rc:orientation" || !box.current) return;
+      const want: Orientation = e.data.want === "portrait" ? "portrait" : "landscape";
+      const el = box.current;
+      let locked = false;
       try {
-        if (!document.fullscreenElement) await box.current.requestFullscreen({ navigationUI: "hide" });
-        await (screen.orientation as LockableOrientation).lock?.("landscape");
+        // some browsers leave the full-screen request hanging instead of refusing it: give up after a moment
+        await Promise.race([
+          (async () => {
+            if (!document.fullscreenElement) await el.requestFullscreen({ navigationUI: "hide" });
+            const orientation = screen.orientation as LockableOrientation;
+            if (orientation.lock) {
+              await orientation.lock(want);
+              locked = true;
+            }
+          })(),
+          new Promise((_, fail) => setTimeout(() => fail(new Error("timed out")), 1500)),
+        ]);
       } catch {
-        // not allowed on this browser: the game shows its "turn your phone" card
+        // not allowed on this browser: turn the frame instead when asked to, else the game shows its card
       }
+      if (want === "portrait" || locked) setTurned(false);
+      else if (e.data.force) setTurned(true);
     };
     window.addEventListener("message", onMessage);
     return () => {
@@ -168,8 +199,30 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
     };
   }, []);
 
+  // turned and held upright: the frame is drawn a quarter turn clockwise, so it reads as landscape
+  const sideways: CSSProperties | undefined =
+    turned && view && view.h > view.w
+      ? {
+          top: 0,
+          left: 0,
+          right: "auto",
+          bottom: "auto",
+          width: view.h,
+          height: view.w,
+          transformOrigin: "0 0",
+          transform: `translateX(${view.w}px) rotate(90deg)`,
+        }
+      : undefined;
+
   return (
-    <div ref={box} className="fixed inset-0 z-[100] bg-[#0b0b0c]" role="dialog" aria-modal="true" aria-label="RC Crawler game">
+    <div
+      ref={box}
+      className="fixed inset-0 z-[100] bg-[#0b0b0c]"
+      style={sideways}
+      role="dialog"
+      aria-modal="true"
+      aria-label="RC Crawler game"
+    >
       {!ready && (
         <div className="absolute inset-0 grid place-items-center text-white">
           <div className="text-center">

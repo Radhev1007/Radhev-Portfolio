@@ -30,6 +30,7 @@ export class UI {
     $('#b-dig').onclick = () => this.emit('dig');
     for (const [id, ev] of [['#tc-range', 'range'], ['#tc-diff', 'diff'], ['#tc-dig', 'dig']]) $(id).addEventListener('pointerdown', (e) => { e.preventDefault(); this.emit(ev); });
     $('#b-menu').onclick = () => this.emit('menu');
+    $('#b-orient').onclick = () => this.emit('orient');
     $('#m-resume').onclick = () => this.emit('resume');
     $('#m-restart').onclick = () => this.emit('restart');
     $('#m-title').onclick = () => this.emit('title');

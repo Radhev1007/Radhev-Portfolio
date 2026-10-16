@@ -366,6 +366,7 @@ html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
   .pedals { right: 12px; }
   .tc-modes { position: static; flex-direction: column; }
   body:has(#hud.touch-on) .mp-vhud { left: 18px; top: 50%; }
+  html.embedded .hud-tl { left: 64px; }   /* beside the portfolio's back button when the frame is turned */
 }
 
 /* ---------- phones: turn sideways (src/ui/landscape.js) */
@@ -378,4 +379,6 @@ html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
 .rotate-ico .rotate-arc { stroke: var(--accent); }
 @keyframes rotate-turn { 0%, 25% { transform: rotate(0); } 55%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .rotate-ico { animation: none; transform: rotate(-90deg); } }
+#b-orient { display: none; } html.phone #b-orient { display: flex; }   /* landscape / portrait switch, phones only */
 .rotate-btn { padding: 11px 18px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.06); font: 700 14px var(--cond); letter-spacing: 1.5px; color: var(--dim); }
+.rotate-main { display: block; margin: 0 auto 10px; border-color: var(--accent); color: var(--accent); }
