@@ -81,12 +81,12 @@ export const DIFF_MODES = [
   { name: 'OPEN', label: 'Open', front: false, rear: false },
 ];
 
-// wmax: free-running wheel speed (rad/s); tstall: torque at stall.
-// Raised ~50% from 14.8/31 so the truck covers ground faster in both ranges,
-// with extra torque so it reaches the higher speeds.
+// wmax: free-running wheel speed (rad/s); tstall: torque at stall; fric: drivetrain friction per rad/s.
+// Low range is the crawler gear (~1.3 km/h scale speed). High range is the trail gear: ~16 km/h on the flat
+// at a full battery (~15 at a low one), ~12+ over real trail bumps and slopes.
 export const GEARS = {
-  LOW: { name: 'L', wmax: 22, tstall: 14 },
-  HIGH: { name: 'H', wmax: 48, tstall: 10 },
+  LOW: { name: 'L', wmax: 22, tstall: 14, fric: 0.15 },
+  HIGH: { name: 'H', wmax: 330, tstall: 15, fric: 0.02 },
 };
 
 export class CrawlerPhysics {
@@ -290,7 +290,10 @@ export class CrawlerPhysics {
     if (u < 0) u *= 0.75;
     let T = 0;
     if (!braking || Math.abs(u) > 0.04) T = gear.tstall * batt * (u - this.omega / gear.wmax);
-    T -= 0.15 * this.omega; // gear friction
+    // a motor spun past its free speed (shifting into low range at speed) brakes, but no harder than its
+    // stall torque: otherwise a downshift from top speed would stop the wheels dead and flip the truck
+    T = Math.max(T, -gear.tstall);
+    T -= gear.fric * this.omega; // gear friction
     this.motorTorque = T;
     const It = PHYS.transInertia, Iw = PHYS.wheelInertia;
     this.omega += (T / It) * dt;

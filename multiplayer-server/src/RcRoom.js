@@ -28,10 +28,10 @@ function newCode() {
   throw new Error('could not allocate a room code');
 }
 
-const MAX_SPEED = 25;          // m/s; the truck tops out near 6, falls and tumbles reach more
+const MAX_SPEED = 70;          // m/s; high range tops out near 46 on the flat, falls and tumbles reach more
 const SLACK = 1.2;             // m of extra displacement allowed per update (jitter, substep catch-up)
 const MOVE_RATE = 40;          // max movement updates / s accepted per player
-const COURSE_SPEED = 12;       // m/s: no gate can be reached faster than this along the course
+const COURSE_SPEED = 55;       // m/s: no gate can be reached faster than this along the course (above top speed)
 const GATE_SLACK = 4;          // m: a reported gate crossing must be this close to the last accepted pose
 
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);

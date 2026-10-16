@@ -90,7 +90,7 @@ for 30 s and the game reconnects automatically (also across a page reload). Empt
 
 **Movement (20 Hz, binary).** Each client simulates its own truck with the game's existing physics and sends
 a 35-byte pose (position, orientation, velocity, steering, throttle, suspension, light/brake flags). The
-server validates every update — finite values, inside the map, under 30 m/s, displacement per update within
+server validates every update — finite values, inside the map, under 70 m/s (high range tops out near 46), displacement per update within
 what that speed allows, at most 40/s, sequence order — drops implausible ones, and after repeated rejections
 sends the client back to its last valid pose. Accepted poses go out to everyone at 20 Hz in one snapshot
 (36 bytes per truck: ~14 KB/s per client in a full room), each stamped with the time the server received it.
@@ -103,7 +103,7 @@ reckoning if a stream stalls and a cut (no slide) on recoveries. They never run 
 
 **Authority — what is and isn't authoritative (stage 1).** The server is authoritative for membership, host,
 ready state, the session clock (countdown, start, end), courses, gate/checkpoint progress (checked against the
-player's last accepted position, in order, and no faster than 12 m/s along the course), timed runs (timed on
+player's last accepted position, in order, and no faster than 55 m/s along the course), timed runs (timed on
 the server clock), stunt points (rate-capped), co-op progress, finish order and which breakable posts are down.
 Vehicle physics is **not** simulated on the server: each truck's own browser simulates it and the server
 validates the result. Truck-to-truck contact is resolved by each truck's owner against the other trucks

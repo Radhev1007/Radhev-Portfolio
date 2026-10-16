@@ -174,28 +174,29 @@ test('race: gate order, timing and recovery teleports are validated', async () =
   let notice = null; host.onMessage('notice', (m) => (notice = m)); host.onMessage('*', () => {});
   host.send('config', { mode: 'race' });
   await sleep(150);
-  const gates = [{ x: 0, z: 0, yaw: 0, width: 4 }, { x: 0, z: 30, yaw: 0, width: 4 }, { x: 0, z: 60, yaw: 0, width: 4 }];
-  host.send('start', { gates, spawn: { x: 0, z: -10 } });
+  // gate 1 diagonally across the map (141 m), so the course speed limit (55 m/s from the start) decides it
+  const gates = [{ x: 0, z: -68, yaw: 0, width: 4 }, { x: 60, z: 60, yaw: 0, width: 4 }, { x: 0, z: 60, yaw: 0, width: 4 }];
+  host.send('start', { gates, spawn: { x: 0, z: -71 } });
   await sleep(200);
   assert.equal(host.state.phase, 'countdown', notice?.text);
   let seq = 0;
   const go = (x, z, flags = 0) => host.sendBytes('m', encodeMove(seq++, pose(x, z, { flags })));
-  go(0, -3, FLAG.RECOVER); await sleep(450);          // onto the grid: allowed
+  go(0, -70, FLAG.RECOVER); await sleep(450);         // onto the grid: allowed
   await sleep(4000);                                   // countdown
   assert.equal(host.state.phase, 'running');
   const me = () => host.state.players.get(host.sessionId);
   host.send('cp', { i: 1 }); await sleep(150);
   assert.equal(me().cp, -1, 'cannot claim gate 1 first');
-  go(0, 0.5); await sleep(80); host.send('cp', { i: 0 }); await sleep(150);
+  go(0, -67.5); await sleep(80); host.send('cp', { i: 0 }); await sleep(150);
   assert.equal(me().cp, 0, 'gate 0 near the truck counts');
   go(0, 59, FLAG.RECOVER); await sleep(450);           // teleport to the finish: refused
   host.send('cp', { i: 2 }); await sleep(150);
   assert.equal(me().cp, 0, 'a recovery cannot skip the course');
-  go(0, 29, FLAG.RECOVER); await sleep(450);           // recovery onto gate 1 (the next gate): allowed...
+  go(60, 59, FLAG.RECOVER); await sleep(450);          // recovery onto gate 1 (the next gate): allowed...
   host.send('cp', { i: 1 }); await sleep(150);
-  assert.equal(me().cp, 0, '...but not faster than the course allows (30 m in under 2.5 s)');
+  assert.equal(me().cp, 0, '...but not faster than the course allows (141 m in under 2.6 s)');
   await sleep(2200);
-  go(0, 30.5); await sleep(80); host.send('cp', { i: 1 }); await sleep(150);
+  go(60, 60.5); await sleep(80); host.send('cp', { i: 1 }); await sleep(150);
   assert.equal(me().cp, 1);
   await host.leave();
 });

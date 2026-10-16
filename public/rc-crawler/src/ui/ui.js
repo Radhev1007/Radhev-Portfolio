@@ -19,7 +19,7 @@ const GRADIENTS = {
 // ---------- instrument cluster: analogue dials drawn once as SVG; only the needles and arcs move
 // A dial sweeps 240 degrees clockwise from lower-left (150 deg) to lower-right (390 deg), like a car's speedometer.
 const DIAL0 = 150, DIAL = 240;
-const SPEED_MAX = 6;           // km/h on the dial (scale speed; the truck tops out around 3.5 in high range)
+const SPEED_MAX = 20;          // km/h on the dial (scale speed; high range tops out around 16 on the flat)
 const RPM_MAX = 30;            // x1000 motor rpm; red line from 25
 const polar = (cx, cy, r, deg) => [cx + r * Math.cos(deg * Math.PI / 180), cy + r * Math.sin(deg * Math.PI / 180)];
 const arcPath = (cx, cy, r, a0, a1) => {
@@ -149,7 +149,7 @@ export class UI {
   // ---------- HUD
   buildCluster() {
     const set = (sel, html) => { const el = $(sel); if (el) el.insertAdjacentHTML('afterbegin', html); };
-    set('#g-speedo', dialSVG('gs', { max: SPEED_MAX, major: 1, minor: 0.5 }));
+    set('#g-speedo', dialSVG('gs', { max: SPEED_MAX, major: 5, minor: 1 }));
     set('#g-tach', dialSVG('gt', { max: RPM_MAX, major: 5, minor: 2.5, red: 25, inner: true }));
     set('#g-bat', miniSVG('gb', 'E', 'F', ICON_BAT, false));
     set('#g-temp', miniSVG('gc', 'C', 'H', ICON_TEMP, true));

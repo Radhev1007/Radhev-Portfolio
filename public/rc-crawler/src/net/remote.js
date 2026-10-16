@@ -16,7 +16,8 @@ import { FLAG } from '../../vendor/net/codec.js';
 
 const INTERP_DELAY = 110;     // ms behind the newest snapshot: ~2 snapshots of jitter cover at 20 Hz
 const MAX_EXTRAP = 250;       // ms of dead reckoning before a stalled truck stops moving
-const SNAP_DIST = 4;          // m: a jump bigger than this between snapshots (a recovery) is not tweened
+const SNAP_DIST = 8;          // m: a jump bigger than this between snapshots (a recovery) is not tweened; a truck at
+                              // top speed covers ~2 m per snapshot, ~4.5 when one arrives late
 const COLLIDE_LEAD = 0.3;
 const FAR = 70;     // s: most we predict a remote truck's collider ahead of its drawn pose
 const PROXY_Z = [-0.58, 0, 0.58], PROXY_R = 0.44;

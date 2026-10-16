@@ -94,6 +94,6 @@ export function decodeSnapshot(bytes, fn, scratch = {}) {
 export function poseSane(s, bound = 72) {
   for (const k of ['x', 'y', 'z', 'qx', 'qy', 'qz', 'qw', 'vx', 'vy', 'vz', 'steer', 'throttle']) if (!Number.isFinite(s[k])) return false;
   if (Math.abs(s.x) > bound || Math.abs(s.z) > bound || s.y < -40 || s.y > 160) return false;
-  if (Math.hypot(s.vx, s.vy, s.vz) > 30) return false;
+  if (Math.hypot(s.vx, s.vy, s.vz) > 80) return false;
   return true;
 }
