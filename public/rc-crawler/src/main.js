@@ -24,12 +24,13 @@ import { Voice } from './net/voice.js';
 import { MpUI } from './ui/mpUI.js';
 import { Landscape } from './ui/landscape.js';
 import { Minimap } from './ui/minimap.js';
+import { VEHICLES, VEHICLE_IDS, mountBody } from './vehicles/bodies.js';
 import { LIVERIES, liveryCss } from './net/config.js';
 
 // ------------------------------------------------------------ settings
 const SET_KEY = 'rccrawler.settings.v1';
 const isTouch = matchMedia('(pointer: coarse)').matches;
-const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, ambience: 'on', dragBrake: 'on', dragPct: 100, level: 'creek' };
+const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, ambience: 'on', dragBrake: 'on', dragPct: 100, vehicle: 'scx30', level: 'creek' };
 let settings = { ...defaults };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || '{}')); } catch { /* ignore */ }
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch { /* ignore */ } };
@@ -84,7 +85,9 @@ addEventListener('resize', () => {
 });
 
 // ------------------------------------------------------------ vehicle
+if (!VEHICLE_IDS.includes(settings.vehicle)) settings.vehicle = 'scx30';
 let model = createCrawler({ quality: settings.quality });
+mountBody(model, settings.vehicle);
 scene.add(model.group);
 let lightsOn = true;
 model.setLights(lightsOn);
@@ -286,6 +289,14 @@ ui.on('volume', (v) => { settings.volume = v; saveSettings(); audio.setMasterVol
 ui.on('ambience', (v) => { settings.ambience = v; saveSettings(); audio.setAmbience(v === 'on'); });
 ui.on('dragBrake', (v) => { settings.dragBrake = v; saveSettings(); applyDrivetrain(); });
 ui.on('dragPct', (v) => { settings.dragPct = v; saveSettings(); applyDrivetrain(); });
+// the vehicle: a body shell on the same RC chassis (bodies.js); other players see it too
+ui.on('vehicle', (id) => {
+  if (!VEHICLE_IDS.includes(id)) return;
+  settings.vehicle = id; saveSettings();
+  ui.setVehicle(id);
+  mountBody(model, id);
+  mp.saveProfile({ vehicle: id });
+});
 ui.on('touch', (v) => { settings.touch = v; saveSettings(); updateTouchVisibility(); });
 ui.on('dof', (v) => { settings.dof = v; saveSettings(); });
 ui.on('fps', (v) => { settings.fps = v; saveSettings(); ui.showFps(v === 'on'); });
@@ -298,7 +309,7 @@ async function rebuildForQuality() {
   applyQuality();
   scene.remove(model.group); model.dispose();
   model = createCrawler({ quality: settings.quality });
-  scene.add(model.group); model.setLights(lightsOn); applyLivery();
+  scene.add(model.group); model.setLights(lightsOn); applyLivery(); mountBody(model, settings.vehicle);
   const wasPlaying = state === 'play' || state === 'paused';
   const pose = phys ? { p: phys.pos.clone(), yaw: phys.yaw } : null;
   await loadLevel(settings.level, { keepState: true });
@@ -611,6 +622,8 @@ function mapSource() {
   return { me, camYaw: Math.atan2(_camDir.x, _camDir.z), others, gates, points };
 }
 minimap = new Minimap(mapSource);
+mp.profile.vehicle = settings.vehicle;
+ui.initVehicles(VEHICLES, settings.vehicle);
 if (level) minimap.setLevel(level);
 voice.on('change', () => mp.onState());   // speaking / mic indicators on name tags follow voice right away
 // while another player talks, the game's own sound dips so their voice comes through

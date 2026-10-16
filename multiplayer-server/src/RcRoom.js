@@ -11,7 +11,7 @@
 //    each truck receives exactly one collision response (its owner's). See README "Authority".
 import { Room, ServerError } from '@colyseus/core';
 import { Player, RoomState } from './state.js';
-import { config, MAPS, MODES, MODE_LIMIT, PALETTE_SIZE, iceServers } from './config.js';
+import { config, MAPS, MODES, MODE_LIMIT, PALETTE_SIZE, VEHICLES, iceServers } from './config.js';
 import { decodeMove, encodeSnapshot, poseSane, FLAG } from '../shared/codec.js';
 import { voiceConfigured, voiceToken } from './voice.js';
 
@@ -114,6 +114,7 @@ export class RcRoom extends Room {
     const takenColors = new Set([...this.state.players.values()].map((q) => q.color));
     const want = Number.isInteger(options.color) && options.color >= 0 && options.color < PALETTE_SIZE ? options.color : slot;
     p.color = !takenColors.has(want) ? want : [...Array(PALETTE_SIZE).keys()].find((c) => !takenColors.has(c)) ?? 0;
+    if (VEHICLES.includes(options.vehicle)) p.vehicle = options.vehicle;
     // joining mid-session: drive along in free roam, or watch (driving, unscored) until the next start
     const live = this.state.phase === 'countdown' || this.state.phase === 'running';
     p.status = !live ? 'lobby' : this.state.mode === 'free' ? 'driving' : 'spectating';
@@ -265,6 +266,7 @@ export class RcRoom extends Room {
     if (!p || !m || !this.allow(client, 'profile', 4)) return;
     const name = cleanName(m.name);
     if (name) p.name = this.uniqueName(name, client.sessionId);
+    if (VEHICLES.includes(m.vehicle)) p.vehicle = m.vehicle;
     if (Number.isInteger(m.color) && m.color >= 0 && m.color < PALETTE_SIZE) {
       const taken = [...this.state.players.entries()].some(([sid, q]) => sid !== client.sessionId && q.color === m.color);
       if (!taken) p.color = m.color;

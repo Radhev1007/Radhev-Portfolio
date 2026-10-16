@@ -740,7 +740,7 @@ function buildRimGeometries() {
 const FRONT_ARCH = { cz: AXLE_Z[0], cy: REST_Y, r: 0.31 };
 const REAR_ARCH = { cz: AXLE_Z[1], cy: REST_Y, r: 0.32 };
 
-function buildBody(B) {
+function buildBody(B, C = B) {
   const D = QS.detail;
   const sides = [1, -1];
   const archY = (z, a) => a.cy + Math.sqrt(Math.max(0, a.r * a.r - (z - a.cz) ** 2));
@@ -1633,6 +1633,7 @@ function buildBody(B) {
   }
 
   // ===================================================== Chassis / frame =====
+  B = C;   // into the chassis bin: the frame stays when another body shell is mounted (bodies.js)
   // C-channel ladder rails (y -0.10 .. -0.03)
   for (const s of sides) {
     const pts = [[0.115, -0.10], [0.085, -0.10], [0.085, -0.092], [0.107, -0.092], [0.107, -0.038],
@@ -1878,9 +1879,10 @@ export function createCrawler(opts = {}) {
   const bodyGroup = new THREE.Group();
   bodyGroup.name = 'CrawlerBody';
   group.add(bodyGroup);
-  const bodyBin = new Bin();
-  buildBody(bodyBin);
-  const bodyMeshes = bodyBin.build(bodyGroup, mats);
+  const bodyBin = new Bin(), chassisBin = new Bin();
+  buildBody(bodyBin, chassisBin);
+  const shellMeshes = bodyBin.build(bodyGroup, mats);          // the SCX30 body shell, rack and accessories
+  const bodyMeshes = shellMeshes.concat(chassisBin.build(bodyGroup, mats));
   bodyGroup.scale.x = 1.03;
 
   // ------------------------------------------------------- Wheel geometry ---
@@ -1942,7 +1944,7 @@ export function createCrawler(opts = {}) {
     spare.rotation.y = PI / 2;            // outer face toward -Z
     spare.scale.set(WHEEL_W, WHEEL_R, WHEEL_R / 1.03);   // full-size spare; undo the body's x-widening so it stays round
     bodyGroup.add(spare);
-    spare.traverse((o) => { if (o.isMesh) bodyMeshes.push(o); });
+    spare.traverse((o) => { if (o.isMesh) { bodyMeshes.push(o); shellMeshes.push(o); } });
   }
 
   // ------------------------------------------------------------- Axles ------
@@ -2091,11 +2093,12 @@ export function createCrawler(opts = {}) {
   // ----------------------------------------------------------- Lights -------
   // real headlight beams for the player's own truck; other players' trucks (opts.realLights === false) keep
   // only the glowing lamp materials, since every extra light makes every surface in the scene costlier to shade
-  const spots = [];
+  const spots = [], LAMP_Z = 0.74;
+  const extraLamps = [];   // headlamp materials of a mounted body shell (bodies.js): they glow with the headlights
   if (opts.realLights !== false) for (const s of [1, -1]) {
     const spot = new THREE.SpotLight(0xffece0, 0, 14, 0.6, 0.6, 1.5);
     spot.castShadow = false;
-    spot.position.set(s * 0.19, 0.166, 0.74);
+    spot.position.set(s * 0.19, 0.166, LAMP_Z);
     const target = new THREE.Object3D();
     target.position.set(s * 0.3, -0.9, 6.0);
     group.add(target);
@@ -2111,6 +2114,7 @@ export function createCrawler(opts = {}) {
     mats.amber.emissiveIntensity = lightsOn ? 1.2 : 0.0;
     mats.tailLens.emissiveIntensity = Math.max(lightsOn ? 0.7 : 0.0, brake * 4.0);
     mats.brakeLens.emissiveIntensity = brake * 4.0;
+    for (const m of extraLamps) m.emissiveIntensity = lightsOn ? 2.4 : 0.0;
     for (const sp of spots) sp.intensity = lightsOn ? 30 : 0;
   };
 
@@ -2186,7 +2190,13 @@ export function createCrawler(opts = {}) {
     applyLightState();
   }
   // repaint the body (a multiplayer livery); only the paint changes, the black and red parts stay
-  function setBodyColor(hex) { mats.paint.color.setHex(hex); }
+  const extraPaint = [];   // paint materials of a mounted body shell (bodies.js)
+  let paintHex = bodyColor;
+  function setBodyColor(hex) { paintHex = hex; mats.paint.color.setHex(hex); for (const m of extraPaint) m.color.setHex(hex); }
+  // hide the SCX30 shell while another body is mounted; the chassis, axles and wheels stay
+  function setShellVisible(v) { for (const m of shellMeshes) m.visible = v; }
+  // a longer body's nose is ahead of the SCX30 lamps: start the beams there, or they light its bumper from behind
+  function setLampZ(z = LAMP_Z) { for (const sp of spots) sp.position.z = z; applyLightState(); }
   function setDirt({ dust, mud, wet } = {}) {
     const c = (v, prev) => (v === undefined || v === null ? prev : Math.min(1, Math.max(0, v)));
     dirtU.uDust.value = c(dust, dirtU.uDust.value);
@@ -2194,6 +2204,12 @@ export function createCrawler(opts = {}) {
     dirtU.uWet.value = c(wet, dirtU.uWet.value);
   }
   function dispose() {
+    api.disposed = true;
+    // a mounted body shell shares its geometry and textures with other trucks: take it off first, and free only
+    // this truck's own paint and lamp materials
+    if (api._body) { group.remove(api._body); api._body = null; }
+    for (const m of [...extraPaint, ...extraLamps]) m.dispose();
+    extraPaint.length = extraLamps.length = 0;
     const geos = new Set(), ms = new Set(), texs = new Set();
     group.traverse((o) => {
       if (o.isMesh) {
@@ -2216,14 +2232,20 @@ export function createCrawler(opts = {}) {
   applyLightState();
   update({ hubY: REST_HUB_Y, steer: 0, spin: ZERO4, dt: 0 });
 
-  return {
+  const api = {
     group,
     update,
     setLights,
     setBrake,
     setBodyColor,
+    setShellVisible,
+    setLampZ,
+    get paintHex() { return paintHex; },
+    extraPaint,
+    extraLamps,
     setDirt,
     bodyMeshes,
     dispose,
   };
+  return api;
 }

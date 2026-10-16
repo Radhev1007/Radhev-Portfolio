@@ -211,7 +211,9 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
 .help { grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 14px; }
 .tab.help.on { display: grid; }
 /* pause menu: close button in the corner; the GAME tab's actions in one column of equal buttons */
-#menu .panel { position: relative; }
+#menu .panel { position: relative; max-height: 100%; }
+/* the weather bar stays usable over the pause menu: the panel, and so its close button, sit below it */
+#menu.dim { padding: 120px 16px 16px; }
 #menu .tabs { padding-right: 48px; }
 .m-close { position: absolute; top: 16px; right: 16px; }
 #m-main.on { display: flex; flex-direction: column; gap: 10px; max-width: 420px; }
@@ -425,7 +427,12 @@ html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
    speed card sits under them, and the pedals keep the bottom-right corner
    with the drive modes stacked beside the brake. The left edge keeps the
    trail name, the voice buttons and the steering pad. */
+@media (max-width: 720px), (orientation: landscape) and (max-height: 500px) {
+  #menu.dim { padding: 80px 10px 10px; }
+}
 @media (orientation: landscape) and (max-height: 500px) {
+  .weather { top: 10px; right: 10px; }                         /* icons only, as on an upright phone */
+  .weather button { width: 44px; } .weather button span { display: none; }
   .touch-on .hud-br { left: auto; right: 12px; top: 12px; bottom: auto; transform: none; flex-direction: row; gap: 8px; }
   .touch-on .telemetry { top: 64px; }
   .pedals { right: 12px; }
@@ -447,6 +454,19 @@ html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
 #b-orient { display: none; } html.phone #b-orient { display: flex; }   /* landscape / portrait switch, phones only */
 .rotate-btn { padding: 11px 18px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.06); font: 700 14px var(--cond); letter-spacing: 1.5px; color: var(--dim); }
 .rotate-main { display: block; margin: 0 auto 10px; border-color: var(--accent); color: var(--accent); }
+
+/* ---------- vehicle picker: chips on the title's model line, and a Settings row */
+.veh-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 12px; }
+.veh-pick { display: flex; flex-wrap: wrap; gap: 6px; letter-spacing: 0; }
+.veh-pick button { padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); background: rgba(0,0,0,.35); color: var(--dim); font: 700 11px var(--cond); letter-spacing: 1.4px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.veh-pick button:hover { color: var(--txt); border-color: rgba(255,255,255,.5); }
+.veh-pick button.on { color: #1a1406; background: var(--accent); border-color: var(--accent); }
+@media (max-width: 720px) {   /* narrow: the three bodies get a full-width row under the label */
+  .set-row:has(#s-veh) { flex-wrap: wrap; gap: 8px; }
+  #s-veh { width: 100%; } #s-veh button { flex: 1; padding: 7px 6px; }
+}
+.veh-credit:empty { display: none; }
+#m-set .note a, #m-help .note a { color: var(--txt); }
 
 /* ---------- minimap (src/ui/minimap.js): bottom-left on desktop, top-right / top-centre on phones */
 .mm { position: fixed; left: 18px; bottom: 100px; z-index: 7; display: flex; flex-direction: column; }

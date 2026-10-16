@@ -29,6 +29,20 @@ a separately deployed Node server in `multiplayer-server/`; see `multiplayer-ser
 `NEXT_PUBLIC_RC_MULTIPLAYER_URL` (see `.env.example`) to that server's `wss://` URL. Without it, the game and
 the rest of the site work as before and the Multiplayer screen says no server is configured.
 
+## RC Crawler vehicle bodies
+
+Besides the SCX30 Wrangler shell, players can pick a hard body for the same RC chassis (title screen or
+Settings; other players see it in multiplayer). Tyres, axles and handling are identical for every body.
+
+| Body | Model | Licence |
+| --- | --- | --- |
+| `assets/vehicles/bronco.glb` | [“2022 Ford Bronco”](https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f) by tonielpro520 | CC BY 4.0 |
+| `assets/vehicles/cruiser.glb` | [“Older Matte Land Cruiser”](https://sketchfab.com/3d-models/older-matte-land-cruiser-6fc05e37e8174446884981282dbc7a0d) by jtressle | CC BY 4.0 |
+
+Both are adapted: wheels and running gear removed, simplified, textures recompressed. The game credits them in
+Settings and Controls. `tools/rc-bodies.mjs` rebuilds a body from the downloaded model (usage at the top of the
+file); its wheel positions go into `public/rc-crawler/src/vehicles/bodies.js`.
+
 ## Replacing the content
 
 All copy lives in **`lib/content.ts`**. Content is populated from the owner's CV: name, role, contact, projects, skills and about copy all live in `site`, `projects`, `skills` and `about`. The nav initials, footer and page title all follow it.

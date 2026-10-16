@@ -100,7 +100,7 @@ export class Multiplayer {
     try {
       const C = await loadColyseus();
       this.client = this.client || new C.Client(this.url);
-      const room = await fn(this.client, { name: this.profile.name, color: this.profile.color, guestId: this.guestId });
+      const room = await fn(this.client, { name: this.profile.name, color: this.profile.color, vehicle: this.profile.vehicle || 'scx30', guestId: this.guestId });
       this.attach(room);
       return true;
     } catch (e) {
@@ -189,7 +189,7 @@ export class Multiplayer {
       live.add(p.slot);
       const t = this.fleet.get(p.slot);
       const v = this.game.voiceInfo?.(sid) || {};
-      t.setLook(p.color, p.name, !!v.speaking, !!p.mic);
+      t.setLook(p.color, p.name, !!v.speaking, !!p.mic, p.vehicle || 'scx30');
       t.sid = sid;
     }
     for (const slot of [...this.fleet.trucks.keys()]) if (!live.has(slot)) this.fleet.remove(slot);

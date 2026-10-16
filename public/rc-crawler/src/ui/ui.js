@@ -147,6 +147,26 @@ export class UI {
   flashKeys() { const k = $('#keys'); k.classList.remove('fade'); clearTimeout(this.keysT); this.keysT = setTimeout(() => k.classList.add('fade'), 12000); }
   setCamLabel(n) { $('#b-cam-l').textContent = n.toUpperCase(); }
 
+  // ---------- vehicle picker (title screen and Settings): body shells on the same RC chassis
+  initVehicles(list, current) {
+    this.vehicles = list;
+    const chips = list.map((v) => `<button data-veh="${v.id}" role="radio" title="${v.name}">${v.short}</button>`).join('');
+    $('#veh-pick').innerHTML = chips; $('#s-veh').innerHTML = chips;
+    $$('[data-veh]').forEach((b) => (b.onclick = () => this.emit('vehicle', b.dataset.veh)));
+    // CC BY: credit each model's author, link the source and the license, and say it was changed
+    const credited = list.filter((v) => v.credit).map(({ credit: c }) => `${this.creditHtml(c)} by ${c.author}`);
+    $('#credits').innerHTML = credited.length ? `Vehicle bodies: ${credited.join(' and ')}, from Sketchfab under <a href="${list.find((v) => v.credit).credit.licenseUrl}" target="_blank" rel="noopener">CC BY 4.0</a>; adapted for the game (wheels removed, simplified).` : '';
+    this.setVehicle(current);
+  }
+  creditHtml(c) { return `<a href="${c.url}" target="_blank" rel="noopener">“${c.title}”</a>`; }
+  setVehicle(id) {
+    const v = this.vehicles?.find((x) => x.id === id) || this.vehicles?.[0];
+    if (!v) return;
+    $$('[data-veh]').forEach((b) => { const on = b.dataset.veh === v.id; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+    const c = v.credit;
+    $('#veh-credit').innerHTML = c ? `${v.name} body: ${this.creditHtml(c)} by ${c.author}, <a href="${c.licenseUrl}" target="_blank" rel="noopener">${c.license}</a>, adapted (wheels removed, simplified). Same RC chassis, tyres and handling.` : '';
+  }
+
   // ---------- HUD
   buildCluster() {
     const set = (sel, html) => { const el = $(sel); if (el) el.insertAdjacentHTML('afterbegin', html); };

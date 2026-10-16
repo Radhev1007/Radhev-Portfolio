@@ -24,12 +24,13 @@ export class Player extends Schema {
     this.voice = false;      // joined the voice room
     this.mic = false;        // microphone published and unmuted
     this.vmode = '';         // voice transport: 'lk' (LiveKit) | 'p2p' (direct) | '' (not in voice)
+    this.vehicle = 'scx30';  // body shell on the shared RC chassis (looks only: physics are the same for all)
   }
 }
 defineTypes(Player, {
   name: 'string', color: 'uint8', slot: 'uint8', ready: 'boolean', host: 'boolean', connected: 'boolean',
   joinedAt: 'number', ping: 'uint16', status: 'string', cp: 'int8', mask: 'uint32', score: 'number',
-  finish: 'number', best: 'number', runs: 'uint16', voice: 'boolean', mic: 'boolean', vmode: 'string',
+  finish: 'number', best: 'number', runs: 'uint16', voice: 'boolean', mic: 'boolean', vmode: 'string', vehicle: 'string',
 });
 
 export class RoomState extends Schema {

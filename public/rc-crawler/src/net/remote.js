@@ -12,6 +12,7 @@
 import * as THREE from 'three';
 import { createCrawler } from '../vehicles/crawlerModel.js';
 import { LIVERIES, liveryCss } from './config.js';
+import { mountBody } from '../vehicles/bodies.js';
 import { FLAG } from '../../vendor/net/codec.js';
 
 const INTERP_DELAY = 110;     // ms behind the newest snapshot: ~2 snapshots of jitter cover at 20 Hz
@@ -36,8 +37,9 @@ class RemoteTruck {
     this.proxies = PROXY_Z.map(() => ({ x: 0, z: 0, r: PROXY_R, y0: 0, top: 0, mat: 'plastic', kind: 'truck', enabled: false, v: new THREE.Vector3(), remote: slot }));
   }
 
-  setLook(color, name, talking, mic) {
+  setLook(color, name, talking, mic, vehicle = 'scx30') {
     if (color !== this.color) {
+      this.vehicle = null;   // a new model: mount its body again below
       this.color = color;
       if (this.model) { this.scene.remove(this.model.group); this.model.dispose(); }
       this.model = createCrawler({ quality: this.quality, bodyColor: (LIVERIES[color] || LIVERIES[0])[1], realLights: false });
@@ -48,6 +50,7 @@ class RemoteTruck {
       this.lightsOn = null;
       this.scene.add(this.model.group);
     }
+    if (vehicle !== this.vehicle && this.model) { this.vehicle = vehicle; mountBody(this.model, vehicle, (LIVERIES[color] || LIVERIES[0])[1]); }
     const key = `${name}|${talking ? 1 : 0}|${mic ? 1 : 0}|${color}`;
     if (key !== this.tagKey) { this.tagKey = key; this.name = name; this.drawTag(name, talking, mic, color); }
   }
