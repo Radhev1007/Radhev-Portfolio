@@ -201,7 +201,15 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
 .set-pair input[type=range]:disabled { opacity: .35; }
 #s-dragv { min-width: 40px; text-align: right; font: 700 14px var(--cond); font-variant-numeric: tabular-nums; }
 .note { color: var(--dim); font-size: 13px; }
-.help { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 14px; }
+/* the controls list is a tab like the others: shown only while CONTROLS is open */
+.help { grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 14px; }
+.tab.help.on { display: grid; }
+/* pause menu: close button in the corner; the GAME tab's actions in one column of equal buttons */
+#menu .panel { position: relative; }
+#menu .tabs { padding-right: 48px; }
+.m-close { position: absolute; top: 16px; right: 16px; }
+#m-main.on { display: flex; flex-direction: column; gap: 10px; max-width: 420px; }
+#m-main .btn, #m-main .btn-primary { width: 100%; margin: 0; justify-content: center; text-align: center; }
 .help .note { grid-column: 1 / -1; }
 .ch-list { display: grid; gap: 10px; }
 .ch-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: center; padding: 14px 16px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid var(--line); text-align: left; }
@@ -476,3 +484,4 @@ body:has(#hud.touch-on) .mm:not(.big) .mm-ctl button { width: 22px; height: 22px
   body:has(#hud.touch-on) .mm:not(.big) .mm-box { width: 92px; height: 92px; }
   .mm.big .mm-legend { display: none; }
 }
+@media (max-width: 720px) { .tabs button { padding: 8px 9px; font-size: 13px; letter-spacing: 1px; } }

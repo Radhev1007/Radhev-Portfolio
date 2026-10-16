@@ -80,6 +80,7 @@ export class UI {
     $('#b-menu').onclick = () => this.emit('menu');
     $('#b-orient').onclick = () => this.emit('orient');
     $('#m-resume').onclick = () => this.emit('resume');
+    $('#m-close').onclick = () => this.emit('resume');
     $('#m-restart').onclick = () => this.emit('restart');
     $('#m-title').onclick = () => this.emit('title');
     $$('.tabs button').forEach((b) => (b.onclick = () => this.tab(b.dataset.tab)));
