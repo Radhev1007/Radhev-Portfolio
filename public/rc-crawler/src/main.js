@@ -29,7 +29,7 @@ import { LIVERIES, liveryCss } from './net/config.js';
 // ------------------------------------------------------------ settings
 const SET_KEY = 'rccrawler.settings.v1';
 const isTouch = matchMedia('(pointer: coarse)').matches;
-const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, ambience: 'on', level: 'creek' };
+const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, ambience: 'on', dragBrake: 'on', dragPct: 100, level: 'creek' };
 let settings = { ...defaults };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || '{}')); } catch { /* ignore */ }
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch { /* ignore */ } };
@@ -256,6 +256,7 @@ const dtState = { gear: 'LOW', diffMode: 0, dig: false };
 function applyDrivetrain() {
   if (!phys) return;
   phys.gear = dtState.gear === 'LOW' ? GEARS.LOW : GEARS.HIGH; phys.diffMode = dtState.diffMode; phys.dig = dtState.dig;
+  phys.dragBrake = settings.dragBrake === 'off' ? 0 : Math.max(0, Math.min(100, settings.dragPct ?? 100)) / 100;
   ui.drivetrain({ gear: phys.gear.name, diff: DIFF_MODES[phys.diffMode].name, dig: phys.dig });
 }
 ui.on('range', () => {
@@ -283,6 +284,8 @@ ui.on('challenge', (id) => { audio.uiClick(); challenges.select(challenges.activ
 ui.on('quality', (q) => { settings.quality = q; saveSettings(); rebuildForQuality(); });
 ui.on('volume', (v) => { settings.volume = v; saveSettings(); audio.setMasterVolume(v / 100); });
 ui.on('ambience', (v) => { settings.ambience = v; saveSettings(); audio.setAmbience(v === 'on'); });
+ui.on('dragBrake', (v) => { settings.dragBrake = v; saveSettings(); applyDrivetrain(); });
+ui.on('dragPct', (v) => { settings.dragPct = v; saveSettings(); applyDrivetrain(); });
 ui.on('touch', (v) => { settings.touch = v; saveSettings(); updateTouchVisibility(); });
 ui.on('dof', (v) => { settings.dof = v; saveSettings(); });
 ui.on('fps', (v) => { settings.fps = v; saveSettings(); ui.showFps(v === 'on'); });

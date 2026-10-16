@@ -104,6 +104,7 @@ export class CrawlerPhysics {
     this.maxSteer = 0.58;
     this.gear = GEARS.LOW;
     this.handbrake = false;
+    this.dragBrake = 1;    // ESC drag brake strength when the throttle is released: 0 = coast freely .. 1 = full
     this.battery = 1;
     this.motorTemp = 0.25;
     this.wheels = MOUNTS.map(([x, z], i) => ({
@@ -283,12 +284,15 @@ export class CrawlerPhysics {
     let u = this.throttle;
     const batt = 0.82 + 0.18 * this.battery;
     let braking = this.handbrake;
-    if (Math.abs(u) < 0.04) braking = true;                       // ESC drag brake
+    // throttle released: the ESC drag brake (strength set by the player) slows the motor and holds the truck on a
+    // slope; with it off the motor is left unpowered and the truck coasts / rolls
+    const coasting = Math.abs(u) < 0.04 && !this.handbrake;
+    if (coasting && this.dragBrake > 0) braking = true;
     if (u < -0.04 && this.omega > 0.8) { braking = true; u = 0; }   // brake before reversing
     if (u > 0.04 && this.omega < -0.8) { braking = true; u = 0; }
     if (u < 0) u *= 0.75;
     let T = 0;
-    if (!braking || Math.abs(u) > 0.04) T = gear.tstall * batt * (u - this.omega / gear.wmax);
+    if (!coasting && (!braking || Math.abs(u) > 0.04)) T = gear.tstall * batt * (u - this.omega / gear.wmax);
     // a motor spun past its free speed (shifting into low range at speed) brakes, but no harder than its
     // stall torque: otherwise a downshift from top speed would stop the wheels dead and flip the truck
     T = Math.max(T, -gear.tstall);
@@ -297,7 +301,7 @@ export class CrawlerPhysics {
     const It = PHYS.transInertia, Iw = PHYS.wheelInertia;
     this.omega += (T / It) * dt;
     if (braking) {
-      const maxD = (this.handbrake ? 30 : 22) / PHYS.driveInertia * dt;
+      const maxD = (this.handbrake ? 30 : coasting ? 22 * this.dragBrake : 22) / PHYS.driveInertia * dt;
       this.omega -= Math.sign(this.omega) * Math.min(Math.abs(this.omega), maxD);
       if (this.handbrake) for (const w of this.wheels) w.om -= Math.sign(w.om) * Math.min(Math.abs(w.om), maxD);
     }

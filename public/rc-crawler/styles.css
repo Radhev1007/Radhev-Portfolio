@@ -196,6 +196,10 @@ kbd { display: inline-block; min-width: 20px; padding: 1px 6px; margin: 0 2px; b
 .seg button { padding: 7px 14px; border: 0; border-radius: 6px; background: none; font: 600 13px var(--cond); letter-spacing: 1px; color: var(--dim); }
 .seg button.on { background: var(--accent); color: #1a1406; }
 input[type=range] { width: 220px; accent-color: var(--accent); }
+.set-pair { display: flex; align-items: center; gap: 12px; }
+.set-pair input[type=range] { width: 150px; }
+.set-pair input[type=range]:disabled { opacity: .35; }
+#s-dragv { min-width: 40px; text-align: right; font: 700 14px var(--cond); font-variant-numeric: tabular-nums; }
 .note { color: var(--dim); font-size: 13px; }
 .help { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 14px; }
 .help .note { grid-column: 1 / -1; }

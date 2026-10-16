@@ -255,6 +255,15 @@ export class UI {
     seg('s-dof', 'v', s.dof, 'dof');
     seg('s-fps', 'v', s.fps, 'fps');
     seg('s-amb', 'v', s.ambience || 'on', 'ambience');
+    // drag brake: on / off plus a strength; the slider rests (dimmed) while it is off
+    const drag = (on, pct) => { $('#s-drag').value = pct; $('#s-drag').disabled = !on; $('#s-dragv').textContent = on ? `${pct}%` : 'OFF'; };
+    let dragOn = s.dragBrake !== 'off', dragPct = s.dragPct ?? 100;
+    drag(dragOn, dragPct);
+    $$('#s-dragon button').forEach((b) => {
+      b.classList.toggle('on', b.dataset.v === (dragOn ? 'on' : 'off'));
+      b.onclick = () => { $$('#s-dragon button').forEach((x) => x.classList.toggle('on', x === b)); dragOn = b.dataset.v === 'on'; drag(dragOn, dragPct); this.emit('dragBrake', b.dataset.v); };
+    });
+    $('#s-drag').oninput = (e) => { dragPct = +e.target.value; drag(dragOn, dragPct); this.emit('dragPct', dragPct); };
     $('#s-vol').value = s.volume;
     $('#s-vol').oninput = (e) => this.emit('volume', +e.target.value);
     this.showFps(s.fps === 'on');
