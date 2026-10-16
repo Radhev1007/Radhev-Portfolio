@@ -216,11 +216,6 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
   .weather { top: auto; bottom: auto; right: 10px; top: 10px; }
   .weather button { width: 44px; } .weather button span { display: none; }
   .telemetry { top: 70px; transform: scale(.78); transform-origin: right top; }
-  /* ── Phone driving HUD: only what you need while driving ──────────
-     The weather bar hides while driving (it is still on the title screen
-     and the pause menu), which frees the top row for the trail name and a
-     small speed card. */
-  .weather.compact { display: none; }
 
   /* Trail: name and stars only, beside the portfolio's back button. */
   .hud-tl { top: 14px; left: 16px; max-width: calc(100vw - 170px); }
@@ -229,20 +224,8 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
   #h-diff, #h-surface { display: none; }
   .help { grid-template-columns: 1fr; }
 
-  /* Speed card: speed and drivetrain only. The drive-mode buttons it also
-     carries are duplicated by the touch pad, so they go. */
-  .telemetry { top: 12px; right: 12px; width: auto; min-width: 104px; padding: 8px 12px; transform: none; }
-  .telemetry .speed { margin-bottom: 2px; }
-  .telemetry .speed b { font-size: 26px; }
-  .telemetry .row, .telemetry .dt-btns, .telemetry .axle { display: none; }
-  .telemetry .fwd { margin-top: 2px; padding-top: 6px; justify-content: center; }
-  #t-difflbl { margin-left: 8px; }
-
-  /* Side buttons: icon-only squares down the left edge. */
+  /* Side buttons down the left edge. */
   .touch-on .hud-br { left: 12px; right: auto; top: 42%; bottom: auto; transform: translateY(-50%); flex-direction: column; gap: 8px; }
-  .touch-on .hud-br button { min-width: 0; width: 44px; height: 44px; padding: 0; justify-content: center; }
-  .touch-on .hud-br button span { display: none; }
-  .touch-on .hud-br button svg { width: 20px; height: 20px; }
 
   /* Steering on the left, three pedals on the right, drive modes in a row
      above the steering pad instead of stacked beside the brake. */
@@ -256,6 +239,25 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
 
   /* Inside the portfolio, the "back" button holds the top-left corner. */
   html.embedded .title-left { top: 84px; }
+}
+/* ── Phone driving HUD, upright or sideways: only what you need while driving.
+   The weather bar hides while driving (it is still on the title screen and
+   the pause menu), which frees the top row. The speed card keeps speed and
+   drivetrain only: the drive-mode buttons it also carries are duplicated by
+   the touch pad, so they go. The side buttons become icon-only squares. */
+@media (max-width: 720px), (orientation: landscape) and (max-height: 500px) {
+  .weather.compact { display: none; }
+
+  .telemetry { top: 12px; right: 12px; width: auto; min-width: 104px; padding: 8px 12px; transform: none; }
+  .telemetry .speed { margin-bottom: 2px; }
+  .telemetry .speed b { font-size: 26px; }
+  .telemetry .row, .telemetry .dt-btns, .telemetry .axle { display: none; }
+  .telemetry .fwd { margin-top: 2px; padding-top: 6px; justify-content: center; }
+  #t-difflbl { margin-left: 8px; }
+
+  .touch-on .hud-br button { min-width: 0; width: 44px; height: 44px; padding: 0; justify-content: center; }
+  .touch-on .hud-br button span { display: none; }
+  .touch-on .hud-br button svg { width: 20px; height: 20px; }
 }
 
 /* ---------- multiplayer (lobby panel, in-game strip, voice) */
@@ -350,4 +352,18 @@ html.embedded .mp-hud { top: 64px; }   /* below the portfolio's "Back" pill */
   /* phones: the recover / camera / lights / menu buttons hold the left edge, so voice sits just beside them */
   body:has(#hud.touch-on) .mp-vhud { left: 66px; top: 42%; }
   body:has(#hud.touch-on) .ptt-x { display: none; }
+}
+
+/* ---------- phone held sideways
+   Too short for the speed card, the side-button column and the pedals to
+   share the right edge. The side buttons run along the top-right corner, the
+   speed card sits under them, and the pedals keep the bottom-right corner
+   with the drive modes stacked beside the brake. The left edge keeps the
+   trail name, the voice buttons and the steering pad. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .touch-on .hud-br { left: auto; right: 12px; top: 12px; bottom: auto; transform: none; flex-direction: row; gap: 8px; }
+  .touch-on .telemetry { top: 64px; }
+  .pedals { right: 12px; }
+  .tc-modes { position: static; flex-direction: column; }
+  body:has(#hud.touch-on) .mp-vhud { left: 18px; top: 50%; }
 }
