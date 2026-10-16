@@ -6,15 +6,21 @@
 //   pine     tall pine: bark trunk + crown cards       slim     slender pine
 //   fir      young fir                                  bush     leafy bush
 //   tuft     grass tuft
+// from the mountain forest, its own versions of the trees (same photos, built differently; textures at 512 px,
+// as these are mostly seen from afar):
+//   pine2    tall pine: bark trunk + photo crown cards    slim2    slender pine on crossed photo cards
+//   spruce   young spruce
 // and from the log pile, one big log lying along +X, 1 unit long:
 //   log
 // Card foliage becomes alpha-tested (not blended) so thousands of instances need no sorting; the log's
 // specular-glossiness material becomes metal-rough, which three.js reads.
 //
-// Models: "a forest (3) with a road at night for game" by dasy444 and "Logs" by Kathrin&Christian, both CC BY 4.0.
+// Models: "a forest (3) with a road at night for game" by dasy444 and "Logs" by Kathrin&Christian, both CC BY 4.0;
+// "The landscape is a forest in the mountains" by dasy444, Sketchfab Standard licence (the owner's).
 // The tools it needs are not part of the portfolio's dependencies (see tools/rc-bodies.mjs for the install line):
 //   RC_BODIES_DEPS=/tmp/rc-bodies node tools/rc-forest.mjs ~/Downloads/a_forest_3_with_a_road_at_night_for_game.glb \
-//     ~/Downloads/logs.glb public/rc-crawler/assets/forest/kit.glb
+//     ~/Downloads/logs.glb ~/Downloads/the_landscape_is_a_forest_in_the_mountains.glb \
+//     public/rc-crawler/assets/forest/kit.glb
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 const req = createRequire(resolve(process.env.RC_BODIES_DEPS || '.', 'index.js'));
@@ -24,7 +30,7 @@ const { prune, dedup, weld, textureCompress, meshopt, quantize, metalRough, tran
 const { MeshoptEncoder } = req('meshoptimizer');
 const sharp = req('sharp');
 
-const [forestFile, logsFile, outFile] = process.argv.slice(2);
+const [forestFile, logsFile, mountainFile, outFile] = process.argv.slice(2);
 await MeshoptEncoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 const mul = (m, x, y, z) => [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]];
@@ -104,8 +110,30 @@ await logs.transform(metalRough());
   await logs.transform(prune(), dedup());
 }
 
+// ---------------------------------------------------------------- mountain forest: its own trees and plant
+// (each is a group node holding its card meshes; the rocks and ground are one baked mesh and stay out)
+const mountain = await io.read(mountainFile);
+{
+  const root = mountain.getRoot(), keep = [];
+  const kids = (n) => n.listChildren().filter((c) => c.getMesh());
+  const matOf = (c) => c.getMesh().listPrimitives()[0].getMaterial()?.getName() || '';
+  // the most typical (median height) of the groups holding a part with this material
+  const pickGroup = (rx) => {
+    const l = root.listNodes().filter((n) => kids(n).some((c) => rx.test(matOf(c))))
+      .map((n) => { const b = bounds(kids(n).flatMap(points)); return { n, h: b.mx[1] - b.mn[1] }; }).sort((a, b) => a.h - b.h);
+    return kids(l[Math.floor(l.length / 2)].n);
+  };
+  for (const [name, rx] of [['pine2', /^Material\.003$/], ['slim2', /^05ade0e/], ['spruce', /^cc24eba/]]) {
+    const [first, ...rest] = pickGroup(rx);
+    keep.push(...standAlone(mountain, first, name, rest));
+  }
+  for (const n of root.listNodes()) if (!keep.includes(n)) n.dispose();
+  await mountain.transform(prune(), dedup(), textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [512, 512], quality: 85 }));
+}
+
 // ---------------------------------------------------------------- one file
 mergeDocuments(forest, logs);
+mergeDocuments(forest, mountain);
 {
   const root = forest.getRoot(), [main, ...rest] = root.listScenes();
   for (const s of rest) { for (const n of s.listChildren()) main.addChild(n); s.dispose(); }
@@ -113,11 +141,12 @@ mergeDocuments(forest, logs);
   const buffers = root.listBuffers(); for (const b of buffers.slice(1)) { for (const a of root.listAccessors()) if (a.getBuffer() === b) a.setBuffer(buffers[0]); b.dispose(); }
 }
 await forest.transform(weld(), dedup(), prune());
-await forest.transform(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1024, 1024], quality: 85 }));
+await forest.transform(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1024, 1024], quality: 85, formats: /png|jpeg/ }));   // (not the WebPs again)
 await forest.transform(quantize(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
 forest.getRoot().getAsset().extras = { credits: [
   'a forest (3) with a road at night for game by dasy444, CC BY 4.0: https://sketchfab.com/3d-models/a-forest-3-with-a-road-at-night-for-game-61f8c7817fe6457fb26e4814cfc48a3f',
   'Logs by Kathrin&Christian, CC BY 4.0: https://sketchfab.com/3d-models/logs-54d0c962a0e24dadb2c01477fd4741f9',
+  'The landscape is a forest in the mountains by dasy444, Sketchfab Standard licence: https://sketchfab.com/3d-models/the-landscape-is-a-forest-in-the-mountains-27b7e06431f244ef84e28bada7560c98',
 ] };
 await io.write(outFile, forest);
 console.log('wrote', outFile, forest.getRoot().listNodes().map((n) => n.getName()).join(' '));

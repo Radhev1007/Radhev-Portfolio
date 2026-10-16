@@ -1,5 +1,6 @@
 // Forest kit: trees, plants and a log from real models (assets/forest/kit.glb, made by tools/rc-forest.mjs from
-// "a forest (3) with a road at night for game" by dasy444 and "Logs" by Kathrin&Christian, both CC BY 4.0).
+// "a forest (3) with a road at night for game" by dasy444 and "Logs" by Kathrin&Christian, both CC BY 4.0, and
+// "The landscape is a forest in the mountains" by dasy444, Sketchfab Standard licence).
 // Vegetation.build() instances these in place of its procedural pines, bushes, grass and logs.
 //
 // Each part comes as plain float geometry, standing on the origin and 1 unit tall (the log: lying along X,
@@ -8,7 +9,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
-export const FOREST_PARTS = ['pine', 'slim', 'fir', 'bush', 'tuft', 'log'];
+export const FOREST_PARTS = ['pine', 'slim', 'fir', 'pine2', 'slim2', 'spruce', 'bush', 'tuft', 'log'];
 let kit = null;
 
 export function loadForestKit() {
@@ -47,7 +48,8 @@ function toParts(gltf) {
       if (!geometry.attributes.normal) geometry.computeVertexNormals();
       const material = o.material;
       material.side = THREE.DoubleSide;
-      if (material.alphaTest > 0 || material.transparent) { material.transparent = false; material.alphaTest = 0.5; }
+      // cards are cut out at each model's own threshold (some parts are meant to stay mostly hidden)
+      if (material.transparent) { material.transparent = false; material.alphaTest ||= 0.5; }
       list.push({ geometry, material });
     });
     if (name === 'log') {   // centre the log on its axis: it is placed like the game's own logs

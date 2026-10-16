@@ -47,16 +47,18 @@ file); its wheel positions go into `public/rc-crawler/src/vehicles/bodies.js`.
 ## RC Crawler forest
 
 Every terrain except Desert Ridge is dressed with real tree, plant and log models instead of procedural ones:
-pines, young firs, bushes, grass tufts and fallen logs, placed where the game always placed its vegetation.
+pines, young firs and spruces, bushes, grass tufts and fallen logs, placed where the game always placed its
+vegetation.
 The log model is also the logs' collision shape, so the truck climbs what you see.
 
 | Asset | Model | Licence |
 | --- | --- | --- |
 | `assets/forest/kit.glb` (trees, plants) | [“a forest (3) with a road at night for game”](https://sketchfab.com/3d-models/a-forest-3-with-a-road-at-night-for-game-61f8c7817fe6457fb26e4814cfc48a3f) by dasy444 | CC BY 4.0 |
 | `assets/forest/kit.glb` (log) | [“Logs”](https://sketchfab.com/3d-models/logs-54d0c962a0e24dadb2c01477fd4741f9) by Kathrin&Christian | CC BY 4.0 |
+| `assets/forest/kit.glb` (pine2, slim2, spruce) | [“The landscape is a forest in the mountains”](https://sketchfab.com/3d-models/the-landscape-is-a-forest-in-the-mountains-27b7e06431f244ef84e28bada7560c98) by dasy444 | Sketchfab Standard |
 
-Both are adapted: one of each repeated part taken out and instanced, textures recompressed. The game credits them
-in Controls. `tools/rc-forest.mjs` rebuilds the kit from the downloaded models (usage at the top of the file).
+All are adapted: one of each repeated part taken out and instanced, textures recompressed (the mountain forest's
+rocks and ground are one baked mesh and aren't used). The game credits them in Controls. `tools/rc-forest.mjs` rebuilds the kit from the downloaded models (usage at the top of the file).
 
 ## Replacing the content
 

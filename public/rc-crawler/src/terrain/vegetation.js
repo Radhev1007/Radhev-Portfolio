@@ -234,18 +234,18 @@ export class Vegetation {
     const inst = (name, list, opts = {}) => {
       for (const p of K[name]) root.add(this._inst(p.geometry, opts.wind === false ? p.material : matFor(p.material, opts.strength ?? 1, opts.kind || 'tree'), list, opts.shadow ?? true, opts.scale, opts.chunk ?? 30, opts.tint));
     };
-    // trees: tall pines, slender pines and young firs, mixed. A fir is shorter (FIR of the planted height) and
-    // branched to the ground, so it only goes where its lowest branches stay clear of the trail
+    // trees: tall pines, slender pines and young firs and spruces, from both forests, mixed. The young ones are
+    // shorter (YOUNG of the planted height) and branched to the ground, so they only go where their lowest branches
+    // stay clear of the trail; elsewhere a tall pine stands instead
     const tint = (it, c) => { const h = Math.sin(it.x * 12.9898 + it.z * 78.233) * 43758.5453, r = h - Math.floor(h); return c.setRGB(0.88 + r * 0.2, 0.9 + r * 0.14, 0.86 + (1 - r) * 0.16); };
-    const FIR = 0.55, kinds = [[], [], []];
+    const TREES = ['pine', 'pine2', 'slim', 'slim2', 'fir', 'spruce'], YOUNG = 0.55;
+    const kinds = TREES.map(() => []);
     this.trees.forEach((t, i) => {
-      let v = [0, 0, 1, 2][i % 4];
-      if (v === 2 && this.roomAt && this.roomAt(t.x, t.z) < t.s * FIR * 0.36 + 3) v = i % 2;   // no room: a pine
+      let v = [0, 1, 0, 1, 2, 3, 4, 5][i % 8];
+      if (v >= 4 && this.roomAt && this.roomAt(t.x, t.z) < t.s * YOUNG * 0.38 + 3) v = i % 2;   // no room: a tall pine
       kinds[v].push(t);
     });
-    inst('pine', kinds[0], { chunk: 40, tint });
-    inst('slim', kinds[1], { chunk: 40, tint });
-    inst('fir', kinds[2], { chunk: 40, tint, scale: (it, s) => s.setScalar(it.s * FIR) });
+    TREES.forEach((n, v) => inst(n, kinds[v], { chunk: 40, tint, scale: v >= 4 ? (it, s) => s.setScalar(it.s * YOUNG) : null }));
     // bushes (green and dry alike) and grass tufts, sized like the shapes they replace
     const shrubTint = (it, c) => { const h = Math.sin(it.x * 91.7 + it.z * 37.3) * 43758.5453, r = h - Math.floor(h); return it.dry ? c.setRGB(0.95 + r * 0.15, 0.9 + r * 0.1, 0.72 + r * 0.1) : c.setRGB(0.85 + r * 0.25, 0.9 + r * 0.15, 0.82 + (1 - r) * 0.18); };
     inst('bush', this.bushes, { scale: (it, s) => s.setScalar(it.s * 1.3), tint: shrubTint, strength: 1.5, kind: 'bush' });
