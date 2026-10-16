@@ -2201,6 +2201,21 @@ export function createCrawler(opts = {}) {
   }
   // hide the SCX30 shell while another body is mounted; the chassis, axles and wheels stay
   function setShellVisible(v) { for (const m of shellMeshes) m.visible = v; }
+  // a mounted body's own wheel (bodies.js) in place of the RC wheel on each hub: it spins, steers and travels
+  // with the hub; the tyre contact and physics stay the RC ones
+  const ownWheels = [];
+  function setWheelVisual(src) {
+    for (const w of ownWheels) w.removeFromParent();
+    ownWheels.length = 0;
+    spinners.forEach((sp, i) => {
+      sp.children[0].visible = !src;
+      if (!src) return;
+      const w = src.clone();
+      if (HUB_X[i] < 0) w.rotation.y = PI;   // outer face toward -X on the right side
+      sp.add(w);
+      ownWheels.push(w);
+    });
+  }
   // a longer body's nose is ahead of the SCX30 lamps: start the beams there, or they light its bumper from behind
   function setLampZ(z = LAMP_Z) { for (const sp of spots) sp.position.z = z; applyLightState(); }
   function setDirt({ dust, mud, wet } = {}) {
@@ -2214,6 +2229,7 @@ export function createCrawler(opts = {}) {
     // a mounted body shell shares its geometry and textures with other trucks: take it off first, and free only
     // this truck's own paint and lamp materials
     if (api._body) { group.remove(api._body); api._body = null; }
+    setWheelVisual(null);
     for (const m of [...extraPaint, ...extraLamps]) m.dispose();
     extraPaint.length = extraLamps.length = 0;
     const geos = new Set(), ms = new Set(), texs = new Set();
@@ -2246,6 +2262,7 @@ export function createCrawler(opts = {}) {
     setBodyColor,
     setShellVisible,
     setLampZ,
+    setWheelVisual,
     get paintHex() { return paintHex; },
     extraPaint,
     extraLamps,

@@ -15,7 +15,7 @@ export const VEHICLES = [
   {
     id: 'bronco', name: '2022 Ford Bronco', short: 'BRONCO', file: 'assets/vehicles/bronco.glb', paint: /Pintura/i, lamps: /Refletor_Farol/i, exact: true,   // as modelled
     wheels: { front: 1.611, rear: -1.264, y: 0.425, x: 0.84, r: 0.425 },
-    credit: { title: '2022 Ford Bronco', author: 'tonielpro520', changes: 'road wheels removed', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+    credit: { title: '2022 Ford Bronco', author: 'tonielpro520', changes: 'its wheels moved onto the RC hubs', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
   {
     id: 'cruiser', name: 'Toyota Land Cruiser 80', short: 'LAND CRUISER', file: 'assets/vehicles/cruiser.glb', paint: null,   // a photo scan: its paint is in the photos
@@ -54,6 +54,18 @@ function fit(scene, v) {
   holder.name = `Body:${v.id}`;
   scene.scale.set(s * sx, s, s);
   scene.position.set(0, HUB_Y + LIFT + (TYRE_R - w.r * s) * 0.35 - w.y * s, -((w.front + w.rear) / 2) * s);
+  // a body that brings its own wheel (saved on its own, centred on its hub): sized to the RC tyre, so it
+  // meets the ground where the physics put the tyre
+  const wheel = scene.getObjectByName('RCWheel');
+  if (wheel) {
+    wheel.removeFromParent();   // (its own transform undoes the geometry compression: keep it, scale around it)
+    const sized = new THREE.Group();
+    sized.name = `Wheel:${v.id}`;
+    sized.add(wheel);
+    sized.scale.setScalar(TYRE_R / w.r);
+    wheel.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    holder.userData.wheel = sized;
+  }
   holder.add(scene);
   holder.updateMatrixWorld(true);
   holder.userData.noseZ = new THREE.Box3().setFromObject(scene).max.z;
@@ -74,7 +86,7 @@ export async function mountBody(model, id, color) {
     if (model._body) { model.group.remove(model._body); model._body = null; }
     for (const list of [model.extraPaint, model.extraLamps]) { for (const m of list) m.dispose(); list.length = 0; }
   };
-  if (!v.file) { unmount(); model.setShellVisible(true); model.setLampZ(); model._bodyId = v.id; return; }
+  if (!v.file) { unmount(); model.setShellVisible(true); model.setLampZ(); model.setWheelVisual(null); model._bodyId = v.id; return; }
   let tpl;
   try { tpl = await template(v); } catch (e) { console.warn('[bodies] could not load', v.id, e); return; }
   if (token !== model._bodyToken || model.disposed) return;   // another body was asked for meanwhile, or the truck is gone
@@ -99,4 +111,5 @@ export async function mountBody(model, id, color) {
   model._body = body; model._bodyId = v.id;
   model.setShellVisible(false);
   model.setLampZ(tpl.userData.noseZ + 0.01);
+  model.setWheelVisual(tpl.userData.wheel || null);
 }
