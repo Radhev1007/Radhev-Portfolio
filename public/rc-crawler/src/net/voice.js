@@ -60,6 +60,9 @@ export class Voice {
 
   async join() {
     if (!this.mp.room || this.status === 'connecting' || this.status === 'on') return;
+    // joining voice is joining the conversation: the microphone goes live straight away (mute or switch to
+    // push-to-talk any time); a player who chose push-to-talk keeps it
+    if (this.micMode === 'muted') this.micMode = 'open';
     this.error = ''; this.set('status', 'connecting');
     let tok;
     try { tok = await this.token(); } catch (e) { this.error = e.message; this.set('status', 'error'); return; }

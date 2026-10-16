@@ -86,8 +86,6 @@ export class MpUI {
           <div class="mp-actions">
             <button id="mp-ready" class="mp-btn">READY</button>
             <button id="mp-start" class="btn-primary small">START GAME</button>
-            <button id="mp-lobbyback" class="mp-btn hidden">BACK TO LOBBY</button>
-            <button id="mp-drive" class="mp-btn">DRIVE</button>
             <button id="mp-leave" class="mp-btn mp-danger">LEAVE ROOM</button>
           </div>
         </div>
@@ -121,18 +119,16 @@ export class MpUI {
     $('#mp-create').onclick = async () => { this.flushName(); this.status('Creating room…'); if (await this.mp.create()) this.status(''); };
     $('#mp-join').onclick = async () => { this.flushName(); this.status('Joining…'); if (await this.mp.join($('#mp-code').value)) this.status(''); };
     $('#mp-close').onclick = () => this.hide();
-    $('#mp-drive').onclick = () => this.hide();
     $('#mp-leave').onclick = async () => { await this.voice.leave(); await this.mp.leave(); this.status('You left the room'); this.render(); };
     $('#mp-ready').onclick = () => { const me = this.mp.me; if (me) this.mp.room.send('ready', { ready: !me.ready }); };
     $('#mp-start').onclick = () => this.start();
-    $('#mp-lobbyback').onclick = () => this.mp.room?.send('lobby');
     $('#mp-copycode').onclick = () => this.copy(this.mp.code, 'Room code copied');
     $('#mp-copylink').onclick = () => this.copy(this.mp.inviteLink(), 'Invite link copied');
     $('#mp-map').innerHTML = this.game.levels.map((l) => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
     $('#mp-mode').innerHTML = Object.entries(MODE_INFO).map(([k, v]) => `<option value="${k}">${esc(v.name)}</option>`).join('');
-    $('#mp-map').onchange = (e) => this.mp.room?.send('config', { map: e.target.value });
-    $('#mp-mode').onchange = (e) => { const mode = e.target.value; const opts = this.modes.courseOptions(mode); this.mp.room?.send('config', { mode, challenge: opts[0]?.id || '' }); };
-    $('#mp-course').onchange = (e) => this.mp.room?.send('config', { challenge: e.target.value });
+    $('#mp-map').onchange = (e) => this.config({ map: e.target.value });
+    $('#mp-mode').onchange = (e) => { const mode = e.target.value; const opts = this.modes.courseOptions(mode); this.config({ mode, challenge: opts[0]?.id || '' }); };
+    $('#mp-course').onchange = (e) => this.config({ challenge: e.target.value });
     $('#mp-players').addEventListener('input', (e) => { const r = e.target.closest('[data-sid]'); if (r && e.target.type === 'range') this.voice.setPlayerVolume(r.dataset.sid, +e.target.value / 100); });
     $('#mp-players').addEventListener('click', (e) => { const b = e.target.closest('button[data-mute]'); if (b) this.voice.togglePlayerMute(b.dataset.mute); });
     $('#mp-vbody').addEventListener('click', (e) => this.voiceClick(e));
@@ -165,6 +161,15 @@ export class MpUI {
     if (!this.mp.active) setTimeout(() => $('#mp-name').focus(), 50);
   }
   hide() { this.open = false; this.root.classList.add('hidden'); this.game.panelOpen(false); }
+
+  // host: game settings can change at any time; during a session, a change ends it and brings everyone back to
+  // the lobby with the new settings, ready for the next start
+  config(patch) {
+    const st = this.mp.state, room = this.mp.room;
+    if (!st || !room) return;
+    if (st.phase === 'countdown' || st.phase === 'running') room.send('lobby');
+    room.send('config', patch);
+  }
 
   start() {
     const st = this.mp.state;
@@ -230,7 +235,7 @@ export class MpUI {
 
     // settings
     $('#mp-hostonly').textContent = host ? '' : '· chosen by the host';
-    for (const id of ['#mp-map', '#mp-mode', '#mp-course']) $(id).disabled = !host || live;
+    for (const id of ['#mp-map', '#mp-mode', '#mp-course']) $(id).disabled = !host;
     $('#mp-map').value = st.map;
     $('#mp-mode').value = st.mode;
     const opts = this.modes.courseOptions(st.mode);
@@ -252,9 +257,7 @@ export class MpUI {
     $('#mp-start').disabled = waiting > 0;
     $('#mp-start').textContent = st.phase === 'results' ? 'PLAY AGAIN' : 'START GAME';
     $('#mp-start').title = waiting ? `Waiting for ${waiting} player${waiting > 1 ? 's' : ''} to be ready` : '';
-    $('#mp-lobbyback').classList.toggle('hidden', !host || st.phase === 'lobby');
-    // one call to action: beside START GAME, "drive" would only close the panel (the × does that)
-    $('#mp-drive').classList.toggle('hidden', host && !live);
+    // players: READY and LEAVE ROOM; the host: START GAME and LEAVE ROOM. Closing the panel (× or Esc) drives.
     $('#mp-session').innerHTML = this.sessionHtml(st, me, waiting, host);
     this.renderVoice();
   }
@@ -262,7 +265,7 @@ export class MpUI {
   sessionHtml(st, me, waiting, host) {
     const info = MODE_INFO[st.mode];
     if (st.phase === 'results') return `<div class="mp-box"><div class="mp-dim mp-cap">RESULTS · ${esc(info.name)}</div>${this.resultsTable(st)}</div>`;
-    if (st.phase === 'running' || st.phase === 'countdown') return `<div class="mp-box"><div class="mp-dim mp-cap">IN PROGRESS · ${esc(info.name)}</div><p class="mp-dim">Close this panel to drive. ${me.status === 'spectating' ? 'You joined mid-session: you will be scored from the next start.' : ''}</p></div>`;
+    if (st.phase === 'running' || st.phase === 'countdown') return `<div class="mp-box"><div class="mp-dim mp-cap">IN PROGRESS · ${esc(info.name)}</div><p class="mp-dim">Close this panel to drive. ${me.status === 'spectating' ? 'You joined mid-session: you will be scored from the next start.' : ''}${host ? ' Changing a game setting ends this session and brings everyone back to the lobby.' : ''}</p></div>`;
     return `<div class="mp-box mp-wait">${host ? (waiting ? `Waiting for ${waiting} player${waiting > 1 ? 's' : ''} to be ready…` : 'Everyone is ready. Start when you like.') : me.ready ? 'Ready. Waiting for the host to start…' : 'Press READY when you are set.'}</div>`;
   }
 
@@ -287,7 +290,7 @@ export class MpUI {
       <div class="mp-vrow"><span>Push-to-talk key</span><button id="mp-pttkey" class="mp-chip"><kbd>${esc(v.pttKey.toUpperCase())}</kbd> change</button></div>
       <div class="mp-vrow"><span>Your mic</span><b class="${v.micLive ? 'mp-live' : 'mp-dim'}">${v.micLive ? (v.speaking.has(this.mp.room?.sessionId) ? '● LIVE · speaking' : '● LIVE') : 'off'}</b></div>
       <div class="mp-vrow"><span>Speaker</span><button id="mp-spkbtn" class="mp-chip">${v.speakerMuted ? 'MUTED · unmute' : 'ON · mute all'}</button></div>
-      ${v.needsGesture ? '<button id="mp-unlock" class="mp-btn">CLICK TO HEAR VOICES</button>' : ''}` : '<p class="mp-dim">Optional. Your microphone is only used once you switch it on. Nothing is recorded.</p>'}
+      ${v.needsGesture ? '<button id="mp-unlock" class="mp-btn">CLICK TO HEAR VOICES</button>' : ''}` : '<p class="mp-dim">Optional. Joining turns your microphone on so everyone in the room can talk, here in the lobby and while driving; mute it any time. Nothing is recorded.</p>'}
       ${v.status === 'on' && v.note ? `<p class="mp-dim">${esc(v.note)}</p>` : ''}
       ${v.error ? `<p class="mp-err">${esc(v.error)}</p>` : ''}`;
     $('#mp-vbody button#mp-vjoin').disabled = v.status === 'connecting' || !this.mp.active;

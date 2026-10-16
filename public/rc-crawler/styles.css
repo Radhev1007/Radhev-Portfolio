@@ -304,6 +304,8 @@ input[type=range] { width: 220px; accent-color: var(--accent); }
 .btn-mp:hover { color: var(--accent); border-color: var(--accent); }
 @media (max-width: 900px) { .btn-mp span { display: none; } }
 #mp { z-index: 30; }
+html.embedded #mp { padding-top: 64px; }   /* clear of the portfolio's "Back to portfolio" button */
+html.embedded #mp .mp-panel { max-height: calc(100vh - 84px); }
 .mp-panel { width: min(1020px, 96vw); position: relative; user-select: text; -webkit-user-select: text; }
 .mp-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
 .mp-head h2 { margin: 0; font: 800 26px var(--cond); font-style: italic; letter-spacing: 1px; }
