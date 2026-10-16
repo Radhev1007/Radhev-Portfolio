@@ -55,8 +55,8 @@ export class MpUI {
           <div class="mp-l">Vehicle livery <span id="mp-livname" class="mp-dim"></span></div>
           <div id="mp-liveries" class="mp-liveries"></div>
           <div class="mp-row2">
-            <div class="mp-box"><h3>Create a room</h3><p class="mp-dim">You host: pick the map and mode, then share the code. Up to 20 players.</p><button id="mp-create" class="btn-primary small">CREATE ROOM</button></div>
-            <div class="mp-box"><h3>Join a room</h3><p class="mp-dim">Enter the 5-character code a friend sent you.</p>
+            <div class="mp-box" id="mp-createbox"><h3>Create a room</h3><p class="mp-dim">You host: pick the map and mode, then share the code. Up to 20 players.</p><button id="mp-create" class="btn-primary small">CREATE ROOM</button></div>
+            <div class="mp-box" id="mp-joinbox"><h3 id="mp-jointitle">Join a room</h3><p class="mp-dim" id="mp-joindesc">Enter the 5-character code a friend sent you.</p>
               <div class="mp-join"><input id="mp-code" maxlength="5" placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false" /><button id="mp-join" class="btn-primary small">JOIN</button></div></div>
           </div>
         </div>
@@ -117,7 +117,12 @@ export class MpUI {
     $('#mp-code').onkeydown = (e) => { if (e.key === 'Enter') $('#mp-join').click(); e.stopPropagation(); };
     $('#mp-name').onkeydown = (e) => e.stopPropagation();
     $('#mp-create').onclick = async () => { this.flushName(); this.status('Creating room…'); if (await this.mp.create()) this.status(''); };
-    $('#mp-join').onclick = async () => { this.flushName(); this.status('Joining…'); if (await this.mp.join($('#mp-code').value)) this.status(''); };
+    $('#mp-join').onclick = async () => {
+      this.flushName(); this.status('Joining…');
+      if (await this.mp.join($('#mp-code').value)) { this.status(''); this.invite(null); return; }
+      // the invite didn't work (room closed or full): offer the other ways in rather than a dead end
+      if (this.inviteCode) { const why = this.mp.error || 'Could not join that room'; this.invite(null); this.status(`${why.replace(/\.?$/, '.')} You can also create your own room.`, true); }
+    };
     $('#mp-close').onclick = () => this.hide();
     $('#mp-leave').onclick = async () => { await this.voice.leave(); await this.mp.leave(); this.status('You left the room'); this.render(); };
     $('#mp-ready').onclick = () => { const me = this.mp.me; if (me) this.mp.room.send('ready', { ready: !me.ready }); };
@@ -161,6 +166,16 @@ export class MpUI {
     if (!this.mp.active) setTimeout(() => $('#mp-name').focus(), 50);
   }
   hide() { this.open = false; this.root.classList.add('hidden'); this.game.panelOpen(false); }
+
+  // Arriving through an invite link: only the way into that room (name, livery, JOIN with the code filled in).
+  // Create Room is for players who opened the game themselves; invite(null) brings it back.
+  invite(code) {
+    this.inviteCode = code ? String(code).toUpperCase().slice(0, 5) : null;
+    $('#mp-entry').classList.toggle('invited', !!this.inviteCode);
+    if (this.inviteCode) $('#mp-code').value = this.inviteCode;
+    $('#mp-jointitle').textContent = this.inviteCode ? `You're invited · ${this.inviteCode}` : 'Join a room';
+    $('#mp-joindesc').textContent = this.inviteCode ? 'Pick your name and colour, then join your friend\'s room.' : 'Enter the 5-character code a friend sent you.';
+  }
 
   // host: game settings can change at any time; during a session, a change ends it and brings everyone back to
   // the lobby with the new settings, ready for the next start

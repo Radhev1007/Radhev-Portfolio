@@ -627,7 +627,7 @@ if (params.has('capture')) capturePreviews();
 else loadLevel(settings.level).then(async () => {
   const code = params.get('join');
   if (await mp.resume()) { if (state === 'title') game.panelOpen(false); ui.toast('Rejoined room', mp.code); return; }
-  if (code && mp.available) { mpUI.show(); document.getElementById('mp-code').value = code.toUpperCase().slice(0, 5); }
+  if (code && mp.available) { mpUI.invite(code); mpUI.show(); }
 });
 window.__game = {
   mp, modes, voice, mpUI, minimap, audio,

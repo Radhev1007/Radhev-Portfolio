@@ -320,6 +320,9 @@ html.embedded #mp .mp-panel { max-height: calc(100vh - 84px); }
 .mp-liveries button { aspect-ratio: 1; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); }
 .mp-liveries button.on { border-color: #fff; box-shadow: 0 0 0 3px var(--accent); }
 .mp-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+#mp-entry.invited #mp-createbox { display: none; }        /* through an invite link: straight to joining that room */
+#mp-entry.invited .mp-row2 { grid-template-columns: 1fr; }
+#mp-entry.invited #mp-joinbox { border-color: rgba(246,181,30,.45); }
 .mp-box { padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.03); margin-bottom: 12px; }
 .mp-box h3 { margin: 0 0 4px; font: 700 18px var(--cond); letter-spacing: 1px; }
 .mp-box p { margin: 0 0 12px; font-size: 14px; }
