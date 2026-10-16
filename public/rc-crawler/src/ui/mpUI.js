@@ -347,6 +347,12 @@ export class MpUI {
     this.cd.classList.toggle('hidden', !cdOn);
     if (cdOn) { const n = Math.ceil((st.startAt - now) / 1000); this.cd.textContent = n > 0 ? String(Math.min(n, 3)) : 'GO'; }
     if (st?.phase === 'results' && this.lastPhase !== 'results') { this.show(); }
+    // the host started a session: everyone goes straight to the countdown, the panel would only hide it
+    const live = (ph) => ph === 'countdown' || ph === 'running';
+    if (st && live(st.phase) && this.lastPhase !== undefined && !live(this.lastPhase)) {
+      if (this.open) this.hide();
+      this.game.toast(`${MODE_INFO[st.mode]?.name || 'Session'} starting`, MODE_INFO[st.mode]?.desc || '');
+    }
     this.lastPhase = st?.phase;
     // voice buttons
     const v = this.voice;

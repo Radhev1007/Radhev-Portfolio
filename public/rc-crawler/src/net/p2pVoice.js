@@ -21,9 +21,10 @@ const MIC_GAIN = 2.5;            // outgoing voice boost, after the browser's ec
                                  // after it keeps loud voices from clipping
 
 export class P2PVoice {
-  constructor(mp, onChange) {
+  constructor(mp, onChange, ctx = null) {
     this.mp = mp;
     this.onChange = onChange;
+    this.ctx = ctx;              // shared, created during the Join tap (see Voice.join)
     this.peers = new Map();      // sid -> { pc, polite, el, stream, src, analyser, pending, state, restarts }
     this.mic = null;             // our MediaStreamTrack once the microphone was granted
     this.micLive = false;
@@ -41,9 +42,10 @@ export class P2PVoice {
   get blocked() { return this.elBlocked || this.ctx?.state === 'suspended'; }
 
   audioCtx() {
-    if (!this.ctx) {
-      this.ctx = new AudioContext();
-      this.ctx.onstatechange = () => this.onChange();
+    if (!this.ctx) this.ctx = new AudioContext();
+    if (!this.ctxWatched) {
+      this.ctxWatched = true;
+      this.ctx.addEventListener('statechange', () => { this.useBoostWhenReady(); this.onChange(); });
     }
     return this.ctx;
   }
@@ -207,14 +209,17 @@ export class P2PVoice {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       this.rawMic = stream.getAudioTracks()[0];
       this.rawMic.onended = () => { this.dropMic(); this.onChange(); };
-      this.mic = this.boost(this.rawMic);           // the track everyone hears
+      // the boosted track only carries sound while the audio context runs; until it does, send the plain
+      // microphone (useBoostWhenReady swaps it in), so a held-back context never means silence
+      this.boosted = this.boost(this.rawMic);
+      this.mic = this.boosted !== this.rawMic && this.ctx?.state === 'running' ? this.boosted : this.rawMic;
       for (const p of this.peers.values()) { const tr = p.pc.getTransceivers()[0]; if (tr) { if (tr.direction !== 'sendrecv') tr.direction = 'sendrecv'; await tr.sender.replaceTrack(this.mic); } }
       try {
         this.micAnalyser = this.audioCtx().createAnalyser(); this.micAnalyser.fftSize = 1024;
         this.micSrc.connect(this.micAnalyser);
       } catch { /* no indicator for ourselves */ }
     }
-    if (this.mic) this.mic.enabled = on;           // muting keeps the permission and the connection, sends silence
+    for (const t of new Set([this.mic, this.rawMic, this.boosted])) if (t) t.enabled = on;   // muting keeps the permission and the connection, sends silence
     this.micLive = on && !!this.mic;
     this.updateRelay();
     return this.micLive;
@@ -237,11 +242,19 @@ export class P2PVoice {
     }
   }
 
+  // the audio context started after the microphone went live: switch the sent track to the boosted one
+  async useBoostWhenReady() {
+    if (this.ctx?.state !== 'running' || !this.boosted || this.mic === this.boosted) return;
+    this.mic = this.boosted;
+    this.mic.enabled = this.micLive;
+    for (const p of this.peers.values()) { const tr = p.pc.getTransceivers()[0]; if (tr) await tr.sender.replaceTrack(this.mic).catch(() => {}); }
+    this.updateRelay();
+  }
+
   dropMic() {
-    if (this.mic) this.mic.stop();
-    if (this.rawMic && this.rawMic !== this.mic) this.rawMic.stop();
+    for (const t of new Set([this.mic, this.rawMic, this.boosted])) if (t) t.stop();
     for (const n of this.micChain || []) { try { n.disconnect(); } catch { /* gone */ } }
-    this.mic = null; this.rawMic = null; this.micChain = null; this.micSrc = null; this.micAnalyser = null;
+    this.mic = null; this.rawMic = null; this.boosted = null; this.micChain = null; this.micSrc = null; this.micAnalyser = null;
     this.micLive = false;
   }
 

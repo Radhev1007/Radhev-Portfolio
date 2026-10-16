@@ -63,6 +63,13 @@ export class Voice {
     // joining voice is joining the conversation: the microphone goes live straight away (mute or switch to
     // push-to-talk any time); a player who chose push-to-talk keeps it
     if (this.micMode === 'muted') this.micMode = 'open';
+    // Safari (and iPhones) only let audio processing start during the tap itself: create it now, not after the
+    // token arrives, or the boosted microphone would send silence
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!this.audioCtx && AC) this.audioCtx = new AC();
+      this.audioCtx?.resume?.().catch(() => {});
+    } catch { /* no Web Audio */ }
     this.error = ''; this.set('status', 'connecting');
     let tok;
     try { tok = await this.token(); } catch (e) { this.error = e.message; this.set('status', 'error'); return; }
@@ -111,7 +118,7 @@ export class Voice {
   // direct (peer-to-peer) voice, through the game server's signalling relay
   async joinDirect(ice, note) {
     if (this.p2p) this.p2p.stop();
-    this.p2p = new P2PVoice(this.mp, () => { this.speaking = this.p2p ? this.p2p.speaking : new Set(); this.needsGesture = !!this.p2p?.blocked; this.emit('change'); });
+    this.p2p = new P2PVoice(this.mp, () => { this.speaking = this.p2p ? this.p2p.speaking : new Set(); this.needsGesture = !!this.p2p?.blocked; this.emit('change'); }, this.audioCtx);
     this.speaking = this.p2p.speaking;
     this.via = 'p2p';
     this.note = note;
