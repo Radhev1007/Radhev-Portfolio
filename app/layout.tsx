@@ -39,6 +39,8 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: seoTitle, description: seoDescription },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
   formatDetection: { telephone: false, email: false, address: false },
+  // Google Search Console ownership (URL-prefix property https://www.radhev.in/); keep it, or the property unverifies
+  verification: { google: "YifXl9A4K9ljMZd9yQOb6AVcJcJu_xLoIV0ysDQIWpM" },
 };
 
 export const viewport: Viewport = { themeColor: THEME_COLOR, colorScheme: "dark" };
