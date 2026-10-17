@@ -7,11 +7,12 @@
   --txt: #f2efe9;
   --dim: rgba(242, 239, 233, 0.62);
   --green: #49c25a;
-  --cond: 'Barlow Condensed', 'Arial Narrow', sans-serif;
-  --sans: 'Barlow', system-ui, sans-serif;
+  /* the website's typeface (Host Grotesk) throughout; --cond keeps its name for the tighter, numeric roles */
+  --cond: 'Host Grotesk', system-ui, sans-serif;
+  --sans: 'Host Grotesk', system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0a09; color: var(--txt); font-family: var(--sans); -webkit-user-select: none; user-select: none; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0a09; color: var(--txt); font-family: var(--sans); font-variant-numeric: tabular-nums; -webkit-user-select: none; user-select: none; }
 canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
 .hidden { display: none !important; }
@@ -21,7 +22,7 @@ kbd { display: inline-block; min-width: 20px; padding: 1px 6px; margin: 0 2px; b
 .overlay.dim { background: rgba(0,0,0,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; }
 
 /* ---------- logo */
-.logo { font-family: var(--cond); font-style: italic; font-weight: 900; line-height: .82; letter-spacing: -1px; }
+.logo { font-family: var(--cond); font-style: italic; font-weight: 800; line-height: .82; letter-spacing: -1px; }
 .logo .logo-row { display: flex; align-items: flex-end; gap: 6px; }
 .logo .rc { font-size: clamp(64px, 9vw, 132px); color: #fff; text-shadow: 0 4px 18px rgba(0,0,0,.45); }
 .logo .crawler { display: block; font-size: clamp(54px, 7.4vw, 108px); color: var(--accent); text-shadow: 0 4px 18px rgba(0,0,0,.45); }
@@ -64,7 +65,7 @@ kbd { display: inline-block; min-width: 20px; padding: 1px 6px; margin: 0 2px; b
 .card .img { height: clamp(70px, 13vh, 150px); background-size: cover; background-position: center; position: relative; }
 .card .img::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10,10,10,.9) 0%, rgba(10,10,10,0) 45%); }
 .card .body { padding: 8px 12px 12px; margin-top: -18px; position: relative; }
-.card h3 { margin: 0 0 4px; font: 700 clamp(14px, 1.15vw, 18px) var(--cond); letter-spacing: .6px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card h3 { margin: 0 0 4px; font: 700 clamp(13px, 1.05vw, 17px) var(--cond); letter-spacing: 0; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stars { color: var(--accent); letter-spacing: 2px; font-size: 13px; }
 .stars .off { color: rgba(255,255,255,.25); }
 .card .meta { margin-top: 6px; font: 500 12px var(--sans); color: var(--dim); line-height: 1.45; }
@@ -129,13 +130,13 @@ kbd { display: inline-block; min-width: 20px; padding: 1px 6px; margin: 0 2px; b
 .mini .mini-end { font: 700 11px var(--cond); fill: var(--dim); text-anchor: middle; }
 .mini .mini-ico { fill: none; stroke: var(--dim); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .mini span { display: block; margin-top: -4px; font: 600 12px var(--cond); font-variant-numeric: tabular-nums; }
-.lcd { min-width: 86px; padding: 6px 8px; border-radius: 7px; background: linear-gradient(#0c0d0e, #15171a); border: 1px solid rgba(255,255,255,.08); box-shadow: inset 0 1px 6px rgba(0,0,0,.6); font-family: var(--cond); }
+.lcd { min-width: 96px; padding: 6px 8px; border-radius: 7px; background: linear-gradient(#0c0d0e, #15171a); border: 1px solid rgba(255,255,255,.08); box-shadow: inset 0 1px 6px rgba(0,0,0,.6); font-family: var(--cond); }
 .gearsel { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .gearsel .gearval { width: auto; font-size: 20px; line-height: 1; }
 .dirs { display: flex; gap: 5px; font: 700 14px var(--cond); }
 .dirs i { font-style: normal; color: rgba(255,255,255,.25); }
 .dirs i.on { color: #fff; text-shadow: 0 0 6px rgba(255,255,255,.6); }
-.lcd-row { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; letter-spacing: 1px; color: var(--dim); }
+.lcd-row { display: flex; justify-content: space-between; gap: 6px; margin-top: 4px; font-size: 11px; letter-spacing: 1px; color: var(--dim); }
 .lcd-row b { color: var(--txt); font-variant-numeric: tabular-nums; }
 .lamps { display: flex; justify-content: center; gap: 4px; margin-top: 8px; }
 .lamp { padding: 2px 5px; border-radius: 3px; font: 700 9.5px var(--cond); font-style: normal; letter-spacing: .8px; color: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.08); transition: color .15s, box-shadow .15s, border-color .15s; }

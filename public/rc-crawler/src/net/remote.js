@@ -65,7 +65,7 @@ class RemoteTruck {
     }
     const g = this.tagCanvas.getContext('2d');
     g.clearRect(0, 0, 512, 96);
-    g.font = '600 46px Barlow, system-ui, sans-serif';
+    g.font = '600 46px "Host Grotesk", system-ui, sans-serif';
     const tw = Math.min(380, g.measureText(name).width), w = tw + (mic ? 150 : 110), x0 = (512 - w) / 2;
     g.fillStyle = talking ? 'rgba(46,160,90,0.92)' : 'rgba(10,12,14,0.72)';
     g.beginPath(); g.roundRect(x0, 10, w, 76, 38); g.fill();

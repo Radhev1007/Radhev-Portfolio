@@ -212,7 +212,7 @@ export class Minimap {
     g.drawImage(this.layer, (cx - span / 2 + half) * k, (cz - span / 2 + half) * k, span * k, span * k, 0, 0, W, W);
     const px = dpr * (big ? 1.25 : 1);     // marker scale, in device pixels per CSS pixel
     const text = clamp(css / 60, 8.5, 12); // label size follows the map's size, so a phone's large map stays legible
-    const font = (w = 700) => `${w} ${Math.round(text * dpr)}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;
+    const font = (w = 700) => `${w} ${Math.round(text * dpr)}px 'Host Grotesk', system-ui, sans-serif`;
 
     // labels for activity sections (large map)
     if (big) {
