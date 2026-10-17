@@ -1884,7 +1884,8 @@ export function createCrawler(opts = {}) {
   const bodyBin = new Bin(), chassisBin = new Bin();
   buildBody(bodyBin, chassisBin);
   const shellMeshes = bodyBin.build(bodyGroup, mats);          // the SCX30 body shell, rack and accessories
-  const bodyMeshes = shellMeshes.concat(chassisBin.build(bodyGroup, mats));
+  const chassisMeshes = chassisBin.build(bodyGroup, mats);    // frame, electronics, bumpers
+  const bodyMeshes = shellMeshes.concat(chassisMeshes);
   bodyGroup.scale.x = 1.03;
 
   // ------------------------------------------------------- Wheel geometry ---
@@ -2216,6 +2217,21 @@ export function createCrawler(opts = {}) {
       ownWheels.push(w);
     });
   }
+  // a body that brings its own running gear (bodies.js): the RC's frame, axles, knuckles, links, shocks, steering
+  // rods and driveshafts hide, and the body's own axle pieces ride on the RC axles (so they move with the wheels)
+  let rcGear = null;
+  const ownGear = [];
+  function setRunningGear(src) {
+    rcGear ||= [
+      ...chassisMeshes, ...axles.flatMap((a) => [...a.children]),
+      ...knuckles.flatMap((k, i) => k.children.filter((c) => c !== spinners[i])),
+      ...links.map((l) => l.mesh), ...shocks.map((s) => s.group), tieRod, dragLink, ...driveshafts.map((d) => d.outer),
+    ];
+    for (const o of ownGear) o.removeFromParent();
+    ownGear.length = 0;
+    for (const o of rcGear) o.visible = !src;
+    if (src) [src.front, src.rear].forEach((t, a) => { if (!t) return; const g = t.clone(); axles[a].add(g); ownGear.push(g); });
+  }
   // a longer body's nose is ahead of the SCX30 lamps: start the beams there, or they light its bumper from behind
   function setLampZ(z = LAMP_Z) { for (const sp of spots) sp.position.z = z; applyLightState(); }
   function setDirt({ dust, mud, wet } = {}) {
@@ -2230,6 +2246,7 @@ export function createCrawler(opts = {}) {
     // this truck's own paint and lamp materials
     if (api._body) { group.remove(api._body); api._body = null; }
     setWheelVisual(null);
+    setRunningGear(null);
     for (const m of [...extraPaint, ...extraLamps]) m.dispose();
     extraPaint.length = extraLamps.length = 0;
     const geos = new Set(), ms = new Set(), texs = new Set();
@@ -2263,6 +2280,7 @@ export function createCrawler(opts = {}) {
     setShellVisible,
     setLampZ,
     setWheelVisual,
+    setRunningGear,
     get paintHex() { return paintHex; },
     extraPaint,
     extraLamps,

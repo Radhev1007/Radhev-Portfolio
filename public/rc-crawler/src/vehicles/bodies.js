@@ -66,6 +66,20 @@ function fit(scene, v) {
     wheel.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
     holder.userData.wheel = sized;
   }
+  // a body that brings its own running gear (axle pieces centred on their axle line): sized like the body, carried
+  // on the RC axles
+  const gear = ['AxleFront', 'AxleRear'].map((name) => {
+    const piece = scene.getObjectByName(name);
+    if (!piece) return null;
+    piece.removeFromParent();
+    const sized = new THREE.Group();
+    sized.name = `Gear:${v.id}:${name}`;
+    sized.add(piece);
+    sized.scale.set(s * sx, s, s);
+    piece.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    return sized;
+  });
+  if (gear[0] || gear[1]) holder.userData.gear = { front: gear[0], rear: gear[1] };
   holder.add(scene);
   holder.updateMatrixWorld(true);
   holder.userData.noseZ = new THREE.Box3().setFromObject(scene).max.z;
@@ -97,7 +111,7 @@ export async function mountBody(model, id, color) {
     if (model._body) { model.group.remove(model._body); model._body = null; }
     for (const list of [model.extraPaint, model.extraLamps]) { for (const m of list) m.dispose(); list.length = 0; }
   };
-  if (!v.file) { unmount(); model.setShellVisible(true); model.setLampZ(); model.setWheelVisual(null); model._bodyId = v.id; return; }
+  if (!v.file) { unmount(); model.setShellVisible(true); model.setLampZ(); model.setWheelVisual(null); model.setRunningGear(null); model._bodyId = v.id; return; }
   let tpl;
   try { tpl = await template(v); } catch (e) { console.warn('[bodies] could not load', v.id, e); return; }
   if (token !== model._bodyToken || model.disposed) return;   // another body was asked for meanwhile, or the truck is gone
@@ -123,4 +137,5 @@ export async function mountBody(model, id, color) {
   model.setShellVisible(false);
   model.setLampZ(tpl.userData.noseZ + 0.01);
   model.setWheelVisual(tpl.userData.wheel || null);
+  model.setRunningGear(tpl.userData.gear || null);
 }

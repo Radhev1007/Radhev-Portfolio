@@ -44,7 +44,7 @@ function cutTriangles(drop) {
       const count = idx ? idx.getCount() : pos.getCount(), get = (k) => (idx ? idx.getScalar(k) : k), keep = [];
       for (let k = 0; k + 2 < count; k += 3) {
         const a = at(get(k)), b = at(get(k + 1)), c = at(get(k + 2));
-        if (drop([(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3], mat)) { cut++; continue; }
+        if (drop([(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3], mat, n)) { cut++; continue; }
         keep.push(get(k), get(k + 1), get(k + 2)); kept++;
       }
       if (!keep.length) { p.dispose(); continue; }
@@ -64,7 +64,7 @@ function grabTriangles(take) {
       const count = idx ? idx.getCount() : pos.getCount(), get = (k) => (idx ? idx.getScalar(k) : k), e = [0, 0, 0], t = [0, 0];
       for (let k = 0; k + 2 < count; k += 3) {
         const vs = [get(k), get(k + 1), get(k + 2)], w = vs.map((i) => { pos.getElement(i, e); return mul(m, e[0], e[1], e[2]); });
-        if (!take([0, 1, 2].map((a) => (w[0][a] + w[1][a] + w[2][a]) / 3), mat?.getName() || '')) continue;
+        if (!take([0, 1, 2].map((a) => (w[0][a] + w[1][a] + w[2][a]) / 3), mat?.getName() || '', n)) continue;
         if (!out.has(mat)) out.set(mat, { pos: [], nor: [], uv: [] });
         const o = out.get(mat);
         vs.forEach((i, j) => {
@@ -77,7 +77,7 @@ function grabTriangles(take) {
   }
   return out;
 }
-let wheelSource = null, spareSource = null;
+let wheelSource = null, spareSource = null, axleSources = null;
 
 // ---------------------------------------------------------------- wheels out, wheel positions recorded
 let wheels = null;   // world space: { front: z, rear: z, y, x (half track), r }
@@ -112,6 +112,44 @@ if (id === 'gladiator') {
   const inSpare = (c) => c[2] < -1.95 && Math.hypot(c[0] - 0.005, c[1] - 0.985) < 0.44;   // hanging on the tailgate
   spareSource = grabTriangles((c, mat) => rx.test(mat) && inSpare(c));
   cutTriangles((c, mat) => rx.test(mat) && inSpare(c));
+  // the running gear at each axle (housing, diff, arms, coilovers): its own pieces, centred on the axle line, which
+  // the game carries on the RC axles so they stay with the wheels as the suspension works (the RC's own running gear
+  // is hidden under this body). The source merges parts by material, so it goes by connected pieces: a piece that
+  // lies within an axle's zone moves with it; one running out of the zone (driveshaft, frame) stays with the body.
+  const gear = /^Carro_(Metal_Preto|Metal_Preto_1|Cromado|Metal_Amarelo|Freio|Freio_Disco|Metal_Vermelho|Metal_Vermelho_1)$/;
+  const zoneOf = (b) => [['AxleFront', front], ['AxleRear', rear]].find(([, z0]) => b.min[2] > z0 - 0.5 && b.max[2] < z0 + 0.5
+    && Math.max(Math.abs(b.min[0]), Math.abs(b.max[0])) < 1.0 && b.min[1] < 0.62 && b.max[1] < 1.08)?.[0];
+  axleSources = { AxleFront: [front, new Map()], AxleRear: [rear, new Map()] };
+  let moved = 0;
+  for (const n of root.listNodes()) { const mesh = n.getMesh(); if (!mesh) continue; const m = n.getWorldMatrix();
+    for (const p of mesh.listPrimitives()) {
+      const mat = p.getMaterial(), idx = p.getIndices();
+      if (!gear.test(mat?.getName() || '') || !idx) continue;
+      const pos = p.getAttribute('POSITION'), nor = p.getAttribute('NORMAL'), uv = p.getAttribute('TEXCOORD_0'), e = [0, 0, 0], t = [0, 0];
+      const W = []; for (let i = 0; i < pos.getCount(); i++) { pos.getElement(i, e); W.push(mul(m, e[0], e[1], e[2])); }
+      // connected pieces: vertices joined by triangles, and by sharing a position (seams split vertices)
+      const parent = W.map((_, i) => i), find = (i) => { while (parent[i] !== i) i = parent[i] = parent[parent[i]]; return i; }, join = (a, b) => { a = find(a); b = find(b); if (a !== b) parent[a] = b; };
+      const at = new Map(); W.forEach((v, i) => { const k = v.map((x) => Math.round(x * 2000)).join(','); if (at.has(k)) join(i, at.get(k)); else at.set(k, i); });
+      for (let k = 0; k + 2 < idx.getCount(); k += 3) { join(idx.getScalar(k), idx.getScalar(k + 1)); join(idx.getScalar(k), idx.getScalar(k + 2)); }
+      const bb = new Map(); W.forEach((v, i) => { const r = find(i); const b = bb.get(r) || { min: [1e9, 1e9, 1e9], max: [-1e9, -1e9, -1e9] }; for (let q = 0; q < 3; q++) { b.min[q] = Math.min(b.min[q], v[q]); b.max[q] = Math.max(b.max[q], v[q]); } bb.set(r, b); });
+      const zone = new Map(); for (const [r, b] of bb) { const z = zoneOf(b); if (z) zone.set(r, z); }
+      if (!zone.size) continue;
+      const keep = [];
+      for (let k = 0; k + 2 < idx.getCount(); k += 3) {
+        const ids = [idx.getScalar(k), idx.getScalar(k + 1), idx.getScalar(k + 2)], z = zone.get(find(ids[0]));
+        if (!z) { keep.push(...ids); continue; }
+        const src = axleSources[z][1]; if (!src.has(mat)) src.set(mat, { pos: [], nor: [], uv: [] }); const o = src.get(mat);
+        for (const i of ids) {
+          o.pos.push(...W[i]);
+          if (nor) { nor.getElement(i, e); const r = [m[0] * e[0] + m[4] * e[1] + m[8] * e[2], m[1] * e[0] + m[5] * e[1] + m[9] * e[2], m[2] * e[0] + m[6] * e[1] + m[10] * e[2]]; const l = Math.hypot(...r) || 1; o.nor.push(r[0] / l, r[1] / l, r[2] / l); } else o.nor.push(0, 1, 0);
+          if (uv) { uv.getElement(i, t); o.uv.push(t[0], t[1]); } else o.uv.push(0, 0);
+        }
+        moved++;
+      }
+      p.setIndices(doc.createAccessor().setType('SCALAR').setArray(pos.getCount() > 65535 ? new Uint32Array(keep) : new Uint16Array(keep)).setBuffer(root.listBuffers()[0]));
+    }
+  }
+  console.log('  running gear moved to the axle pieces:', moved, 'triangles');
 } else if (id === 'cruiser') {
   // a photogrammetry scan: the tyres are part of the body mesh, so cut out every triangle inside a tyre cylinder
   wheels = { front: 1.63, rear: -1.23, y: 0.44, x: 0.81, r: 0.44 };
@@ -179,7 +217,27 @@ for (const ext of root.listExtensionsUsed()) if (['KHR_materials_transmission', 
 
 // ---------------------------------------------------------------- geometry
 // (EXACT: parts merged by material only; vertices, normals and triangles untouched)
-await doc.transform(prune(), flatten(), join({ keepNamed: false }), ...(EXACT ? [] : [weld()]), dedup(), prune());
+// the axle pieces, built now with their own materials (before pruning could drop a material only they use), and
+// kept apart from the merging by being the only named meshes
+if (axleSources) {
+  const buf = root.listBuffers()[0];
+  for (const n of root.listNodes()) n.setName('');
+  for (const m of root.listMeshes()) m.setName('');
+  for (const [name, [z0, source]] of Object.entries(axleSources)) {
+    const mesh = doc.createMesh(name);
+    for (const [mat, o] of source) {
+      const pos = new Float32Array(o.pos.length);
+      for (let i = 0; i < o.pos.length; i++) pos[i] = o.pos[i] - [0, wheels.y, z0][i % 3];
+      mesh.addPrimitive(doc.createPrimitive().setMaterial(mat)
+        .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(pos).setBuffer(buf))
+        .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(o.nor)).setBuffer(buf))
+        .setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(new Float32Array(o.uv)).setBuffer(buf)));
+    }
+    root.listScenes()[0].addChild(doc.createNode(name).setMesh(mesh));
+    console.log('  axle piece', name, [...source.values()].reduce((t, o) => t + o.pos.length / 9, 0), 'triangles');
+  }
+}
+await doc.transform(prune(), flatten(), join({ keepNamed: !!axleSources }), ...(EXACT ? [] : [weld()]), dedup(), prune());
 const before = tris();
 const ratio = Math.min(1, target / Math.max(1, before));
 if (ratio < 0.98 && !EXACT) await doc.transform(simplify({ simplifier: MeshoptSimplifier, ratio, error: 0.004 }), weld(), prune());
