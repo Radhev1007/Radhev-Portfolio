@@ -11,7 +11,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { CRAWLER_DIMS } from './crawlerModel.js';
 
 export const VEHICLES = [
-  { id: 'scx30', name: 'SCX30 Jeep Wrangler JLU', short: 'WRANGLER', color: 0x141518 },   // gloss black
+  { id: 'scx30', name: 'SCX30 Jeep Wrangler JLU', short: 'WRANGLER', color: 0xf1f1ee },   // gloss white
   {
     id: 'bronco', name: '2022 Ford Bronco', short: 'BRONCO', color: 0xa8141c, file: 'assets/vehicles/bronco.glb', paint: /Pintura/i, lamps: /Refletor_Farol/i, exact: true,   // as modelled
     wheels: { front: 1.611, rear: -1.264, y: 0.425, x: 0.84, r: 0.425 },
