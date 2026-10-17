@@ -204,7 +204,7 @@ html.has-custom-cursor * {
 
 @utility section-intro {
   max-width: 46ch;
-  font-size: var(--text-lead);
+  font-size: var(--text-body);   /* 16px at every size */
   line-height: 1.45;
   letter-spacing: -0.01em;
   color: var(--color-mute);
