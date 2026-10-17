@@ -52,7 +52,7 @@ const LIFE = 5.5, IN = 0.9, OUT = 0.9;   // seconds: whole life, assembling, dis
 
 type Piece = { g: string[]; x: number; y: number; t0: number };
 
-export function PixelField({ cell = 7, gap = 2 }: { cell?: number; gap?: number }) {
+export function PixelField({ cell = 4, gap = 1 }: { cell?: number; gap?: number }) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const reduced = usePrefersReducedMotion();
@@ -164,7 +164,7 @@ export function PixelField({ cell = 7, gap = 2 }: { cell?: number; gap?: number 
       if (!visible || document.hidden || now - last < 33) return;   // ~30 fps, and only while it can be seen
       last = now;
       const t = now / 1000;
-      if (t > nextAt && pieces.length < (cols > 120 ? 7 : 4)) { spawn(t); nextAt = t + 0.7 + Math.random() * 0.8; }
+      if (t > nextAt && pieces.length < (cols > 210 ? 7 : 4)) { spawn(t); nextAt = t + 0.7 + Math.random() * 0.8; }
       draw(t);
     };
     raf = requestAnimationFrame(loop);
