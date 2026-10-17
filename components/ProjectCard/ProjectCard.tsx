@@ -88,8 +88,8 @@ export function ProjectCard({ project, index, onActive }: Props) {
             <motion.div
               ref={cover}
               className="relative aspect-[101/79] overflow-hidden rounded-card bg-ink-3"
-              initial={{ clipPath: reduced ? "inset(0% 0% 0% 0% round 28px)" : "inset(12% 8% 12% 8% round 28px)" }}
-              whileInView={{ clipPath: "inset(0% 0% 0% 0% round 28px)" }}
+              initial={{ clipPath: reduced ? "inset(0% 0% 0% 0%)" : "inset(12% 8% 12% 8%)" }}
+              whileInView={{ clipPath: "inset(0% 0% 0% 0%)" }}
               viewport={viewportOnce}
               transition={{ duration: 1.4, ease: ease.outExpo }}
             >
