@@ -68,7 +68,29 @@ function pixelRatio(q) {
   if (isTouch) return { low: Math.min(d, 1.5), medium: Math.min(d, 1.75), high: Math.min(d, 2), ultra: Math.min(d, 2.5) }[q] || Math.min(d, 1.5);
   return { low: Math.min(d, 1) * 0.75, medium: Math.min(d, 1), high: Math.min(d, 1.25), ultra: Math.min(d, 1.75) }[q] || 1;
 }
+// Adaptive resolution: when frames run long for a couple of seconds (a slow GPU, a big Retina window), render
+// fewer pixels, a step at a time, down to 60% of the quality's resolution; when there is headroom again, step
+// back up. A fast machine never leaves 100%, so it looks exactly as before.
+let resScale = 1, slowFor = 0, fastFor = 0;
+function adaptResolution(rawDt) {
+  if (NORENDER || rawDt > 1 || document.hidden || state === 'loading') { slowFor = fastFor = 0; return; }   // stalls, hidden tabs
+  rawDt = Math.min(rawDt, 0.25);
+  if (rawDt > 1 / 48) { slowFor += rawDt; fastFor = 0; } else if (rawDt < 1 / 57) { fastFor += rawDt; slowFor = 0; } else { slowFor = fastFor = 0; }
+  let next = resScale;
+  if (slowFor > 2 && resScale > 0.6) next = Math.max(0.6, Math.round(resScale * 10 - 1) / 10);
+  else if (fastFor > 5 && resScale < 1) next = Math.min(1, Math.round(resScale * 10 + 1) / 10);
+  if (next === resScale) return;
+  resScale = next; slowFor = fastFor = 0;
+  applyPixelRatio();
+}
+function applyPixelRatio() {
+  renderer.setPixelRatio(pixelRatio(settings.quality) * resScale);
+  renderer.setSize(innerWidth, innerHeight, false);
+  if (post) { post.composer.setPixelRatio(renderer.getPixelRatio()); post.setSize(innerWidth, innerHeight); }
+  particles.setPixelScale(innerHeight * renderer.getPixelRatio());
+}
 function applyQuality() {
+  resScale = 1; slowFor = fastFor = 0;
   renderer.setPixelRatio(pixelRatio(settings.quality));
   renderer.setSize(innerWidth, innerHeight, false);
   env.setShadowQuality(settings.quality);
@@ -437,8 +459,9 @@ let last = performance.now(), time = 0;
 const _q = new THREE.Quaternion();
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
   tick(dt);
+  adaptResolution(raw);
 }
 const _aFwd = new THREE.Vector3();
 function tick(dt, forced) {
@@ -650,7 +673,7 @@ else loadLevel(settings.level).then(async () => {
 });
 window.__game = {
   mp, modes, voice, mpUI, minimap, audio,
-  get phys() { return phys; }, get level() { return level; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
+  get phys() { return phys; }, get level() { return level; }, get resScale() { return resScale; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
   step(n, inp, dt = 1 / 60) { for (let i = 0; i < n; i++) tick(dt, inp); },
   // dev: save the current frame to assets/previews/<name>.jpg (localhost only)
   async shot(name, w = 960) {

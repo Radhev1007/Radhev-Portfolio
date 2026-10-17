@@ -189,7 +189,8 @@ export function createTerrainMaterial(params = {}) {
   return mat;
 }
 
-// Rock material for instanced rock meshes: triplanar rock + moss/sand on top + wetness + per-instance tint
+// Rock material for the merged rock meshes (rocks.js): triplanar rock + moss/sand on top + wetness; each rock's
+// tint is baked into its vertex colours and its own height (for the base grime) into aLocalY
 export function createRockMaterial(params = {}) {
   const { mat, tex } = baseMat(params);
   mat.vertexColors = true; // baked cavity / edge-wear / base grime (multiplied with instance tint)
@@ -198,8 +199,8 @@ export function createRockMaterial(params = {}) {
     sh.uniforms.uNor = { value: tex.normal };
     Object.assign(sh.uniforms, sharedTerrainUniforms);
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\n' + VERT_PRE + 'varying float vLocalY;')
-      .replace('#include <fog_vertex>', '#include <fog_vertex>\n' + VERT_MAIN + 'vLocalY = position.y;');
+      .replace('#include <common>', '#include <common>\n' + VERT_PRE + 'attribute float aLocalY; varying float vLocalY;')
+      .replace('#include <fog_vertex>', '#include <fog_vertex>\n' + VERT_MAIN + 'vLocalY = aLocalY;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\n' + COMMON + 'varying float vLocalY;')
       .replace('#include <map_fragment>', /* glsl */`
@@ -251,6 +252,6 @@ export function createRockMaterial(params = {}) {
       .replace('#include <normal_fragment_maps>', 'normal = normalize((viewMatrix * vec4(gWorldN, 0.0)).xyz);')
       .replace('#include <opaque_fragment>', REFLECT_FIX);
   };
-  mat.customProgramCacheKey = () => 'rock-v4';
+  mat.customProgramCacheKey = () => 'rock-v5';
   return mat;
 }

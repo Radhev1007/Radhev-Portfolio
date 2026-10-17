@@ -1914,17 +1914,31 @@ export function createCrawler(opts = {}) {
     return g;
   })();
 
+  // The lugged tyre is ~30k triangles; drawing it again into the shadow map bought nothing a plain tyre
+  // shape doesn't (the lugs are below the shadow map's resolution). So the shadow comes from this stand-in:
+  // the carcass profile, a little fuller for the lugs, at low detail, never drawn to the screen.
+  const tireShadowGeo = (() => {
+    const prof = [[0.12, -0.075], [0.2, -0.097], [0.25, -0.09], [0.266, -0.05], [0.268, 0], [0.266, 0.05], [0.25, 0.09], [0.2, 0.097], [0.12, 0.075]];
+    const g = new THREE.LatheGeometry(prof.map(([r, a]) => new THREE.Vector2(r, a)), 24);
+    g.rotateZ(-PI / 2);
+    return g;
+  })();
+  const shadowOnly = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide });
+
   const WHEEL_R = CRAWLER_DIMS.wheelRadius / 0.27, WHEEL_W = 0.9;
   const makeWheelVisual = () => {
     const w = new THREE.Group();
     w.scale.set(WHEEL_W, WHEEL_R, WHEEL_R);
     const tire = new THREE.Mesh(tireGeo, mats.rubber);
-    tire.castShadow = tire.receiveShadow = true;
+    tire.receiveShadow = true;
     tire.name = 'tire';
     const rim = new THREE.Mesh(rimGeo.black, mats.rim);
-    rim.castShadow = rim.receiveShadow = true;
+    rim.receiveShadow = true;   // inside the tyre: its shadow is the tyre's
     rim.name = 'rim';
-    w.add(tire, rim);
+    const tireShadow = new THREE.Mesh(tireShadowGeo, shadowOnly);
+    tireShadow.castShadow = true;
+    tireShadow.name = 'tireShadow';
+    w.add(tire, rim, tireShadow);
     if (sidewallGeo) {
       const sw = new THREE.Mesh(sidewallGeo, mats.sidewall);
       sw.name = 'sidewall'; sw.receiveShadow = true;

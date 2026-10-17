@@ -434,7 +434,7 @@ function buildTerrainMesh(hf, splat, quality, material) {
   const step = { low: 6, medium: 4, high: 3, ultra: 2 }[quality] ?? 3; // in heightfield cells
   const group = new THREE.Group();
   const verts = Math.floor(hf.n / step);   // cells per side in render grid
-  const chunk = 32;                         // render cells per chunk side
+  const chunk = 64;                         // render cells per chunk side (fewer, larger chunks: 4× fewer draw calls)
   const tmpN = new THREE.Vector3();
   for (let cj = 0; cj < verts; cj += chunk) for (let ci = 0; ci < verts; ci += chunk) {
     const nx = Math.min(chunk, verts - ci), nz = Math.min(chunk, verts - cj);

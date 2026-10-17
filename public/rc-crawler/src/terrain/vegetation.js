@@ -203,7 +203,7 @@ export class Vegetation {
       const mat = createGrassMaterial(kind, this.quality, windUniforms);
       const buckets = [[], [], []];
       list.forEach((t, i) => buckets[i % 3].push(t));
-      buckets.forEach((arr, v) => root.add(this._inst(grassTuftGeometry(300 + v * 11 + (kind === 'dry' ? 40 : 0), kind, d), mat, arr, this.quality === 'ultra', null, 16, patch)));
+      buckets.forEach((arr, v) => root.add(this._inst(grassTuftGeometry(300 + v * 11 + (kind === 'dry' ? 40 : 0), kind, d), mat, arr, this.quality === 'ultra', null, 32, patch)));
     }
     // yucca / desert plants
     const yMat = windMaterial({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide }, 1.5, 'bush');
@@ -253,7 +253,7 @@ export class Vegetation {
     inst('bush', this.bushes, { scale: (it, s) => s.setScalar(it.s * 1.3), tint: shrubTint, strength: 1.5, kind: 'bush' });
     const patch = (it, c) => { const p = Math.sin(it.x * 0.17 + Math.sin(it.z * 0.11) * 2) * 0.5 + Math.sin(it.z * 0.23 - it.x * 0.07) * 0.5; return it.dry ? c.setRGB(1.05 + p * 0.08, 0.98 + p * 0.04, 0.8) : c.setRGB(0.9 + p * 0.1, 0.98 + p * 0.06, 0.85 - p * 0.08); };
     const tufts = this.grass.map((t) => ({ ...t, dry: false })).concat(this.dryGrass.map((t) => ({ ...t, dry: true })));
-    inst('tuft', tufts, { scale: (it, s) => s.setScalar(it.s * 1.1), tint: patch, shadow: this.quality === 'ultra', chunk: 16, kind: 'grass' });
+    inst('tuft', tufts, { scale: (it, s) => s.setScalar(it.s * 1.1), tint: patch, shadow: this.quality === 'ultra', chunk: 32, kind: 'grass' });
     // far trees, yucca, branches, roots: as before
     if (this.farTrees.length) root.add(this._inst(farTreeGeometry(), createFarTreeMaterial(), this.farTrees, false, null, 120));
     const yMat = windMaterial({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide }, 1.5, 'bush');
@@ -264,12 +264,15 @@ export class Vegetation {
       const m = new THREE.Mesh(mergeGeometries(this.roots), new THREE.MeshStandardMaterial({ map: this.bark, color: 0xc4977a, roughness: 0.9 }));
       m.castShadow = m.receiveShadow = true; root.add(m);
     }
-    // logs: the log model stretched to each log's length and thickness, placed and tilted like the collision log
+    // logs: the log model stretched to each log's length and thickness, placed and tilted like the collision log.
+    // The model is detailed (~14k triangles), so the logs are instanced per map tile and the ones out of view culled
     if (this.logSpecs.length) {
       const kr = K.log.radius, mtx = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3();
-      for (const part of K.log) {
-        const mesh = new THREE.InstancedMesh(part.geometry, part.material, this.logSpecs.length);
-        this.logSpecs.forEach((L, i) => {
+      const tiles = new Map();
+      for (const L of this.logSpecs) { const k = Math.floor(L.x / 30) + ',' + Math.floor(L.z / 30); if (!tiles.has(k)) tiles.set(k, []); tiles.get(k).push(L); }
+      for (const specs of tiles.values()) for (const part of K.log) {
+        const mesh = new THREE.InstancedMesh(part.geometry, part.material, specs.length);
+        specs.forEach((L, i) => {
           q.setFromEuler(e.set(0, L.yaw, L.pitch, 'YXZ'));
           mesh.setMatrixAt(i, mtx.compose(p.set(L.x, L.y, L.z), q, s.set(L.length, L.radius / kr, L.radius / kr)));
         });

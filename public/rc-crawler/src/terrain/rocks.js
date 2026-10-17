@@ -185,30 +185,50 @@ export class RockField {
     }
   }
 
+  // All the rocks in a map tile are baked into one mesh (two: shadow casters and the small pebbles that cast
+  // none), so a tile costs one draw call however many rock shapes it holds, and tiles out of view (or outside
+  // the shadow camera) are skipped. Instancing one mesh per shape across the whole level could not be culled:
+  // every rock was drawn twice a frame.
   buildMeshes(material) {
-    const group = new THREE.Group();
-    const color = new THREE.Color();
-    this.protos.forEach((p, pi) => {
-      const list = this.instances.filter((i) => i.pi === pi);
-      if (!list.length) return;
-      // big rocks use high-detail geometry; small ones the low one
-      const groups = p.geoHi ? [[list.filter((i) => i.big), p.geoHi], [list.filter((i) => !i.big), p.geoLo]] : [[list, p.geoLo]];
-      for (const [arr, geo] of groups) {
-        if (!arr.length) continue;
-        const mesh = new THREE.InstancedMesh(geo, material, arr.length);
-        arr.forEach((inst, k) => {
-          mesh.setMatrixAt(k, inst.m);
-          color.setRGB(inst.tint * (1 + inst.warm), inst.tint, inst.tint * (1 - inst.warm * 1.4));
-          mesh.setColorAt(k, color);
-        });
-        mesh.castShadow = geo === p.geoHi || p.kind !== 'pebble';
-        mesh.receiveShadow = true;
-        mesh.instanceMatrix.needsUpdate = true;
-        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-        mesh.computeBoundingSphere();
-        group.add(mesh);
+    const TILE = 40, tiles = new Map();
+    for (const inst of this.instances) {
+      const p = this.protos[inst.pi], geo = inst.big && p.geoHi ? p.geoHi : p.geoLo;
+      const casts = geo === p.geoHi || p.kind !== 'pebble';
+      const k = Math.floor(inst.x / TILE) + ',' + Math.floor(inst.z / TILE) + (casts ? '' : ',p');
+      if (!tiles.has(k)) tiles.set(k, { casts, items: [] });
+      tiles.get(k).items.push([inst, geo]);
+    }
+    const group = new THREE.Group(), v = new THREE.Vector3(), nm = new THREE.Matrix3(), tint = new THREE.Color();
+    for (const { casts, items } of tiles.values()) {
+      let nv = 0, ni = 0;
+      for (const [, g] of items) { nv += g.attributes.position.count; ni += g.index.count; }
+      const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), col = new Float32Array(nv * 3), ly = new Float32Array(nv);
+      const idx = new Uint32Array(ni);
+      let o = 0, oi = 0;
+      for (const [inst, g] of items) {
+        const P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color, I = g.index.array;
+        nm.getNormalMatrix(inst.m);
+        tint.setRGB(inst.tint * (1 + inst.warm), inst.tint, inst.tint * (1 - inst.warm * 1.4));
+        for (let i = 0; i < P.count; i++) {
+          v.fromBufferAttribute(P, i); ly[o + i] = v.y;
+          v.applyMatrix4(inst.m); pos.set([v.x, v.y, v.z], (o + i) * 3);
+          v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor.set([v.x, v.y, v.z], (o + i) * 3);
+          col.set([C.getX(i) * tint.r, C.getY(i) * tint.g, C.getZ(i) * tint.b], (o + i) * 3);
+        }
+        for (let i = 0; i < I.length; i++) idx[oi + i] = I[i] + o;
+        o += P.count; oi += I.length;
       }
-    });
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      g.setAttribute('aLocalY', new THREE.BufferAttribute(ly, 1));
+      g.setIndex(new THREE.BufferAttribute(idx, 1));
+      g.computeBoundingSphere();
+      const mesh = new THREE.Mesh(g, material);
+      mesh.castShadow = casts; mesh.receiveShadow = true;
+      group.add(mesh);
+    }
     return group;
   }
 }
