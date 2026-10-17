@@ -165,35 +165,144 @@ export function createWaterMesh(hf, body, cell = 0.25) {
 }
 
 // vertical falling-water sheet (decorative waterfall)
-export function createWaterfall(x, y0, y1, z, width, yaw) {
-  const g = new THREE.PlaneGeometry(width, y0 - y1, 8, 16);
-  const p = g.attributes.position;
+// ---------- waterfall: a curved falling sheet in two layers, foam where it lands, and drifting spray
+// Water rolls over a lip, falls on a ballistic arc and spreads; it is glassy at the lip and turns white and aerated as
+// it speeds up, in strands of uneven thickness with ragged, torn sides. The sheets and foam are lit like everything
+// else (standard materials with a procedural pattern), so they follow the time of day and the fog.
+const WF_NOISE = /* glsl */`
+  float wfH(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float wfN(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+    return mix(mix(wfH(i), wfH(i + vec2(1, 0)), f.x), mix(wfH(i + vec2(0, 1)), wfH(i + vec2(1, 1)), f.x), f.y); }
+  float wfF(vec2 p) { return wfN(p) * 0.55 + wfN(p * 2.03 + 17.1) * 0.3 + wfN(p * 4.1 + 41.7) * 0.15; }`;
+const LIP = 0.07;   // share of the sheet that rolls over the edge before it falls
+
+function sheetGeometry(width, H, reach) {
+  const g = new THREE.PlaneGeometry(1, 1, 28, 72), p = g.attributes.position, uv = g.attributes.uv;
+  const wf = new Float32Array(p.count * 2);
   for (let i = 0; i < p.count; i++) {
-    const t = (p.getY(i) + (y0 - y1) / 2) / (y0 - y1); // 1 top .. 0 bottom
-    p.setZ(i, Math.pow(1 - t, 2) * 0.8 + Math.sin(p.getX(i) * 3) * 0.08);
+    const u = uv.getX(i), v = 1 - uv.getY(i);   // u across, v down: 0 at the lip .. 1 at the pool
+    let y, zz, spread;
+    if (v < LIP) { const s = v / LIP; y = H + 0.06 * Math.cos(s * Math.PI * 0.5); zz = -0.3 * (1 - s); spread = 0; }    // over the edge
+    else { const d = (v - LIP) / (1 - LIP); y = H * (1 - d); zz = reach * Math.sqrt(d); spread = d; }                   // falling
+    const half = width / 2 * (1 + 0.22 * spread);
+    p.setXYZ(i, (u - 0.5) * 2 * half, y, zz + Math.sin(u * 9.0 + v * 4.0) * 0.03 * spread);
+    wf[i * 2] = u; wf[i * 2 + 1] = v;
   }
+  g.setAttribute('aWf', new THREE.BufferAttribute(wf, 2));
   g.computeVertexNormals();
+  return g;
+}
+
+function sheetMaterial({ speed, opacity, seed }) {
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0, transparent: true, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.8 });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTime = waterUniforms.uTime;
+    sh.vertexShader = 'attribute vec2 aWf;\nvarying vec2 vWf;\n' + sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n  vWf = aWf;');
+    sh.fragmentShader = 'uniform float uTime;\nvarying vec2 vWf;\n' + WF_NOISE + '\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', /* glsl */`#include <color_fragment>
+        float wu = vWf.x, wv = vWf.y;
+        float fall = max(0., (wv - ${LIP.toFixed(3)}) / (1. - ${LIP.toFixed(3)}));      // 0 at the lip .. 1 at the pool
+        float s = sqrt(fall) * 7. - uTime * ${speed.toFixed(2)} + ${seed.toFixed(1)};    // accelerating: streaks stretch lower down
+        float strand = wfF(vec2(wu * 6. + ${seed.toFixed(1)}, uTime * 0.04));            // thicker and thinner ropes of water
+        float streak = wfF(vec2(wu * 22. + strand * 3., s * 2.4));
+        float fine = wfN(vec2(wu * 70. + ${seed.toFixed(1)}, s * 9.));
+        float aer = smoothstep(0.0, 0.45, fall);                                          // glassy at the lip, white below
+        float rope = smoothstep(0.28, 0.78, streak);                                      // dense ropes with gaps between
+        float body = mix(0.5, 0.04 + rope * 1.05, aer) * (0.3 + strand * 1.0);
+        float side = min(wu, 1. - wu);
+        float rag = 0.03 + wfN(vec2(wu * 7., s * 1.3)) * 0.14 + fall * 0.06;            // torn sides, travelling with the water
+        float edge = smoothstep(rag, rag + 0.07, side);
+        float lip = smoothstep(0.0, ${(LIP * 1.2).toFixed(3)}, wv);                        // fades in over the edge
+        float pool = 1. - smoothstep(0.9, 1.0, wv) * (0.55 + fine * 0.45);                 // breaking up into the pool
+        diffuseColor.a = clamp((body + fine * 0.18 * aer) * edge * lip * pool, 0., 1.) * ${opacity.toFixed(2)};
+        float white = clamp(aer * (0.35 + rope * 0.7) + fine * 0.12, 0., 1.);
+        diffuseColor.rgb = mix(vec3(0.14, 0.21, 0.2), vec3(0.93, 0.96, 0.97), white);`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(0.12, 0.85, white);');
+  };
+  m.customProgramCacheKey = () => `waterfall-${speed}-${opacity}-${seed}`;
+  return m;
+}
+
+function foamMaterial() {
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTime = waterUniforms.uTime;
+    sh.vertexShader = 'varying vec2 vFp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vFp = position.xy;');
+    sh.fragmentShader = 'uniform float uTime;\nvarying vec2 vFp;\n' + WF_NOISE + '\n' + sh.fragmentShader.replace('#include <color_fragment>', /* glsl */`#include <color_fragment>
+      float r = length(vFp), ang = atan(vFp.y, vFp.x);
+      vec2 q = vec2(ang * 2.5, r * 3.5 - uTime * 0.9);                                     // foam boiling outward from the impact
+      float f = wfF(q) * 0.6 + wfF(vFp * 2.2 + vec2(uTime * 0.2, -uTime * 0.15)) * 0.4;
+      float ring = smoothstep(1.0, 0.1, r + (f - 0.5) * 0.45);                             // ragged, soft outer edge
+      diffuseColor.a = clamp(pow(ring, 1.5) * smoothstep(0.5, 0.85, f) * 0.6 + pow(ring, 5.) * 0.12, 0., 1.);
+      diffuseColor.rgb = vec3(0.82, 0.86, 0.86);`);
+  };
+  m.customProgramCacheKey = () => 'waterfall-foam';
+  return m;
+}
+
+function sprayPoints(count, width, reach, rise) {
+  const pos = new Float32Array(count * 3), seed = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random());
+    pos[i * 3] = Math.cos(a) * r * width * 0.55; pos[i * 3 + 1] = 0; pos[i * 3 + 2] = reach + Math.sin(a) * r * width * 0.35;
+    seed[i * 3] = Math.random(); seed[i * 3 + 1] = Math.random(); seed[i * 3 + 2] = 0.5 + Math.random() * 0.5;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 3));
+  const uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uScale: { value: 400 }, uSize: { value: width * 0.5 }, uRise: { value: rise } }]);
+  uniforms.uTime = waterUniforms.uTime;
   const mat = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: { uTime: waterUniforms.uTime },
-    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    uniforms, transparent: true, depthWrite: false, fog: true,
+    vertexShader: /* glsl */`
+      uniform float uTime, uScale, uSize, uRise; attribute vec3 aSeed; varying float vAlpha;
+      #include <fog_pars_vertex>
+      void main() {
+        float life = fract(uTime * (0.1 + aSeed.y * 0.08) + aSeed.x);   // each puff rises, spreads and fades, then starts again
+        vec3 p = position;
+        p.xz *= 1.0 + life * 1.4;
+        p.z += life * 0.9;
+        p.y += life * uRise * (0.6 + aSeed.y * 0.6);
+        vAlpha = sin(life * 3.14159) * 0.1 * aSeed.z;
+        vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = uSize * (0.5 + life * 1.2) * uScale / -mvPosition.z;
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
     fragmentShader: /* glsl */`
-      uniform float uTime; varying vec2 vUv;
-      float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-      float n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }
-      void main(){
-        vec2 uv = vec2(vUv.x * 6., vUv.y * 3. + uTime * 2.2);
-        float s = n(uv * vec2(3., 1.)) * 0.6 + n(uv * vec2(9., 2.5)) * 0.4;
-        float streak = smoothstep(0.35, 0.85, s);
-        float edge = smoothstep(0., 0.12, vUv.x) * smoothstep(1., 0.88, vUv.x);
-        float a = (0.35 + streak * 0.6) * edge;
-        vec3 c = mix(vec3(0.32, 0.38, 0.36), vec3(0.62, 0.66, 0.64), streak);
-        gl_FragColor = vec4(c, a * 0.75);
+      varying float vAlpha;
+      #include <fog_pars_fragment>
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.0, d); a *= a;                                       // soft wisps, not discs
+        gl_FragColor = vec4(0.86, 0.89, 0.9, a * vAlpha);
+        #include <fog_fragment>
       }`,
   });
-  const m = new THREE.Mesh(g, mat);
-  m.position.set(x, (y0 + y1) / 2, z);
-  m.rotation.y = yaw;
-  m.renderOrder = 3;
-  return m;
+  const pts = new THREE.Points(g, mat);
+  pts.frustumCulled = false;
+  pts.onBeforeRender = (renderer) => { mat.uniforms.uScale.value = renderer.domElement.height / 2; };
+  return pts;
+}
+
+export function createWaterfall(x, y0, y1, z, width, yaw) {
+  const H = y0 - y1, reach = Math.min(1.1, 0.14 * H), grp = new THREE.Group();
+  grp.name = 'Waterfall';
+  grp.position.set(x, y1, z);
+  grp.rotation.y = yaw;
+  // two layers: a fuller, slower one behind and a lighter, faster one in front, for depth
+  const back = new THREE.Mesh(sheetGeometry(width * 1.05, H, reach), sheetMaterial({ speed: 1.7, opacity: 0.85, seed: 3.0 }));
+  const front = new THREE.Mesh(sheetGeometry(width * 0.88, H, reach + 0.08), sheetMaterial({ speed: 2.4, opacity: 0.7, seed: 11.0 }));
+  front.position.z = 0.06;
+  back.renderOrder = 3; front.renderOrder = 4;
+  // foam boiling out over the pool where it lands
+  const foam = new THREE.Mesh(new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2), foamMaterial());
+  foam.scale.set(width * 0.75, 1, width * 0.8);
+  foam.position.set(0, 0.04, reach + 0.25);
+  foam.renderOrder = 5;
+  // spray drifting up from the impact
+  const spray = sprayPoints(110, width, reach, Math.min(2.6, H * 0.32));
+  spray.renderOrder = 6;
+  grp.add(back, front, foam, spray);
+  return grp;
 }
