@@ -24,7 +24,7 @@ export function Specialisms() {
     >
       <SectionHeader index="03" label="Specialisms" count={specialisms.length} countNoun="Areas" />
 
-      <div className="mt-8 grid grid-cols-1 gap-8 md:mt-12 md:grid-cols-12">
+      <div className="mt-8 grid grid-cols-1 gap-6 md:mt-12 md:grid-cols-12 md:gap-8">
         <Reveal className="md:col-span-7">
           <h2 className="section-title max-w-[14ch]">
             What I <span className="font-accent text-bone/60">specialise in</span>

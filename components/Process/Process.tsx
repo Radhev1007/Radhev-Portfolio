@@ -116,11 +116,11 @@ function StepPanel({ step, index, progress, active }: { step: Step; index: numbe
       <div>
         <span
           aria-hidden
-          className={`block text-display font-light leading-[0.8] tracking-[-0.04em] transition-colors duration-500 ${active ? "text-ink" : "text-accent"}`}
+          className={`block text-display font-light leading-[0.8] tracking-[-0.03em] transition-colors duration-500 ${active ? "text-ink" : "text-accent"}`}
         >
           {step.n}
         </span>
-        <h3 className="mt-6 text-item font-normal tracking-[-0.03em]">{step.title}</h3>
+        <h3 className="mt-6 text-item font-normal leading-[1.1] tracking-[-0.03em]">{step.title}</h3>
         <p className={`mt-4 max-w-xs text-body leading-relaxed transition-colors duration-500 ${active ? "text-ink/75" : "text-bone/80"}`}>
           {step.body}
         </p>
@@ -149,7 +149,7 @@ function StackedProcess() {
                 <span className="label !text-accent">Stage {s.n}</span>
                 <ProcessGlyph index={i} small />
               </div>
-              <h3 className="mt-2 text-item font-normal tracking-[-0.03em]">{s.title}</h3>
+              <h3 className="mt-2 text-item font-normal leading-[1.1] tracking-[-0.03em]">{s.title}</h3>
               <p className="mt-2 max-w-md text-body leading-relaxed text-bone/80">{s.body}</p>
             </Reveal>
           </li>
