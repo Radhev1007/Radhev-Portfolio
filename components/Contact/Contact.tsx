@@ -1,5 +1,6 @@
 "use client";
 
+import { ScrambleText } from "@/components/Animations/ScrambleText";
 import { motion } from "framer-motion";
 import { Reveal } from "@/components/Animations/Reveal";
 import { TextReveal } from "@/components/Animations/TextReveal";
@@ -102,7 +103,7 @@ export function Contact() {
                       i === 0 ? "text-lead text-accent sm:text-subtitle" : "text-lead md:text-[1.5rem]"
                     }`}
                   >
-                    {c.value}
+                    <ScrambleText text={c.value} />
                   </span>
                   <span
                     aria-hidden

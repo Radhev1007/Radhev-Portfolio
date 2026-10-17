@@ -1,5 +1,6 @@
 "use client";
 
+import { ScrambleText } from "@/components/Animations/ScrambleText";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Magnetic } from "@/components/Animations/Magnetic";
@@ -48,7 +49,7 @@ export function Footer() {
           </Link>
           <p className="mt-4 text-bone/60">{site.role}</p>
           <a href={`mailto:${site.email}`} className="mt-6 inline-block text-bone/80 underline decoration-bone/20 underline-offset-8 transition-colors hover:decoration-accent">
-            {site.email}
+            <ScrambleText text={site.email} />
           </a>
         </div>
         <nav aria-label="Footer" className="md:col-span-2 md:col-start-7">
@@ -66,7 +67,7 @@ export function Footer() {
                   }}
                   className="text-bone/70 transition-colors hover:text-bone"
                 >
-                  {n.label}
+                  <ScrambleText text={n.label} />
                 </Link>
               </li>
             ))}
@@ -78,7 +79,7 @@ export function Footer() {
             {site.socials.map((s) => (
               <li key={s.label}>
                 <a href={s.href} target="_blank" rel="noreferrer" className="text-bone/70 transition-colors hover:text-bone">
-                  {s.label}
+                  <ScrambleText text={s.label} />
                 </a>
               </li>
             ))}

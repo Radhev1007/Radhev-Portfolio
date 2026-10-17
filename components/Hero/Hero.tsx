@@ -7,6 +7,7 @@ import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { intro, transition } from "@/lib/motion";
 import { HeroIdentity } from "./HeroIdentity";
+import { ScrambleText } from "@/components/Animations/ScrambleText";
 import { PixelField } from "./PixelField";
 import { ScrollCue } from "./ScrollCue";
 import { SocialLinks, SocialRail } from "./SocialLinks";
@@ -57,7 +58,8 @@ export function Hero() {
             animate={{ y: 0 }}
             transition={transition(intro.supporting, 1.1)}
           >
-            {site.statement}
+            {/* decodes itself on hover (monospace, so letters swap in place) */}
+            <ScrambleText text={site.statement} inPlace stagger={0.22} />
           </motion.p>
 
           <motion.div className="mt-8 flex flex-wrap items-center gap-3 md:mt-10" {...appear(intro.cta)}>
