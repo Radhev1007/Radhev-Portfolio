@@ -79,9 +79,11 @@ export function ProjectCard({ project, index, onActive }: Props) {
           onFocus={enter}
           onBlur={leave}
           data-cursor="view"
-          aria-label={`Open case study: ${project.title}`}
           className="block"
         >
+          {/* the link's name, read before the visible category chips (an aria-label would hide them, and the
+              accessible name must contain the text people see) */}
+          <span className="sr-only">Open case study: {project.title}</span>
           <motion.div
             style={interactive ? { x: driftX, y: driftY } : undefined}
           >

@@ -7,7 +7,6 @@ import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { intro, transition } from "@/lib/motion";
 import { HeroIdentity } from "./HeroIdentity";
-import { HeroVideo } from "./HeroVideo";
 import { ScrollCue } from "./ScrollCue";
 import { SocialLinks, SocialRail } from "./SocialLinks";
 import { useScrollTo } from "@/components/Providers/SmoothScroll";
@@ -30,7 +29,8 @@ export function Hero() {
 
   return (
     <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col overflow-hidden">
-      <HeroVideo />
+      {/* <HeroVideo /> goes back here once public/video/ has the files (see its README): without them it only
+          requested a missing poster and videos. */}
       <div className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-6 gutter pb-8 pt-24 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-24">
         {/* The illustration leads on narrow screens, right-hand column on wide
             ones. It sits behind the written column's stacking context, so the
@@ -46,9 +46,14 @@ export function Hero() {
             delay={intro.title}
           />
 
+          {/* The statement is the page's largest text block on phones, so it is painted at once (only its
+              slide-up waits for the intro): a fade from transparent held it back ~2.5 s on a mid-range phone,
+              and that is what Google measures as the page's load time. */}
           <motion.p
             className="mt-6 max-w-[52ch] font-mono text-caption leading-[1.7] text-mute md:mt-8"
-            {...appear(intro.supporting)}
+            initial={{ y: reduced ? 0 : 16 }}
+            animate={{ y: 0 }}
+            transition={transition(intro.supporting, 1.1)}
           >
             {site.statement}
           </motion.p>
