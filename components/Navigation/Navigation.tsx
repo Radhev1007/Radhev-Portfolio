@@ -1,5 +1,6 @@
 "use client";
 
+import { ScrambleText } from "@/components/Animations/ScrambleText";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -33,7 +34,7 @@ function NavLink({
           active ? "text-bone" : "text-mute hover:text-bone"
         }`}
       >
-        {item.label}
+        <ScrambleText text={item.label} />
       </Link>
     </Magnetic>
   );
@@ -155,7 +156,7 @@ export function Navigation() {
               data-cursor="cta"
               className="group hidden items-center gap-2 rounded-control border border-line px-4 py-2 text-small tracking-[-0.01em] text-bone transition-colors duration-300 hover:border-bone/45 hover:bg-bone/5 md:inline-flex"
             >
-              Let&apos;s talk
+              <ScrambleText text="Let's talk" />
               <span
                 aria-hidden
                 className="transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-1"
@@ -217,7 +218,7 @@ export function Navigation() {
                       className="flex items-baseline gap-4 py-2 text-headline font-light leading-[1.05] tracking-[-0.03em] md:text-headline"
                     >
                       <span className="label">0{i + 1}</span>
-                      {item.label}
+                      <ScrambleText text={item.label} onMount />
                     </Link>
                   </motion.div>
                 </li>
@@ -236,7 +237,7 @@ export function Navigation() {
               <div className="flex gap-4">
                 {site.socials.map((s) => (
                   <a key={s.label} href={s.href} target="_blank" rel="noreferrer" className="label !text-bone">
-                    {s.label}
+                    <ScrambleText text={s.label} />
                   </a>
                 ))}
               </div>
