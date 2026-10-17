@@ -58,7 +58,8 @@ export function StatusBar() {
         atFooter ? "opacity-0" : "opacity-100"
       }`}
     >
-      <div className="mx-auto grid max-w-[1600px] grid-cols-12 items-center gap-8 font-mono text-micro uppercase tracking-[0.14em] text-white mix-blend-difference">
+      {/* 12px: the one size below the type scale's 14px floor, so this ambient strip stays quieter than any content */}
+      <div className="mx-auto grid max-w-[1600px] grid-cols-12 items-center gap-8 font-mono text-[0.75rem] uppercase tracking-[0.14em] text-white mix-blend-difference">
         <span className="col-span-3">© {new Date().getFullYear()}</span>
         <span className="col-start-4 col-span-3 tabular-nums">{zone}</span>
         <span className="col-start-8 col-span-2 tabular-nums">{now}</span>
