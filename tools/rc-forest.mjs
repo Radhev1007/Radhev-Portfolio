@@ -44,6 +44,40 @@ function points(node) {
 const bounds = (pts) => { const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (const p of pts) for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], p[k]); mx[k] = Math.max(mx[k], p[k]); } return { mn, mx }; };
 const uvBox = (prim) => { const uv = prim.getAttribute('TEXCOORD_0'), t = [0, 0], mn = [9, 9], mx = [-9, -9]; if (uv) for (let i = 0; i < uv.getCount(); i++) { uv.getElement(i, t); for (let k = 0; k < 2; k++) { mn[k] = Math.min(mn[k], t[k]); mx[k] = Math.max(mx[k], t[k]); } } return [...mn, ...mx].map((v) => v.toFixed(2)).join(','); };
 
+// a triangle whose corners and texture coordinates all match another's (within a hair, in any order) is that card's
+// back face
+function dropBackCopies(mesh) {
+  let dropped = 0;
+  for (const p of mesh.listPrimitives()) {
+    const pos = p.getAttribute('POSITION'), uv = p.getAttribute('TEXCOORD_0'), nor = p.getAttribute('NORMAL'), idx = p.getIndices();
+    if (!idx) continue;
+    const tris = [];
+    // of the two, keep the one whose normals face outward and up (lit by the sky, like the plant's outside)
+    const facing = (tr) => { let s = 0; tr.ids.forEach((i, k) => { if (!nor) return; const n = nor.getElement(i, [0, 0, 0]), c = tr.v[k], l = Math.hypot(c[0], c[2]) || 1; s += n[1] + (n[0] * c[0] + n[2] * c[2]) / l; }); return s; };
+    for (let k = 0; k + 2 < idx.getCount(); k += 3) {
+      const ids = [idx.getScalar(k), idx.getScalar(k + 1), idx.getScalar(k + 2)];
+      tris.push({ ids, v: ids.map((i) => pos.getElement(i, [0, 0, 0])), t: ids.map((i) => (uv ? uv.getElement(i, [0, 0]) : [0, 0])) });
+    }
+    const dist = (P, Q) => Math.hypot(P[0] - Q[0], P[1] - Q[1], P[2] - Q[2]);
+    const shortest = (tr) => Math.min(dist(tr.v[0], tr.v[1]), dist(tr.v[1], tr.v[2]), dist(tr.v[2], tr.v[0]));
+    // corner for corner (each to a different one), within 5% of the smaller triangle's shortest edge (at least 2 mm
+    // of the 1-unit part)
+    const same = (a, b) => {
+      const tol = Math.max(0.002, 0.05 * Math.min(shortest(a), shortest(b))), used = new Set();
+      return a.v.every((P, k) => { const j = [0, 1, 2].find((j) => !used.has(j) && dist(P, b.v[j]) < tol && Math.hypot(a.t[k][0] - b.t[j][0], a.t[k][1] - b.t[j][1]) < 0.01); if (j === undefined) return false; used.add(j); return true; });
+    };
+    const keep = [];
+    for (const tri of tris) {
+      const twin = keep.findIndex((k) => same(tri, k));
+      if (twin < 0) { keep.push(tri); continue; }
+      dropped++;
+      if (facing(tri) > facing(keep[twin])) keep[twin] = tri;
+    }
+    if (keep.length < tris.length) { const flat = keep.flatMap((k) => k.ids); p.setIndices(idx.clone().setArray(pos.getCount() > 65535 ? new Uint32Array(flat) : new Uint16Array(flat))); }
+  }
+  return dropped;
+}
+
 // bake the node's world transform into its mesh and move it to the scene root, then stand it on the origin at
 // unit height (or unit length along X for the log); `extra` nodes (a trunk's crown) share the same placement
 function standAlone(doc, node, name, extra = [], alongX = false) {
@@ -64,6 +98,9 @@ function standAlone(doc, node, name, extra = [], alongX = false) {
   const k = 1 / (alongX ? size[0] : size[1]);
   const T = [k, 0, 0, 0, 0, k, 0, 0, 0, 0, k, 0, -(mn[0] + mx[0]) / 2 * k, -mn[1] * k, -(mn[2] + mx[2]) / 2 * k, 1];
   for (const n of parts) transformMesh(n.getMesh(), T);
+  // the models fake two-sided cards with a reversed copy of every card; the game draws both sides of a card anyway,
+  // so the copy only fights the original for the same pixels (z-fighting: flickering grass and trees). Drop it.
+  if (!alongX) for (const n of parts) dropBackCopies(n.getMesh());   // (not the log: it is solid)
   // one parent node per part, named plainly (three.js drops dots from names)
   const holder = doc.createNode(name);
   scene.addChild(holder);
