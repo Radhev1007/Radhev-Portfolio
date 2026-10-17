@@ -370,6 +370,7 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   });
 
   // physics heights: ground + rocks + logs + roots
+  ctx.rocks.settle(hf);   // the terrain is final now: nothing left floating
   hf.finalizePhysics();
   ctx.rocks.rasterize(hf);
   for (const g of ctx.logsPhys) hf.rasterize(g.attributes.position.array, g.index ? g.index.array : null, SURF.WOOD, 0.02);

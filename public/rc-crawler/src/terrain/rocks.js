@@ -137,6 +137,38 @@ export class RockField {
     return inst;
   }
 
+  // Rocks are placed while the terrain is still being shaped; later steps (trail carving, activity pads) can
+  // lower the ground under one and leave it hanging. Once the terrain is final: drop any rock that is neither
+  // touching the ground nor resting on another rock, so it sits on the ground again (lowest rocks first, so a
+  // rock settled onto counts as support for the ones above it).
+  settle(hf) {
+    const v = new THREE.Vector3();
+    const world = this.instances.map((inst) => {
+      const pos = this.protos[inst.pi].geoLo.attributes.position, pts = [];
+      for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(inst.m); pts.push([v.x, v.y, v.z]); }
+      return pts;
+    });
+    const low = world.map((pts) => Math.min(...pts.map((p) => p[1])));
+    const order = this.instances.map((_, i) => i).sort((a, b) => low[a] - low[b]);
+    let moved = 0;
+    for (const n of order) {
+      const inst = this.instances[n], pts = world[n];
+      let gap = Infinity;
+      for (const p of pts) gap = Math.min(gap, p[1] - hf.baseHeightAt(p[0], p[2]));
+      if (gap <= 0.03) continue;
+      const bottom = pts.reduce((a, p) => (p[1] < a[1] ? p : a));
+      const reach = Math.max(0.12, inst.radius * 0.5);
+      const supported = world.some((o, m) => m !== n && o.some((q) => Math.hypot(q[0] - bottom[0], q[2] - bottom[2]) < reach && Math.abs(q[1] - bottom[1]) < 0.1));
+      if (supported) continue;
+      const drop = gap + Math.min(0.08, inst.radius * 0.15);   // and sink in a little, as placed rocks do
+      inst.m.elements[13] -= drop;
+      inst.top -= drop;
+      for (const p of pts) p[1] -= drop;
+      moved++;
+    }
+    return moved;
+  }
+
   rasterize(hf) {
     const tmp = new THREE.Vector3();
     for (const inst of this.instances) {
