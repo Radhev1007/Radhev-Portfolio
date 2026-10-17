@@ -9,15 +9,22 @@ export const ease = {
 
 export const duration = { fast: 0.35, base: 0.7, slow: 1.1, cinematic: 1.4 };
 
+/**
+ * How long the opening screen (components/Chrome/IntroLoader) holds before it lifts. The hero's
+ * entrance below starts from then, so it plays as the screen reveals it rather than behind it.
+ */
+export const INTRO_HOLD = 2.1;
+const H = INTRO_HOLD + 0.25;   // the lift is under way
+
 /** Hero entrance choreography (seconds from first paint): label → headline → illustration → copy → nav. */
 export const intro = {
-  background: 0,
-  label: 0.3,
-  title: 0.45,
-  objects: 0.85,
-  supporting: 1.0,
-  cta: 1.15,
-  nav: 1.5,
+  background: H,
+  label: H + 0.3,
+  title: H + 0.45,
+  objects: H + 0.85,
+  supporting: H + 1.0,
+  cta: H + 1.15,
+  nav: H + 1.5,
 } as const;
 
 export const transition = (delay = 0, d = duration.base): Transition => ({

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Backdrop } from "@/components/Chrome/Backdrop";
 import { StatusBar } from "@/components/Chrome/StatusBar";
 import { Cursor } from "@/components/Cursor/Cursor";
+import { IntroLoader } from "@/components/Chrome/IntroLoader";
 import { Footer } from "@/components/Footer/Footer";
 import { Navigation } from "@/components/Navigation/Navigation";
 import { SmoothScroll } from "@/components/Providers/SmoothScroll";
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </a>
         <Backdrop />
         <SmoothScroll>
+            <IntroLoader />
             <Navigation />
             {children}
             <Footer />
