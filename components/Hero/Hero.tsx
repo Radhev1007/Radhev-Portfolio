@@ -37,11 +37,11 @@ export function Hero() {
         {/* The illustration leads on narrow screens, right-hand column on wide
             ones. It sits behind the written column's stacking context, so the
             links and buttons there still take their own clicks. */}
-        <div className="order-1 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px] md:pr-14">
+        <div data-pixel-avoid className="order-1 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px] md:pr-14">
           <HeroIllustration delay={intro.objects} />
         </div>
 
-        <div className="relative z-10 order-2 md:order-1 md:col-span-6">
+        <div data-pixel-avoid className="relative z-10 order-2 md:order-1 md:col-span-6">
           <HeroIdentity
             lines={[site.heroTitle.lead, site.heroTitle.mid, site.heroTitle.tail]}
             accent={site.heroTitle.accent}
