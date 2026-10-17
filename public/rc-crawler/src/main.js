@@ -24,7 +24,7 @@ import { Voice } from './net/voice.js';
 import { MpUI } from './ui/mpUI.js';
 import { Landscape } from './ui/landscape.js';
 import { Minimap } from './ui/minimap.js';
-import { VEHICLES, VEHICLE_IDS, mountBody } from './vehicles/bodies.js';
+import { VEHICLES, VEHICLE_IDS, mountBody, vehicleColor } from './vehicles/bodies.js';
 import { LIVERIES, liveryCss } from './net/config.js';
 
 // ------------------------------------------------------------ settings
@@ -87,6 +87,7 @@ addEventListener('resize', () => {
 // ------------------------------------------------------------ vehicle
 if (!VEHICLE_IDS.includes(settings.vehicle)) settings.vehicle = 'scx30';
 let model = createCrawler({ quality: settings.quality });
+model.setBodyColor(vehicleColor(settings.vehicle));
 mountBody(model, settings.vehicle);
 scene.add(model.group);
 let lightsOn = true;
@@ -294,6 +295,7 @@ ui.on('vehicle', (id) => {
   if (!VEHICLE_IDS.includes(id)) return;
   settings.vehicle = id; saveSettings();
   ui.setVehicle(id);
+  applyLivery();
   mountBody(model, id);
   mp.saveProfile({ vehicle: id });
 });
@@ -634,7 +636,8 @@ mp.on('left', () => { modes.teardown(); voice.leave(); myLivery = null; applyLiv
 // In a room, this truck wears the livery the player picked, exactly as everyone else sees it; white again solo.
 // (The last livery is kept through a reconnect, so the paint doesn't flash white.)
 let myLivery = null;
-function applyLivery() { model.setBodyColor((LIVERIES[myLivery ?? 0] || LIVERIES[0])[1]); }
+// alone: the vehicle's own colour (red Bronco, black Wrangler); in a room: the player's livery
+function applyLivery() { model.setBodyColor(myLivery == null ? vehicleColor(settings.vehicle) : (LIVERIES[myLivery] || LIVERIES[0])[1]); }
 mp.on('change', () => { const c = mp.me?.color; if (c !== undefined && c !== myLivery) { myLivery = c; applyLivery(); } });
 
 // ------------------------------------------------------------ boot

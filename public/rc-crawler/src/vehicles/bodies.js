@@ -11,9 +11,9 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { CRAWLER_DIMS } from './crawlerModel.js';
 
 export const VEHICLES = [
-  { id: 'scx30', name: 'SCX30 Jeep Wrangler JLU', short: 'WRANGLER' },
+  { id: 'scx30', name: 'SCX30 Jeep Wrangler JLU', short: 'WRANGLER', color: 0x141518 },   // gloss black
   {
-    id: 'bronco', name: '2022 Ford Bronco', short: 'BRONCO', file: 'assets/vehicles/bronco.glb', paint: /Pintura/i, lamps: /Refletor_Farol/i, exact: true,   // as modelled
+    id: 'bronco', name: '2022 Ford Bronco', short: 'BRONCO', color: 0xa8141c, file: 'assets/vehicles/bronco.glb', paint: /Pintura/i, lamps: /Refletor_Farol/i, exact: true,   // as modelled
     wheels: { front: 1.611, rear: -1.264, y: 0.425, x: 0.84, r: 0.425 },
     credit: { title: '2022 Ford Bronco', author: 'tonielpro520', changes: 'its wheels moved onto the RC hubs, tyres and alloys in black', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
@@ -25,6 +25,9 @@ export const VEHICLES = [
 ];
 export const VEHICLE_IDS = VEHICLES.map((v) => v.id);
 export const vehicleById = (id) => VEHICLES.find((v) => v.id === id) || VEHICLES[0];
+// a body's own colour when driving alone (in multiplayer each player's livery colour is used instead); a body
+// without one (the photo-scanned Land Cruiser) keeps the default
+export const vehicleColor = (id) => vehicleById(id).color ?? 0xf1f1ee;
 
 // RC chassis reference: axles at +-wheelBase/2, hubs at hubRestY, tyres of wheelRadius
 const WB = CRAWLER_DIMS.wheelBase, HUB_Y = CRAWLER_DIMS.hubRestY, TYRE_R = CRAWLER_DIMS.wheelRadius, HALF_TRACK = CRAWLER_DIMS.track / 2;
