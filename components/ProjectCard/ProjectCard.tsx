@@ -89,7 +89,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
           >
             <motion.div
               ref={cover}
-              className="relative aspect-[101/79] overflow-hidden rounded-card bg-ink-3"
+              className="relative aspect-[3/2] overflow-hidden rounded-card bg-ink-3"
               initial={{ clipPath: reduced ? "inset(0% 0% 0% 0%)" : "inset(12% 8% 12% 8%)" }}
               whileInView={{ clipPath: "inset(0% 0% 0% 0%)" }}
               viewport={viewportOnce}
