@@ -9,6 +9,7 @@ import { Footer } from "@/components/Footer/Footer";
 import { Navigation } from "@/components/Navigation/Navigation";
 import { SmoothScroll } from "@/components/Providers/SmoothScroll";
 import { site } from "@/lib/content";
+import { fullName, seoDescription, seoKeywords, seoTitle } from "@/lib/seo";
 import { THEME_COLOR } from "@/lib/theme-config";
 import "@/styles/globals.css";
 
@@ -24,9 +25,20 @@ const mono = Geist_Mono({ subsets: ["latin"], weight: ["400"], variable: "--font
 
 
 export const metadata: Metadata = {
-  title: { default: `${site.name.first} ${site.name.last} — ${site.role}`, template: `%s — ${site.name.first} ${site.name.last}` },
-  description: site.statement,
-  openGraph: { title: `${site.name.first} ${site.name.last} — ${site.role}`, description: site.statement, type: "website" },
+  metadataBase: new URL(site.url),
+  title: { default: seoTitle, template: `%s — ${fullName}` },
+  description: seoDescription,
+  keywords: seoKeywords,
+  authors: [{ name: fullName, url: site.url }],
+  creator: fullName,
+  applicationName: fullName,
+  category: "design",
+  alternates: { canonical: "/" },
+  // the share image comes from app/opengraph-image.tsx
+  openGraph: { type: "profile", url: "/", siteName: fullName, locale: "en_IN", title: seoTitle, description: seoDescription, firstName: site.name.first, lastName: site.name.last },
+  twitter: { card: "summary_large_image", title: seoTitle, description: seoDescription },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export const viewport: Viewport = { themeColor: THEME_COLOR, colorScheme: "dark" };

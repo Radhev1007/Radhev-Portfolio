@@ -24,6 +24,8 @@ export const site = {
   },
   brand: "Radhev R",
   role: "UI/UX Designer",
+  /** The live address: canonical URL, sitemap, share cards and structured data are built on it. */
+  url: "https://www.radhev.in",
   available: true,
   availabilityLabel: "Available for selected projects",
   email: "radhev1999@gmail.com",

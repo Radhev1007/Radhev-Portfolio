@@ -28,8 +28,10 @@ export function HeroIdentity({ lines, delay = 0, accent }: Props) {
     >
       {lines.map((text, li) => {
         const last = li === lines.length - 1;
+        // (the space after each line, see below, keeps the words apart in the page text that crawlers read:
+        // block lines alone run together as "complexdigital")
         const at = accent ? text.indexOf(accent) : -1;
-        return (
+        return [
           <span
             key={text}
             aria-hidden
@@ -52,8 +54,9 @@ export function HeroIdentity({ lines, delay = 0, accent }: Props) {
                 </motion.span>
               );
             })}
-          </span>
-        );
+          </span>,
+          ...(last ? [] : [" "]),
+        ];
       })}
     </h1>
   );

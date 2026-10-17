@@ -6,6 +6,7 @@ import { Hero } from "@/components/Hero/Hero";
 import { Process } from "@/components/Process/Process";
 import { Projects } from "@/components/Projects/Projects";
 import { Specialisms } from "@/components/Specialisms/Specialisms";
+import { homeJsonLd, jsonLdString } from "@/lib/seo";
 
 /**
  * Person → work → expertise → experience → contact.
@@ -19,6 +20,8 @@ import { Specialisms } from "@/components/Specialisms/Specialisms";
 export default function Home() {
   return (
     <main id="main">
+      {/* structured data for search engines: the person, the site and the selected work (lib/seo.ts) */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(homeJsonLd()) }} />
       <SectionScene>
         <Hero />
       </SectionScene>
