@@ -101,24 +101,32 @@ export function GarageLauncher({ className }: { className?: string }) {
 }
 
 /**
- * A lifted 4×4 in side profile on a 24px grid: sloped windscreen, roof light
- * bar, the body riding clear of oversized tyres, and the accent as a tail
- * light. On hover the body rocks on its suspension — a hint that it drives.
+ * A lifted 4×4 in side profile on a 24px grid: one rounded outline from the
+ * bumper over the raked windscreen and roof, wheel arches cut with clearance
+ * above oversized tyres, a single pillar for the windows, and the accent as a
+ * tail light. On hover the body rocks on its suspension — a hint that it drives.
  */
 function RcIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className="size-6 overflow-visible" fill="none">
-      <g className="origin-bottom [transform-box:fill-box] group-hover:animate-[rock_0.6s_ease-in-out_infinite]">
-        <path d="M3 13.6V10.6h4.4l2.3-4.1h6.5l2.5 4.1H21v3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M13.2 6.5v4.1M10.4 4.4h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <rect x="19.2" y="11.4" width="1" height="1.4" fill="var(--color-accent)" />
-      </g>
-      {[7, 17].map((cx) => (
-        <g key={cx}>
-          <circle cx={cx} cy="17.6" r="2.9" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx={cx} cy="17.6" r="1" fill="currentColor" />
+      <g transform="translate(0 -1.4)">
+        <g className="origin-bottom [transform-box:fill-box] group-hover:animate-[rock_0.6s_ease-in-out_infinite]">
+          <path
+            d="M2.6 14.6V12.2Q2.6 11 3.8 10.9L8.2 10.6 10.4 7.9Q10.7 7.5 11.2 7.5H19.4Q20.2 7.5 20.5 8.2L21.3 10.6Q21.4 10.9 21.4 11.4V14.6H20.3A3.2 3.2 0 0 0 13.9 14.6H10.1A3.2 3.2 0 0 0 3.7 14.6Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path d="M15.2 7.6v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <rect x="19.9" y="11.6" width="0.9" height="1.5" rx="0.35" fill="var(--color-accent)" />
         </g>
-      ))}
+        {[6.9, 17.1].map((cx) => (
+          <g key={cx}>
+            <circle cx={cx} cy="17.3" r="2.3" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx={cx} cy="17.3" r="0.75" fill="currentColor" />
+          </g>
+        ))}
+      </g>
     </svg>
   );
 }
