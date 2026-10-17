@@ -33,7 +33,7 @@ export function Footer() {
 
       <div className="gutter mx-auto grid max-w-[1600px] grid-cols-2 gap-10 py-14 md:grid-cols-12">
         <div className="col-span-2 md:col-span-5">
-          {/* Same lockup as the nav, set larger: the footer signs off with the mark. */}
+          {/* The nav's lockup, at the nav's size. */}
           <Link
             href="/"
             onClick={(e) => {
@@ -41,11 +41,11 @@ export function Footer() {
               e.preventDefault();
               scrollTo("home");
             }}
-            className="inline-flex items-center gap-4 text-bone"
+            className="inline-flex items-center gap-3 text-bone"
             aria-label={`${site.name.first} ${site.name.last} — back to top`}
           >
-            <Logo className="h-10 w-auto md:h-12" />
-            <span className="text-lead font-medium uppercase tracking-[0.18em]">{site.name.first}</span>
+            <Logo className="h-6 w-auto" />
+            <span className="text-small font-medium uppercase tracking-[0.18em]">{site.name.first}</span>
           </Link>
           <p className="mt-4 text-bone/60">{site.role}</p>
           <a href={`mailto:${site.email}`} className="mt-6 inline-block text-bone/80 underline decoration-bone/20 underline-offset-8 transition-colors hover:decoration-accent">
@@ -104,7 +104,7 @@ export function Footer() {
         <p>
           © {year} — All rights reserved.
         </p>
-        <p>Designed & built with care.</p>
+        <p>Designed &amp; built by {site.name.first}.</p>
       </div>
     </footer>
   );
