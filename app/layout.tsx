@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Host_Grotesk } from "next/font/google";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import type { ReactNode } from "react";
 import { Backdrop } from "@/components/Chrome/Backdrop";
 import { StatusBar } from "@/components/Chrome/StatusBar";
@@ -67,6 +68,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <StatusBar />
             <Cursor />
         </SmoothScroll>
+        {/* Vercel Web Analytics: visits, pages, referrers, countries and devices, without cookies (vercel.com →
+            project → Analytics). Sends nothing outside Vercel, e.g. on localhost or the static build. */}
+        <Analytics />
       </body>
     </html>
   );
