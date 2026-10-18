@@ -37,7 +37,7 @@ export default function Image() {
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontSize: 26, color: DIM }}>
           <div style={{ display: "flex", maxWidth: 760, lineHeight: 1.4 }}>Enterprise SaaS · Government platforms · Dashboards · Fintech · Design systems</div>
-          <div style={{ display: "flex", color: BONE, letterSpacing: 4, textTransform: "uppercase", fontSize: 24, whiteSpace: "nowrap" }}>{site.role}</div>
+          <div style={{ display: "flex", color: BONE, letterSpacing: 3, textTransform: "uppercase", fontSize: 21, whiteSpace: "nowrap" }}>{site.role}</div>
         </div>
       </div>
     ),

@@ -23,11 +23,12 @@ export const site = {
     accent: "products",
   },
   brand: "Radhev R",
-  role: "UI/UX Designer",
+  /** One wording everywhere: the hero, the footer, the share card and structured data. */
+  role: "UI/UX & Product Designer",
   /** The live address: canonical URL, sitemap, share cards and structured data are built on it. */
   url: "https://www.radhev.in",
   available: true,
-  availabilityLabel: "Available for selected projects",
+  availabilityLabel: "Open to new roles",
   email: "radhev1999@gmail.com",
   phone: "+91 808 982 1700",
   /** The nav's "Let's talk" opens a WhatsApp chat with this number. */
@@ -36,13 +37,13 @@ export const site = {
   resume: "https://drive.google.com/file/d/1FGt65CDoKoxUXWIjAgswC5341gIOfaFl/view?usp=sharing",
   location: "Kollam, Kerala",
   statement:
-    "Product / UI/UX Designer specializing in enterprise SaaS, government platforms, dashboards, fintech products and scalable design systems.",
+    "UI/UX & Product Designer specialising in enterprise SaaS, government platforms, dashboards, fintech products and scalable design systems.",
   /**
    * The hero's two actions. The CV is the primary — it is what a recruiter
-   * opens first — and the secondary jumps to the work history in the page.
+   * opens first — and the secondary jumps to the work, the evidence behind it.
    */
   heroCtas: {
-    secondary: { label: "View Experience", target: "experience" },
+    secondary: { label: "View Work", target: "work" },
   },
   /** Shown as icons in the hero's social rail, in this order. */
   socials: [

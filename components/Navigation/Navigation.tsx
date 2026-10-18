@@ -145,6 +145,17 @@ export function Navigation() {
                   <NavLink item={item} active={isHome && active === item.id} onClick={go(item.id)} />
                 </li>
               ))}
+              {/* the CV, one click from anywhere (what a recruiter opens first) */}
+              <li>
+                <a
+                  href={site.resume}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-small text-bone/60 transition-colors duration-300 hover:text-bone"
+                >
+                  <ScrambleText text="Résumé" /> <span aria-hidden>↗</span>
+                </a>
+              </li>
             </ul>
 
             {/* The one action the nav is for: straight into a WhatsApp chat. */}
@@ -234,7 +245,15 @@ export function Navigation() {
               <a href={`mailto:${site.email}`} className="text-lead">
                 {site.email}
               </a>
-              <div className="flex gap-4">
+              <a
+                href={site.resume}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 self-start rounded-control border border-line px-4 py-3 text-small uppercase tracking-[0.12em]"
+              >
+                View résumé <span aria-hidden>↗</span>
+              </a>
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {site.socials.map((s) => (
                   <a key={s.label} href={s.href} target="_blank" rel="noreferrer" className="label !text-bone">
                     <ScrambleText text={s.label} />
