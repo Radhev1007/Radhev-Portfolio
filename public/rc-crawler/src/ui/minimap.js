@@ -212,11 +212,11 @@ export class Minimap {
     g.drawImage(this.layer, (cx - span / 2 + half) * k, (cz - span / 2 + half) * k, span * k, span * k, 0, 0, W, W);
     const px = dpr * (big ? 1.25 : 1);     // marker scale, in device pixels per CSS pixel
     const text = clamp(css / 60, 8.5, 12); // label size follows the map's size, so a phone's large map stays legible
-    const font = (w = 700) => `${w} ${Math.round(text * dpr)}px 'Host Grotesk', system-ui, sans-serif`;
+    const font = (w = 500) => `${w} ${Math.round(text * dpr)}px 'Host Grotesk', system-ui, sans-serif`;
 
     // labels for activity sections (large map)
     if (big) {
-      g.font = font(600); g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = font(500); g.textAlign = 'center'; g.textBaseline = 'middle';
       for (const st of lvl.activities?.sites || []) {
         const c = lvl.challenges?.find((q) => q.id === st.id);
         if (c) this.label(g, c.name, X(st.cx), Z(st.cz) - text * dpr, 'rgba(255,255,255,0.92)');
