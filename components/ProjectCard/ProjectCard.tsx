@@ -1,9 +1,10 @@
 "use client";
 
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { Arrow } from "@/components/Animations/Button";
-import type { Project } from "@/lib/content";
+import { workPath, type Project } from "@/lib/content";
 import { useFinePointer, usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, viewportOnce } from "@/lib/motion";
 import { ProjectVisual } from "./ProjectVisual";
@@ -57,9 +58,9 @@ export function ProjectCard({ project, index, onActive }: Props) {
     py.set(0);
   };
 
-  // The work itself lives on Behance, so the card leaves the site. The
-  // page-transition animation is for internal routes and does not apply.
-  const external = { href: project.href, target: "_blank", rel: "noreferrer" } as const;
+  // The cover and title open the project's own page; the full case study on
+  // Behance is linked beside them, one click away.
+  const page = workPath(project);
 
   return (
     <motion.article
@@ -71,8 +72,8 @@ export function ProjectCard({ project, index, onActive }: Props) {
     >
       {/* Cover */}
       <div className={`md:col-span-8 ${flip ? "md:order-2 md:col-start-5 md:row-start-1" : ""}`}>
-        <a
-          {...external}
+        <Link
+          href={page}
           onPointerMove={onMove}
           onPointerEnter={enter}
           onPointerLeave={leave}
@@ -105,7 +106,7 @@ export function ProjectCard({ project, index, onActive }: Props) {
                 </motion.div>
               </motion.div>
               <div className="absolute left-4 top-4 flex gap-2 md:left-6 md:top-6">
-                {project.categories.slice(0, 2).map((c) => (
+                {[...(project.status ? [project.status] : []), ...project.categories.slice(0, 2)].map((c) => (
                   <span key={c} className="glass rounded-control px-3 py-2 text-caption font-medium tracking-wide">
                     {c}
                   </span>
@@ -113,20 +114,20 @@ export function ProjectCard({ project, index, onActive }: Props) {
               </div>
             </motion.div>
           </motion.div>
-        </a>
+        </Link>
       </div>
 
       {/* Meta */}
       <div className={`flex flex-col justify-between gap-6 md:col-span-4 md:py-4 ${flip ? "md:order-1 md:col-start-1 md:row-start-1" : ""}`}>
         <div className="flex items-start justify-between md:flex-col md:gap-6">
           <span className="label">Project {project.number}</span>
+          {/* drawn from data-n by CSS: the label beside it already says the number, once */}
           <span
             aria-hidden
-            className="font-accent text-display leading-[0.8] text-mute transition-colors duration-700"
+            data-n={project.number}
+            className="font-accent text-display leading-[0.8] text-mute transition-colors duration-700 before:content-[attr(data-n)]"
             style={hovered ? { color: accent } : undefined}
-          >
-            {project.number}
-          </span>
+          />
         </div>
 
         <div className="flex flex-col gap-4">
@@ -134,9 +135,9 @@ export function ProjectCard({ project, index, onActive }: Props) {
             className="text-item font-normal leading-[1.1] tracking-[-0.03em]"
             style={{ x: interactive ? titleX : 0 }}
           >
-            <a {...external} className="focus-visible:outline-offset-8" data-cursor="view">
+            <Link href={page} className="focus-visible:outline-offset-8" data-cursor="view">
               {project.title}
-            </a>
+            </Link>
           </motion.h3>
           <p className="text-small text-bone/60">{project.categories.join(" · ")}</p>
 
@@ -162,15 +163,27 @@ export function ProjectCard({ project, index, onActive }: Props) {
             </div>
           </dl>
 
-          <span className="flex items-center gap-2 text-small" aria-hidden>
-            <span
-              className="grid size-10 place-items-center rounded-full border border-line transition-all duration-500"
-              style={hovered ? { background: "var(--color-bone)", color: "var(--color-ink)", transform: "rotate(-45deg)" } : undefined}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-small">
+            {/* a tap target for touch and mouse (it looked like a button but did nothing on a phone); keyboard and
+                screen-reader users reach the same page through the cover and title links, so it is skipped by both */}
+            <Link href={page} tabIndex={-1} aria-hidden data-cursor="view" className="flex items-center gap-2">
+              <span
+                className="grid size-10 place-items-center rounded-full border border-line transition-all duration-500"
+                style={hovered ? { background: "var(--color-bone)", color: "var(--color-ink)", transform: "rotate(-45deg)" } : undefined}
+              >
+                <Arrow />
+              </span>
+              View project
+            </Link>
+            <a
+              href={project.href}
+              target="_blank"
+              rel="noreferrer"
+              className="text-bone/70 underline decoration-line underline-offset-4 transition-colors duration-300 hover:text-bone hover:decoration-accent"
             >
-              <Arrow />
-            </span>
-            View on Behance
-          </span>
+              <span className="sr-only">{project.title}: </span>All screens on Behance ↗
+            </a>
+          </div>
         </div>
       </div>
     </motion.article>
