@@ -53,13 +53,13 @@ export function Hero() {
               slide-up waits for the intro): a fade from transparent held it back ~2.5 s on a mid-range phone,
               and that is what Google measures as the page's load time. */}
           <motion.p
-            className="mt-6 max-w-[52ch] font-mono text-caption leading-[1.7] text-mute md:mt-8"
+            className="mt-6 max-w-[52ch] text-body leading-[1.625] text-mute md:mt-8"
             initial={{ y: reduced ? 0 : 16 }}
             animate={{ y: 0 }}
             transition={transition(intro.supporting, 1.1)}
           >
-            {/* decodes itself on hover (monospace, so letters swap in place) */}
-            <ScrambleText text={site.statement} inPlace stagger={0.22} />
+            {/* decodes itself on hover, word by word so the lines hold still */}
+            <ScrambleText text={site.statement} wrap stagger={0.22} />
           </motion.p>
 
           <motion.div className="mt-8 flex flex-wrap items-center gap-3 md:mt-10" {...appear(intro.cta)}>
