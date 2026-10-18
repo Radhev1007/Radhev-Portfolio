@@ -139,7 +139,7 @@ export function IntroLoader() {
             exit={reduced ? {} : { opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="mb-3 flex min-h-[1.25em] justify-between font-mono text-[0.75rem] uppercase tracking-[0.14em] text-mute">
+            <div className="mb-3 flex min-h-[1.25em] justify-between font-medium tabular-nums text-[0.75rem] uppercase tracking-[0.14em] text-mute">
               <span>{live && "UI/UX & Product Designer"}</span>
               <span ref={pct} className="tabular-nums text-bone" />
             </div>

@@ -14,7 +14,7 @@ import { GarageLauncher } from "@/components/Garage/Garage";
 import { Logo } from "@/components/Chrome/Logo";
 import { StatusBadge } from "./StatusBadge";
 
-/** 14px Geist, sentence case, −0.01em — the reference's nav type. */
+/** 14px Host Grotesk, sentence case, −0.01em — the reference's nav type. */
 function NavLink({
   item,
   active,

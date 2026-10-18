@@ -138,7 +138,7 @@ export function Cursor() {
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, ease: ease.outExpo }}
-            className="font-mono text-micro uppercase tracking-[0.18em] text-white"
+            className="font-medium tabular-nums text-micro uppercase tracking-[0.18em] text-white"
           >
             {text}
           </motion.span>

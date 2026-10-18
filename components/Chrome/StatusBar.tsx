@@ -59,7 +59,7 @@ export function StatusBar() {
       }`}
     >
       {/* 10px: below the type scale's 14px floor, so this ambient strip stays quieter than any content */}
-      <div className="mx-auto grid max-w-[1600px] grid-cols-12 items-center gap-8 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-white mix-blend-difference">
+      <div className="mx-auto grid max-w-[1600px] grid-cols-12 items-center gap-8 font-medium tabular-nums text-[0.625rem] uppercase tracking-[0.14em] text-white mix-blend-difference">
         <span className="col-span-3">© {new Date().getFullYear()}</span>
         <span className="col-start-4 col-span-3 tabular-nums">{zone}</span>
         <span className="col-start-8 col-span-2 tabular-nums">{now}</span>

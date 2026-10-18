@@ -3,7 +3,7 @@
 
 
 /* ── Design tokens ─────────────────────────────────────────────
-   Typography: Cabinet Grotesk (display) + Geist / Geist Mono (UI, meta).
+   Typography: Host Grotesk throughout (self-hosted through next/font, see app/layout.tsx).
    All three are self-hosted through next/font — see app/layout.tsx.
    Palette: near-black ground, cream foreground, one hot accent. */
 @theme {
@@ -27,7 +27,7 @@
      request and no licence to clear. */
   --font-sans: var(--font-host-grotesk), Arial, Helvetica, sans-serif;
   --font-display: var(--font-sans);
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: var(--font-sans);   /* one typeface: any font-mono left resolves to Host Grotesk */
 
   /* ── Corner radius ───────────────────────────────────────────
      The site is square-cornered. Every surface and control still names
@@ -227,7 +227,7 @@ html.has-custom-cursor * {
   border: 1px solid rgb(255 255 255 / 0.12);
 }
 
-/* Contrasting display voice — Cabinet Grotesk against Geist body copy. */
+/* The light display voice, against the regular body copy. */
 @utility font-accent {
   font-family: var(--font-sans);
   font-weight: 300;

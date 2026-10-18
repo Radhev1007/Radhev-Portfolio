@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Host_Grotesk } from "next/font/google";
+import { Host_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import type { ReactNode } from "react";
@@ -17,13 +17,10 @@ import "@/styles/globals.css";
 
 const sans = Host_Grotesk({ subsets: ["latin"], variable: "--font-host-grotesk", display: "swap" });
 
-/**
- * A real monospace. `--font-mono` was aliased to the sans, so every
- * `font-mono` on the site — the hero statement, the status bar, the cursor
- * label, buttons — has been asking for a typewriter and getting a grotesk.
- * One weight, latin only.
+/*
+ * One typeface. Geist Mono, used for the small uppercase labels, is gone: they are Host Grotesk at 500 with
+ * tabular figures (so the status bar's clock does not jitter), and `--font-mono` points at the same face.
  */
-const mono = Geist_Mono({ subsets: ["latin"], weight: ["400"], variable: "--font-geist-mono", display: "swap" });
 
 
 export const metadata: Metadata = {
@@ -49,7 +46,7 @@ export const viewport: Viewport = { themeColor: THEME_COLOR, colorScheme: "dark"
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={sans.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>
         {/* Open every page on its hero so entrance choreography plays in full. */}
         <Script id="scroll-restoration" strategy="beforeInteractive">{`history.scrollRestoration='manual'`}</Script>

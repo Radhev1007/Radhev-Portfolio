@@ -270,7 +270,7 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
         onClick={() => setConfirming(true)}
         aria-label="Back to portfolio"
         data-cursor="hover"
-        className="absolute left-3 top-3 z-10 flex size-10 items-center justify-center gap-3 whitespace-nowrap border border-white/25 bg-black/60 font-mono text-caption uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors duration-300 hover:border-accent hover:bg-accent md:left-1/2 md:top-4 md:size-auto md:-translate-x-1/2 md:px-4 md:py-2"
+        className="absolute left-3 top-3 z-10 flex size-10 items-center justify-center gap-3 whitespace-nowrap border border-white/25 bg-black/60 font-medium tabular-nums text-caption uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors duration-300 hover:border-accent hover:bg-accent md:left-1/2 md:top-4 md:size-auto md:-translate-x-1/2 md:px-4 md:py-2"
       >
         <span aria-hidden>←</span>
         <span className="hidden md:inline">Back to portfolio</span>
@@ -286,7 +286,7 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm border border-white/15 bg-[#141414] p-6 text-white"
           >
-            <p id="rc-leave-title" className="font-mono text-caption uppercase tracking-[0.18em]">
+            <p id="rc-leave-title" className="font-medium tabular-nums text-caption uppercase tracking-[0.18em]">
               Leave the game?
             </p>
             <p id="rc-leave-desc" className="mt-3 text-sm leading-relaxed text-white/65">
@@ -298,7 +298,7 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
                 autoFocus
                 onClick={keepDriving}
                 data-cursor="hover"
-                className="flex-1 border border-white/25 px-4 py-2.5 font-mono text-caption uppercase tracking-[0.12em] transition-colors duration-300 hover:border-white/60"
+                className="flex-1 border border-white/25 px-4 py-2.5 font-medium tabular-nums text-caption uppercase tracking-[0.12em] transition-colors duration-300 hover:border-white/60"
               >
                 Keep driving
               </button>
@@ -306,7 +306,7 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
                 type="button"
                 onClick={onExit}
                 data-cursor="hover"
-                className="flex-1 border border-accent bg-accent px-4 py-2.5 font-mono text-caption uppercase tracking-[0.12em] text-white transition-colors duration-300 hover:bg-accent-inverse"
+                className="flex-1 border border-accent bg-accent px-4 py-2.5 font-medium tabular-nums text-caption uppercase tracking-[0.12em] text-white transition-colors duration-300 hover:bg-accent-inverse"
               >
                 Leave
               </button>
