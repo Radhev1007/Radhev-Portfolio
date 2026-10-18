@@ -41,7 +41,7 @@ export function DesignSystem() {
               text="Design Beyond the Screen"
               className="section-title mt-8 max-w-[12ch] md:mt-12"
             />
-            <p className="section-intro mt-6 md:mt-8">
+            <p className="section-intro mt-3 md:mt-4">
               Interfaces are systems before they are screens. A shared set of decisions keeps products coherent as they grow.
             </p>
 
