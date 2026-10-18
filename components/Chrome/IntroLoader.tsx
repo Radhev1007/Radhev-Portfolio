@@ -18,6 +18,10 @@ import { ease, INTRO_HOLD } from "@/lib/motion";
  * The page is rendered underneath the whole time, so search engines and the
  * page-speed metrics see the content at once; only scrolling waits. Reduced
  * motion gets the finished logo and a short fade.
+ *
+ * Its words (name, role, percentage) are drawn only once the page runs in the
+ * browser: in the server HTML they were the first text on the page, ahead of
+ * the real content, in every search snippet and text extraction ("… 0%").
  */
 const PANELS = 5;
 const GRID = 2;   // logo units per pixel (the mark is 50 × 56 units)
@@ -73,6 +77,8 @@ export function IntroLoader() {
   const reduced = usePrefersReducedMotion();
   const lenis = useLenis();
   const [open, setOpen] = useState(true);
+  const [live, setLive] = useState(false);   // false in the server HTML (see above)
+  useEffect(() => setLive(true), []);
   const bar = useRef<HTMLDivElement>(null);
   const pct = useRef<HTMLSpanElement>(null);
 
@@ -122,8 +128,8 @@ export function IntroLoader() {
             transition={{ duration: 0.45, ease: ease.inOutQuart }}
           >
             <PixelLogo size={92} still={reduced} />
-            <span className="text-small font-medium uppercase tracking-[0.42em] text-bone/85">
-              <ScrambleText text="Radhev R" onMount={!reduced} stagger={2.2} />
+            <span className="min-h-[1.5em] text-small font-medium uppercase tracking-[0.42em] text-bone/85">
+              {live && <ScrambleText text="Radhev R" onMount={!reduced} stagger={2.2} />}
             </span>
           </motion.div>
 
@@ -133,9 +139,9 @@ export function IntroLoader() {
             exit={reduced ? {} : { opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="mb-3 flex justify-between font-mono text-[0.75rem] uppercase tracking-[0.14em] text-mute">
-              <span>UI/UX &amp; Product Designer</span>
-              <span ref={pct} className="tabular-nums text-bone">0%</span>
+            <div className="mb-3 flex min-h-[1.25em] justify-between font-mono text-[0.75rem] uppercase tracking-[0.14em] text-mute">
+              <span>{live && "UI/UX & Product Designer"}</span>
+              <span ref={pct} className="tabular-nums text-bone" />
             </div>
             <div className="h-px w-full bg-bone/15">
               <div ref={bar} className="h-full w-full origin-left bg-accent" style={{ transform: "scaleX(0)" }} />

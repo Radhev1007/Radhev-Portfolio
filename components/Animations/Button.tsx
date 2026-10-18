@@ -31,11 +31,13 @@ export function Button({ children, href, onClick, variant = "primary", icon = tr
         <span className="block transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:-translate-y-full">
           {children}
         </span>
+        {/* the copy that rolls in on hover is drawn from data-label by CSS, so the label is in the page once */}
         <span
           aria-hidden
-          className="absolute inset-0 block translate-y-full transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:translate-y-0"
+          data-label={typeof children === "string" ? children : undefined}
+          className="absolute inset-0 block translate-y-full transition-transform duration-500 ease-[var(--ease-out-expo)] before:content-[attr(data-label)] group-hover:translate-y-0"
         >
-          {children}
+          {typeof children === "string" ? null : children}
         </span>
       </span>
       {icon && variant === "primary" && (

@@ -22,7 +22,8 @@ export function Footer() {
             <span key={k} className="flex shrink-0 items-center">
               {["Product Design", "Interaction", "Design Systems", "Prototyping", "Visual Design"].map((w) => (
                 <span key={w} className="flex items-center text-title tracking-[-0.04em]">
-                  <span className="px-8">{w}</span>
+                  {/* the second pass of the loop is drawn by CSS, so the words are in the page once */}
+                  {k === 0 ? <span className="px-8">{w}</span> : <span data-w={w} className="px-8 before:content-[attr(data-w)]" />}
                   <span className="font-accent text-accent">✳</span>
                 </span>
               ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { Reveal } from "@/components/Animations/Reveal";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
@@ -183,29 +183,32 @@ export function Experience() {
                     </span>
                   </button>
 
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
+                  {/* Every role's details stay in the page, collapsed (and inert) when closed, so the whole work
+                      history is in the HTML that search engines and a recruiter's tools read, not only the open one. */}
                       <motion.div
                         id={`role-${i}`}
-                        key="panel"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
+                        initial={false}
+                        animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
                         transition={{ duration: 0.6, ease: ease.outExpo }}
                         className="overflow-hidden"
+                        inert={!isOpen}
                       >
-                        {/* Dates repeat here on phones, where the row hides them. */}
-                        <p className="label pb-4 !text-bone sm:hidden" suppressHydrationWarning>
-                          {role.from} — {role.to} · {formatTenure(tenure(role))}
-                        </p>
+                        {/* Dates repeat here on phones, where the row hides them: drawn by CSS, so they are in the
+                            page's text once. */}
+                        <p
+                          aria-hidden
+                          data-dates={`${role.from} — ${role.to} · ${formatTenure(tenure(role))}`}
+                          className="label pb-4 !text-bone before:content-[attr(data-dates)] sm:hidden"
+                          suppressHydrationWarning
+                        />
                         <ul className="space-y-4 pb-10 sm:pl-[3.25rem] md:pl-[4rem]">
                           {role.points.map((point, p) => (
                             <motion.li
                               key={point}
                               className="flex max-w-[62ch] gap-4 text-body leading-relaxed text-mute"
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.6, delay: 0.1 + p * 0.05, ease: ease.outExpo }}
+                              initial={false}
+                              animate={{ opacity: isOpen ? 1 : 0, y: isOpen ? 0 : 10 }}
+                              transition={{ duration: 0.6, delay: isOpen ? 0.1 + p * 0.05 : 0, ease: ease.outExpo }}
                             >
                               <span aria-hidden className="mt-[0.6em] h-px w-3 shrink-0 bg-accent" />
                               <span>{point}</span>
@@ -213,8 +216,6 @@ export function Experience() {
                           ))}
                         </ul>
                       </motion.div>
-                    )}
-                  </AnimatePresence>
                 </li>
               );
             })}

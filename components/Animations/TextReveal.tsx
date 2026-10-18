@@ -17,9 +17,13 @@ type Props = {
 };
 
 /**
- * Masked word-by-word reveal. The full string is kept as visually-hidden
- * text so screen readers read one sentence, not fragments (aria-label is
- * ignored on generic elements like <span>).
+ * Masked word-by-word reveal.
+ *
+ * The animated words are the only copy of the text. It used to carry a second,
+ * visually-hidden copy for screen readers beside an aria-hidden animated one,
+ * and everything that reads the page as text — search snippets, link previews,
+ * reader modes, copy and paste — got both ("Selected Selected Work Work").
+ * Each word keeps its trailing space, so the text reads as one sentence.
  */
 export function TextReveal({ text, as: Tag = "p", className, delay = 0, stagger = 0.06, immediate }: Props) {
   const words = text.split(" ");
@@ -27,9 +31,7 @@ export function TextReveal({ text, as: Tag = "p", className, delay = 0, stagger 
 
   return (
     <Tag className={className}>
-      <span className="sr-only">{text} </span>
       <motion.span
-        aria-hidden
         className="inline"
         initial="hidden"
         {...trigger}

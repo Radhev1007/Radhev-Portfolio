@@ -39,7 +39,7 @@ export function Projects() {
         <div className="mt-8 grid grid-cols-1 gap-12 md:mt-12 md:grid-cols-12 md:gap-8">
           <Parallax speed={30} className="md:col-span-6">
             <h2 className="section-title">
-              <TextReveal as="span" text="Selected" className="block" />
+              <TextReveal as="span" text="Selected" className="block" />{" "}
               <TextReveal as="span" text="Work" delay={0.1} className="block font-accent text-bone/60" />
             </h2>
             <ul className="mt-12 flex flex-wrap gap-2 md:mt-16">

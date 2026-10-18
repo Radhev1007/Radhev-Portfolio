@@ -114,12 +114,12 @@ function StepPanel({ step, index, progress, active }: { step: Step; index: numbe
         </motion.div>
       </div>
       <div>
+        {/* drawn from data-n by CSS: "Stage 01" above already says the number, once */}
         <span
           aria-hidden
-          className={`block text-display font-light leading-[0.8] tracking-[-0.03em] transition-colors duration-500 ${active ? "text-ink" : "text-accent"}`}
-        >
-          {step.n}
-        </span>
+          data-n={step.n}
+          className={`block text-display font-light leading-[0.8] tracking-[-0.03em] transition-colors duration-500 before:content-[attr(data-n)] ${active ? "text-ink" : "text-accent"}`}
+        />
         <h3 className="mt-6 text-item font-normal leading-[1.1] tracking-[-0.03em]">{step.title}</h3>
         <p className={`mt-4 max-w-xs text-body leading-relaxed transition-colors duration-500 ${active ? "text-ink/75" : "text-bone/80"}`}>
           {step.body}

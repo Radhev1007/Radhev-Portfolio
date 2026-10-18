@@ -41,7 +41,7 @@ export function Contact() {
         {/* ── The ask ─────────────────────────────── */}
         <div className="lg:col-span-6">
           <h2 className="section-title max-w-[16ch]">
-            <TextReveal as="span" text="Let's build" className="block" />
+            <TextReveal as="span" text="Let's build" className="block" />{" "}
             <TextReveal as="span" text="something good." delay={0.1} className="block font-accent text-bone/60" />
           </h2>
 
