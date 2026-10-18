@@ -4,7 +4,7 @@ import { ScrambleText } from "@/components/Animations/ScrambleText";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Magnetic } from "@/components/Animations/Magnetic";
 import { useLenis, useScrollTo } from "@/components/Providers/SmoothScroll";
 import { navItems, site, type SectionId } from "@/lib/content";
@@ -82,6 +82,22 @@ export function Navigation() {
     setScrolled(y > 40);
     setHidden(y > prev && y > 240 && !menuOpen);
   });
+
+  // While the menu is open it is the page for keyboard and screen-reader users too: what is behind it is inert,
+  // focus moves to its first link, and returns to the toggle when it closes.
+  const toggle = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const behind = [...document.querySelectorAll<HTMLElement>("main, footer")];
+    behind.forEach((el) => (el.inert = true));
+    const t = setTimeout(() => document.querySelector<HTMLElement>("#mobile-menu a")?.focus(), 50);
+    const button = toggle.current;
+    return () => {
+      clearTimeout(t);
+      behind.forEach((el) => (el.inert = false));
+      button?.focus();
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     if (menuOpen) lenis?.stop();
@@ -180,9 +196,11 @@ export function Navigation() {
               {/* A toggle rather than a nav item: there is nothing to scroll
                   to and nothing to deep-link. */}
               <GarageLauncher className="opacity-60" />
+              {/* a 44px target around the 16px glyph */}
               <button
+                ref={toggle}
                 type="button"
-                className="relative grid size-5 place-items-center"
+                className="relative -m-3 grid size-11 place-items-center"
                 aria-expanded={menuOpen}
                 aria-controls="mobile-menu"
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
