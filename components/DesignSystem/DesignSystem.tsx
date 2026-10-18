@@ -64,7 +64,7 @@ export function DesignSystem() {
             </ol>
             <motion.p
               key={step}
-              className="mt-4 min-h-[3em] max-w-sm text-small leading-relaxed text-mute"
+              className="mt-8 min-h-[3em] max-w-sm text-small leading-relaxed text-mute"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: ease.outExpo }}
