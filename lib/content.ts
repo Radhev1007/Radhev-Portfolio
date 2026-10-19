@@ -164,6 +164,50 @@ export const projects: Project[] = [
     palette: { from: "#221A3D", to: "#8E7BFF", ink: "#E9E4FF" },
   },
   {
+    slug: "stride-fitness-dashboard",
+    status: "Concept",
+    story: {
+      seoTitle: "Stride Health & Fitness Dashboard — UI/UX Case Study",
+      seoDescription:
+        "Health and fitness dashboard concept by Radhev R: consolidated KPIs, prioritised client health alerts, heart-rate trends and weekly workout compliance.",
+      published: "Mar 2023",
+      year: "2023",
+      tools: ["Figma", "Photoshop"],
+      overview: [
+        "Stride is a concept dashboard for gym trainers and fitness coaches: one place to monitor client health, track workout performance and decide who to follow up with, instead of reading those things off separate apps.",
+        "The problem it answers is fragmented data. Health readings, workout activity and progress live in different places and arrive without context, so monitoring takes time and a trainer has little visibility into how a client is actually moving. The design pulls the metrics, the alerts and the follow-up list into one screen.",
+      ],
+      screens: [
+        { title: "Overview dashboard", body: "Four KPI cards across the top: total clients, activity today, health metrics recorded this week, and how many clients need attention. Below them the day's fitness insight, the heart-rate chart and weekly workout compliance." },
+        { title: "Client health alerts", body: "Clients with abnormal readings, each with the reading that triggered it and a severity label, High or Medium, that sets the order of follow-ups." },
+        { title: "Workout analytics", body: "Heart rate, calories burned and workout duration as three series on one chart, with weekly compliance beside it as completed, scheduled and missed." },
+        { title: "Client progress", body: "Recent activity and per-client progress indicators side by side: who logged what, and how far each client is through their goal." },
+        { title: "Wearable sync", body: "Heart rate streams from the client's watch during a session, so readings land in Health Metrics and raise alerts without anyone entering them." },
+        { title: "Navigation", body: "Overview, Clients, Health Metrics, Workout Analytics, Fitness Insights, Progress Reports and Workout Plans down the left, with filter and export pinned below them." },
+      ],
+      decisions: [
+        "The roster's status reads from the first four KPI cards, so a trainer can see the whole caseload before opening any one client.",
+        "Health alerts are ranked by severity rather than by time, which puts the clients who need attention above the ones who only need a look.",
+        "Heart rate, calories and duration share one chart instead of three, because the change a trainer is looking for is the relationship between them.",
+        "Weekly compliance separates missed sessions into their own colour, so a gap in the plan is visible without counting.",
+        "The interface is built on one typeface, Archivo, and a four-colour palette — coral #F35746 for action and alerts, a lime accent, greyscale and white — on a 1920px grid with 40px margins.",
+      ],
+      scope:
+        "A self-initiated concept, published on Behance. The personas are role-based, built from the project brief rather than from interviews, and the outcomes the case study lists are stated as intended, not measured. No user research, testing or launch results are claimed.",
+    },
+    image: "/projects/stride-fitness-dashboard.webp",
+    imageAlt: "Stride health and fitness dashboard cover: the Health & Fitness Dashboard title beside a trainer, with heart-rate, weekly compliance and attention-required callouts",
+    href: "https://www.behance.net/gallery/166160121/Stride-Health-Fitness-Case-Study",
+    number: "02",
+    title: "Stride Health & Fitness Dashboard",
+    categories: ["UI/UX Design", "Dashboard", "Health & Fitness"],
+    description:
+      "A dashboard concept for gym trainers: client health alerts ranked by severity, workout analytics and weekly compliance for a whole roster on one screen.",
+    role: "UI/UX Designer",
+    visual: "analytics",
+    palette: { from: "#2B1310", to: "#F35746", ink: "#FFE3DD" },
+  },
+  {
     slug: "dashboard-concept",
     status: "Concept",
     story: {
@@ -194,7 +238,7 @@ export const projects: Project[] = [
     image: "/projects/dashboard-concept.webp",
     imageAlt: "Employee self-service dashboard: loan and leave balances, an uncovered-hours gauge, recent requests and request forms",
     href: "https://www.behance.net/gallery/164544999/Dashboard-Concept",
-    number: "02",
+    number: "03",
     title: "Employee Self-Service Dashboard",
     categories: ["UI Design", "Dashboard", "HR"],
     description:
@@ -233,7 +277,7 @@ export const projects: Project[] = [
     image: "/projects/thuna-mobile-ui.webp",
     imageAlt: "Thuna.Care mobile app screens: splash, an elder's home screen with an SOS button and vitals, and an emergency responder's dispatch",
     href: "https://www.behance.net/gallery/128315087/UI-UX-Design-Thuna-Mobile-UI",
-    number: "03",
+    number: "04",
     title: "Thuna Care Mobile App",
     categories: ["UI/UX Design", "Mobile", "Healthcare"],
     description:
