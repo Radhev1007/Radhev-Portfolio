@@ -7,7 +7,7 @@ import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { intro, transition } from "@/lib/motion";
 import { HeroIdentity } from "./HeroIdentity";
-import { PixelField } from "./PixelField";
+import { DotField } from "./DotField";
 import { ScrollCue } from "./ScrollCue";
 import { SocialLinks, SocialRail } from "./SocialLinks";
 import { useScrollTo } from "@/components/Providers/SmoothScroll";
@@ -30,18 +30,18 @@ export function Hero() {
 
   return (
     <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col overflow-hidden">
-      <PixelField />
+      <DotField />
       {/* <HeroVideo /> goes back here once public/video/ has the files (see its README): without them it only
           requested a missing poster and videos. */}
       <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-6 gutter pb-8 pt-24 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-24">
         {/* The illustration follows the words on narrow screens (so the headline, statement and résumé come
             first on a phone) and takes the right-hand column on wide ones. It sits behind the written column's
             stacking context, so the links and buttons there still take their own clicks. */}
-        <div data-pixel-avoid className="order-2 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px] md:pr-14">
+        <div className="order-2 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px] md:pr-14">
           <HeroIllustration delay={intro.objects} />
         </div>
 
-        <div data-pixel-avoid className="relative z-10 order-1 md:order-1 md:col-span-6">
+        <div className="relative z-10 order-1 md:order-1 md:col-span-6">
           <HeroIdentity
             lines={[site.heroTitle.lead, site.heroTitle.mid, site.heroTitle.tail]}
             accent={site.heroTitle.accent}
