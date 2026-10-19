@@ -161,17 +161,6 @@ export function Navigation() {
                   <NavLink item={item} active={isHome && active === item.id} onClick={go(item.id)} />
                 </li>
               ))}
-              {/* the CV, one click from anywhere (what a recruiter opens first) */}
-              <li>
-                <a
-                  href={site.resume}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-small text-bone/60 transition-colors duration-300 hover:text-bone"
-                >
-                  <ScrambleText text="Résumé" /> <span aria-hidden>↗</span>
-                </a>
-              </li>
             </ul>
 
             {/* The one action the nav is for: straight into a WhatsApp chat. */}
