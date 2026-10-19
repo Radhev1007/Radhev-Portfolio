@@ -64,7 +64,7 @@ export function DesignSystem() {
         <div className="relative z-10 gutter mx-auto flex w-full max-w-[1600px] flex-col items-center text-center section-y lg:py-0">
           <span className="label !text-bone/70">(02)&nbsp;&nbsp;Systems thinking</span>
 
-          <h2 className="dot-matrix mt-8 max-w-[13ch] text-balance text-headline leading-[1.08] tracking-[0.01em] md:mt-10">
+          <h2 className="section-title mt-8 max-w-[13ch] text-balance md:mt-10">
             Design Beyond the Screen
           </h2>
 
