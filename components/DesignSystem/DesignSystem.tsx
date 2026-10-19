@@ -1,172 +1,179 @@
 "use client";
 
-import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import Image from "next/image";
-import { useRef, useState } from "react";
-import { TextReveal } from "@/components/Animations/TextReveal";
-import { SectionHeader } from "@/components/Projects/SectionHeader";
-import { useMediaQuery, usePrefersReducedMotion } from "@/lib/hooks";
-import { ease } from "@/lib/motion";
+import { useRef } from "react";
+import { usePrefersReducedMotion } from "@/lib/hooks";
 
-const layers = [
-  { k: "Tokens", img: "/system/tokens.webp", d: "Colour, type, spacing and radius — the smallest decisions, made once." },
-  { k: "Components", img: "/system/components.webp", d: "Buttons, inputs, toggles and cards with every state accounted for." },
-  { k: "Patterns", img: "/system/patterns.webp", d: "Forms, navigation and lists that solve recurring problems." },
-  { k: "Products", img: "/system/products.webp", d: "Screens and flows composed from the system, consistent by default." },
-];
+type Layer = {
+  k: string;
+  img: string;
+  d: string;
+  /** Which side the card travels up, and how far below the fold it starts, in vh. */
+  lane: "left" | "right";
+  start: number;
+};
 
 /**
- * From tablet up: a pinned stage that steps from tokens to finished
- * products as you scroll. On phones: a normal section with tappable layers.
- * The illustration redraws for each layer.
+ * The four layers, dealt alternately into the two lanes and spaced so that
+ * one card is crossing the stage at any point in the scroll.
+ */
+const layers: Layer[] = [
+  { k: "Tokens", img: "/system/tokens.webp", d: "Colour, type, spacing and radius — the smallest decisions, made once.", lane: "left", start: 80 },
+  { k: "Components", img: "/system/components.webp", d: "Buttons, inputs, toggles and cards with every state accounted for.", lane: "right", start: 135 },
+  { k: "Patterns", img: "/system/patterns.webp", d: "Forms, navigation and lists that solve recurring problems.", lane: "left", start: 190 },
+  { k: "Products", img: "/system/products.webp", d: "Screens and flows composed from the system, consistent by default.", lane: "right", start: 245 },
+];
+
+/** How far, in vh, each card climbs across the pinned scroll. */
+const TRAVEL = 230;
+
+/**
+ * A pinned stage with the statement held in the middle while the four
+ * layers climb past it on either side.
+ *
+ * The warm fade is the section's own background rather than a scroll-driven
+ * colour: the band is 320vh tall and the stage is sticky, so the gradient
+ * slides behind the held text on its own, and the same declaration reads
+ * correctly top-to-bottom on a phone where nothing is pinned.
+ *
+ * Below md, and whenever reduced motion is asked for, the lanes are dropped
+ * and the layers are listed under the statement instead.
  */
 export function DesignSystem() {
   const ref = useRef<HTMLElement>(null);
-  const [step, setStep] = useState(0);
-  const pinned = useMediaQuery("(min-width: 768px)", true);
+  const reduced = usePrefersReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
-  const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (pinned) setStep(Math.min(layers.length - 1, Math.floor(v * layers.length)));
-  });
+
+  const drifting = !reduced;
 
   return (
-    <section ref={ref} aria-label="Design beyond the screen" className="relative md:h-[280vh]">
-      <div className="flex items-center md:sticky md:top-0 md:min-h-[100svh]">
-        <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 gutter section-y md:grid-cols-12 md:gap-8">
-          <div className="md:col-span-5">
-            <SectionHeader index="02" label="Systems thinking" />
-            <TextReveal
-              as="h2"
-              text="Design Beyond the Screen"
-              className="section-title mt-8 max-w-[12ch] md:mt-12"
-            />
-            <p className="section-intro mt-3 md:mt-4">
-              Interfaces are systems before they are screens. A shared set of decisions keeps products coherent as they grow.
-            </p>
+    <section
+      ref={ref}
+      aria-label="Design beyond the screen"
+      className={`relative overflow-clip bg-[linear-gradient(180deg,#c23200_0%,#8d2705_26%,#431304_60%,#0a0a0a_100%)] ${drifting ? "lg:h-[320vh]" : ""}`}
+    >
+      {/* The dot grid the whole section is built on. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.22] [background-image:radial-gradient(rgb(255_255_255/0.6)_1px,transparent_1px)] [background-size:14px_14px]"
+      />
 
-            <ol className="mt-10 flex flex-col gap-2" aria-label="Design system layers">
-              {layers.map((l, i) => (
-                <li key={l.k} className="flex items-baseline gap-4">
-                  <span className="label w-6">0{i + 1}</span>
-                  <motion.button
-                    type="button"
-                    onClick={() => setStep(i)}
-                    aria-pressed={i === step}
-                    className="text-left text-[1.5rem] font-normal leading-[1.1] tracking-[-0.03em]"
-                    animate={{ opacity: i === step ? 1 : 0.5, x: i === step ? 0 : -6 }}
-                    transition={{ duration: 0.6, ease: ease.outExpo }}
-                  >
-                    {l.k}
-                  </motion.button>
-                </li>
-              ))}
-            </ol>
-            <motion.p
-              key={step}
-              className="mt-8 min-h-[3em] max-w-sm text-small leading-relaxed text-mute"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: ease.outExpo }}
-            >
-              {layers[step].d}
-            </motion.p>
-            <div className="mt-4 hidden h-px w-full max-w-sm bg-line md:block">
-              <motion.div className="h-px bg-accent" style={{ width: progressWidth }} />
-            </div>
-          </div>
+      <div className={`relative flex min-h-[100svh] flex-col justify-center ${drifting ? "lg:sticky lg:top-0 lg:h-[100svh]" : ""}`}>
+        {/* The statement, held in the middle of the stage. */}
+        <div className="relative z-10 gutter mx-auto flex w-full max-w-[1600px] flex-col items-center text-center section-y lg:py-0">
+          <span className="label !text-bone/70">(02)&nbsp;&nbsp;Systems thinking</span>
 
-          <div className="md:col-span-6 md:col-start-7">
-            {/* One photograph per layer, crossfaded inside a fixed frame. */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-card bg-ink-3">
-              <AnimatePresence initial={false}>
-                <motion.div
-                  key={step}
-                  className="absolute inset-0"
-                  initial={{ opacity: 0, scale: 0.96, y: 16 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 1.02, y: -8 }}
-                  transition={{ duration: 0.8, ease: ease.outExpo }}
-                >
-                  <LayerImage src={layers[step].img} label={layers[step].k} alt={`${layers[step].k}: ${layers[step].d}`} />
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
+          <h2 className="dot-matrix mt-8 max-w-[13ch] text-balance text-headline leading-[1.08] tracking-[0.01em] md:mt-10">
+            Design Beyond the Screen
+          </h2>
+
+          <p className="section-intro mt-6 max-w-[44ch] !text-bone/80 md:mt-8">
+            Interfaces are systems before they are screens. A shared set of decisions keeps products coherent as they grow.
+          </p>
+
+          <ScrollDot progress={scrollYProgress} active={drifting} />
         </div>
+
+        {/* After the statement, so a screen reader meets the heading before
+            the layers it introduces. Absolute either way, so the stage looks
+            the same; `z-0` against the statement's `z-10` keeps the text on top. */}
+        {drifting &&
+          layers.map((l, i) => (
+            <DriftCard key={l.k} layer={l} index={i} progress={scrollYProgress} />
+          ))}
+
+        {/* Phones, and anyone who asked for less motion, read the layers as a list. */}
+        <ol className={`relative z-10 gutter mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-6 pb-24 sm:grid-cols-2 ${drifting ? "lg:hidden" : "md:grid-cols-4 md:pb-32"}`}>
+          {layers.map((l, i) => (
+            <li key={l.k}>
+              <LayerCard layer={l} index={i} />
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );
 }
 
-/**
- * A layer's photograph with its own loading choreography.
- *
- * Until the file arrives the frame shows a skeleton — faint blocks under a
- * light sweep, with an accent bar running along the bottom — so the stage
- * never sits empty. When it lands, the photo wipes up from the bottom while
- * resolving from blur, then keeps a slow drift so a held step still feels
- * alive. Reduced motion gets a plain fade.
- */
-function LayerImage({ src, alt, label }: { src: string; alt: string; label: string }) {
-  const reduced = usePrefersReducedMotion();
-  const [loaded, setLoaded] = useState(false);
+/** One layer climbing its lane, from below the fold to above it. */
+function DriftCard({ layer, index, progress }: { layer: Layer; index: number; progress: MotionValue<number> }) {
+  const y = useTransform(progress, [0, 1], [`${layer.start}vh`, `${layer.start - TRAVEL}vh`]);
 
   return (
-    <>
-      <AnimatePresence>
-        {!loaded && (
-          <motion.div
-            key="skeleton"
-            aria-hidden
-            className="absolute inset-0 overflow-hidden bg-ink-3"
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <div className="absolute inset-6 flex flex-col gap-4 md:inset-10">
-              <div className="h-1/2 w-3/5 rounded-inner bg-bone/5" />
-              <div className="h-3 w-2/5 bg-bone/5" />
-              <div className="h-3 w-1/4 bg-bone/5" />
-            </div>
-            <div className="absolute inset-0 animate-[shimmer_1.6s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-bone/[0.07] to-transparent" />
-            <span className="label absolute bottom-6 left-6 md:bottom-10 md:left-10">Loading {label}</span>
-            <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-bone/10">
-              <div className="h-full w-full origin-left animate-[load-bar_1.4s_ease-in-out_infinite] bg-accent" />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <motion.div
+      style={{ y }}
+      className={`absolute top-0 z-0 hidden w-[clamp(15rem,20vw,20rem)] lg:block ${
+        layer.lane === "left" ? "left-[var(--gutter)]" : "right-[var(--gutter)]"
+      }`}
+    >
+      <LayerCard layer={layer} index={index} />
+    </motion.div>
+  );
+}
 
-      <motion.div
-        className="absolute inset-0"
-        initial={false}
-        animate={
-          loaded
-            ? { opacity: 1, clipPath: "inset(0% 0% 0% 0%)", filter: "blur(0px)", scale: 1 }
-            : { opacity: 0, clipPath: reduced ? "inset(0% 0% 0% 0%)" : "inset(100% 0% 0% 0%)", filter: reduced ? "blur(0px)" : "blur(16px)", scale: reduced ? 1 : 1.12 }
-        }
-        transition={{ duration: reduced ? 0.4 : 1.2, ease: ease.outExpo }}
-      >
-        {/* Slow drift once shown: a held step still moves. */}
-        <motion.div
-          className="absolute inset-0"
-          animate={loaded && !reduced ? { scale: [1, 1.06] } : undefined}
-          transition={{ duration: 14, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
-        >
-          <Image
-            src={src}
-            alt={alt}
-            fill
-            sizes="(min-width: 768px) 50vw, 100vw"
-            unoptimized
-            // Eager: the frame starts clipped and transparent, which can keep a
-            // lazy image from ever being requested. The files are small.
-            loading="eager"
-            onLoad={() => setLoaded(true)}
-            className="object-cover"
-          />
-        </motion.div>
-      </motion.div>
-    </>
+/**
+ * A layer as a card: the screen it produces, a strip of the grid, what it
+ * holds, and its place in the stack.
+ */
+function LayerCard({ layer, index }: { layer: Layer; index: number }) {
+  return (
+    <article className="border border-line bg-ink/70 p-3 backdrop-blur-md">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-ink-3">
+        <Image
+          src={layer.img}
+          alt=""
+          fill
+          sizes="(min-width: 768px) 22vw, 90vw"
+          unoptimized
+          className="object-cover"
+        />
+      </div>
+
+      <DotStrip seed={index} />
+
+      <h3 className="label mt-3 !text-bone">{layer.k}</h3>
+      <p className="mt-2 text-small leading-relaxed text-bone/60">{layer.d}</p>
+
+      <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
+        <span className="label">Design system</span>
+        <span className="label !text-accent">0{index + 1}</span>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * The grid itself, as a readout. Which cells are lit is derived from the
+ * layer's index rather than drawn at random, so the server and the client
+ * agree and the four cards stay visibly different from one another.
+ */
+function DotStrip({ seed }: { seed: number }) {
+  return (
+    <div
+      aria-hidden
+      className="mt-3 grid gap-[3px] [grid-template-columns:repeat(24,1fr)]"
+    >
+      {Array.from({ length: 48 }, (_, i) => {
+        const lit = (i * 7 + seed * 11) % 17 < 2;
+        return <span key={i} className={`aspect-square ${lit ? "bg-accent" : "bg-bone/15"}`} />;
+      })}
+    </div>
+  );
+}
+
+/** Progress through the stage, as the reference's record dot. */
+function ScrollDot({ progress, active }: { progress: MotionValue<number>; active: boolean }) {
+  const scale = useTransform(progress, [0, 1], [0.35, 1]);
+
+  return (
+    <div className="mt-12 hidden h-10 w-10 items-center justify-center rounded-full border border-accent lg:mt-16 lg:flex">
+      <motion.span
+        aria-hidden
+        className="block h-3 w-3 rounded-full bg-accent"
+        style={active ? { scale } : undefined}
+      />
+      <span className="sr-only">Scroll to step through the system</span>
+    </div>
   );
 }

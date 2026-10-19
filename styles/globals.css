@@ -227,6 +227,31 @@ html.has-custom-cursor * {
   border: 1px solid rgb(255 255 255 / 0.12);
 }
 
+/* ── Dot matrix ───────────────────────────────────────────────────
+   Punches a dot grid through whatever it is set on, so a headline reads as
+   a pixel-grid rendering of the site's own typeface instead of needing a
+   second font. The cell is sized in `em`, so one utility covers every step
+   of the type scale, and the weight is raised because a 300 stroke does not
+   survive being dotted. */
+@utility dot-matrix {
+  --dot-cell: 0.08em;
+  font-weight: 500;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 44%, transparent 50%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 44%, transparent 50%);
+  -webkit-mask-size: var(--dot-cell) var(--dot-cell);
+  mask-size: var(--dot-cell) var(--dot-cell);
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+/* Readability wins over texture when the reader has asked for contrast. */
+@media (prefers-contrast: more) {
+  .dot-matrix {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
 /* The light display voice, against the regular body copy. */
 @utility font-accent {
   font-family: var(--font-sans);
