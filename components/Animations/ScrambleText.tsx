@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
 /**
@@ -12,8 +12,7 @@ import { usePrefersReducedMotion } from "@/lib/hooks";
  * While it plays, the real text keeps the width (made transparent) and the
  * scramble is drawn over it, so a proportional typeface never makes the layout
  * jitter; at rest the element is just the text, for screen readers and search
- * engines alike. `wrap` does the same word by word, so a paragraph still
- * wraps and its lines never reflow while it plays; `stagger` is the steps
+ * engines alike. `stagger` is the steps
  * between one letter settling and the next (lower for long text). Nothing plays
  * for reduced motion.
  */
@@ -25,10 +24,9 @@ const pick = (s: string) => s[Math.floor(Math.random() * s.length)];
 const noise = (c: string) =>
   c === " " ? " " : Math.random() < 0.3 ? pick(MARKS) : c === c.toUpperCase() && c !== c.toLowerCase() ? pick(UPPER) : pick(LOWER);
 
-export function ScrambleText({ text, onMount = false, wrap = false, stagger = 1.6, className }: {
+export function ScrambleText({ text, onMount = false, stagger = 1.6, className }: {
   text: string;
   onMount?: boolean;
-  wrap?: boolean;
   stagger?: number;
   className?: string;
 }) {
@@ -62,26 +60,6 @@ export function ScrambleText({ text, onMount = false, wrap = false, stagger = 1.
     };
   }, [text, onMount, reduced, stagger]);
 
-  if (wrap) {
-    const live = shown?.split(" ");   // the scramble keeps the spaces, so its words line up with the text's
-    return (
-      <span ref={ref} className={className}>
-        {text.split(" ").map((word, i) => (
-          <Fragment key={i}>
-            {i > 0 && " "}
-            <span className="relative inline-block">
-              <span className={live ? "text-transparent" : undefined}>{word}</span>
-              {live && (
-                <span aria-hidden className="absolute inset-0 overflow-hidden whitespace-nowrap">
-                  {live[i]}
-                </span>
-              )}
-            </span>
-          </Fragment>
-        ))}
-      </span>
-    );
-  }
   return (
     <span ref={ref} className={`relative inline-block whitespace-nowrap ${className ?? ""}`}>
       <span className={shown === null ? undefined : "text-transparent"}>{text}</span>
