@@ -77,8 +77,6 @@ export function HeroIllustration({ delay = 0 }: { delay?: number }) {
           animate={live ? { x: CURSOR_X } : undefined}
           transition={loop()}
         />
-        <text x="60" y="58" fill={ill.grey} fontSize="11" letterSpacing="1.5">FRAME — 01</text>
-        <text x="480" y="58" fill={ill.grey} fontSize="11" textAnchor="end" letterSpacing="1.5">1440 × 1024</text>
       </motion.g>
 
       {/* Artboard + 6-column grid with a sweeping highlight */}
