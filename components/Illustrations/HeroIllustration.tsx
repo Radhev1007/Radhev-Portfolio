@@ -262,7 +262,6 @@ export function HeroIllustration({ delay = 0 }: { delay?: number }) {
           animate={live ? { opacity: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], scale: [1, 1, 1, 1, 1.8, 1.8, 1, 1, 1, 1, 1] } : undefined}
           transition={loop()}
         />
-        <text x="480" y="612" fill={ill.grey} fontSize="11" textAnchor="end" letterSpacing="1.5">AUTO LAYOUT · 24</text>
       </motion.g>
 
       {/* Cursor + tag — the session's protagonist */}
