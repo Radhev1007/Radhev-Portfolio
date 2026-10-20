@@ -120,12 +120,16 @@ function LayerCard({ layer, index }: { layer: Layer; index: number }) {
   return (
     <article className="border border-line bg-ink/70 p-3 backdrop-blur-md">
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-ink-3">
+        {/* The sources are 1280×960 but a card is never wider than 20rem, so
+            this goes through the optimiser rather than carrying `unoptimized`:
+            raw, the four of them were 193 kB. The static export turns the
+            optimiser off globally in next.config.ts, so that build is
+            unaffected either way. */}
         <Image
           src={layer.img}
           alt=""
           fill
-          sizes="(min-width: 768px) 22vw, 90vw"
-          unoptimized
+          sizes="(min-width: 1024px) 20rem, (min-width: 640px) 45vw, 90vw"
           className="object-cover"
         />
       </div>
