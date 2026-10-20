@@ -31,8 +31,6 @@ export function Hero() {
   return (
     <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col overflow-hidden">
       <PixelField />
-      {/* <HeroVideo /> goes back here once public/video/ has the files (see its README): without them it only
-          requested a missing poster and videos. */}
       <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-6 gutter pb-8 pt-24 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-24">
         {/* The illustration follows the words on narrow screens (so the headline, statement and résumé come
             first on a phone) and takes the right-hand column on wide ones. It sits behind the written column's
