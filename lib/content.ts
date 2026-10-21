@@ -34,7 +34,7 @@ export const site = {
   /** The nav's "Let's talk" opens a WhatsApp chat with this number. */
   whatsapp: "https://wa.me/918089821700",
   /** Hosted on Drive, so the CV can be updated without a deploy. */
-  resume: "https://drive.google.com/file/d/1FGt65CDoKoxUXWIjAgswC5341gIOfaFl/view?usp=sharing",
+  resume: "https://drive.google.com/file/d/1aZVd8yCqh1uFCw_0ubPjlkxiKlwqtgYv/view?usp=sharing",
   location: "Kollam, Kerala",
   statement:
     "UI/UX & Product Designer specialising in enterprise SaaS, government platforms, dashboards, fintech products and scalable design systems.",
