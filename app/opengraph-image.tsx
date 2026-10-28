@@ -8,7 +8,7 @@ import { fullName } from "@/lib/seo";
  * once at build time.
  */
 export const dynamic = "force-static";
-export const alt = `${fullName} — UI/UX & Product Designer`;
+export const alt = `${fullName} — ${site.role}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -29,9 +29,8 @@ export default function Image() {
         <div style={{ display: "flex", flexDirection: "column", fontSize: 76, lineHeight: 1.04, letterSpacing: -2 }}>
           <div>{lead}</div>
           <div style={{ display: "flex", gap: 20 }}>
-            <span>digital</span>
-            <span style={{ color: ACCENT }}>products</span>
-            <span>into</span>
+            <span style={{ color: ACCENT }}>enterprise</span>
+            <span>products</span>
           </div>
           <div>{tail}</div>
         </div>

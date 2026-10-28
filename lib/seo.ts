@@ -8,8 +8,8 @@ import { experience, projects, site, specialisms, workPath, type Project } from 
  * about 155 characters so it is not cut in results.
  */
 export const fullName = `${site.name.first} ${site.name.last}`;
-export const seoTitle = `${fullName} — UI/UX & Product Designer`;
-export const seoDescription = `${fullName} is a UI/UX and product designer in Kerala, India, designing enterprise SaaS, government platforms, dashboards, fintech products and design systems.`;
+export const seoTitle = `${fullName} — Senior UI/UX & Product Designer`;
+export const seoDescription = `${fullName} is a senior UI/UX and product designer in Kerala, India, with 5 years designing enterprise SaaS, fintech and government products for Qatar and the GCC.`;
 export const seoKeywords = [
   fullName,
   "Radhev",

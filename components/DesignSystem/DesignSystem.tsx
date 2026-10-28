@@ -19,10 +19,10 @@ type Layer = {
  * one card is crossing the stage at any point in the scroll.
  */
 const layers: Layer[] = [
-  { k: "Tokens", img: "/system/tokens.webp", d: "Colour, type, spacing and radius — the smallest decisions, made once.", lane: "left", start: 80 },
-  { k: "Components", img: "/system/components.webp", d: "Buttons, inputs, toggles and cards with every state accounted for.", lane: "right", start: 135 },
-  { k: "Patterns", img: "/system/patterns.webp", d: "Forms, navigation and lists that solve recurring problems.", lane: "left", start: 190 },
-  { k: "Products", img: "/system/products.webp", d: "Screens and flows composed from the system, consistent by default.", lane: "right", start: 245 },
+  { k: "Tokens", img: "/system/tokens.webp", d: "Design tokens and Figma variables for colour, type, spacing and radius, decided once.", lane: "left", start: 80 },
+  { k: "Components", img: "/system/components.webp", d: "Components and variants built with Auto Layout, with every state accounted for.", lane: "right", start: 135 },
+  { k: "Patterns", img: "/system/patterns.webp", d: "User flows, forms, navigation and data-heavy dashboards that solve recurring problems.", lane: "left", start: 190 },
+  { k: "Products", img: "/system/products.webp", d: "400+ screens across 18+ client projects, accessible (WCAG) and developer-ready.", lane: "right", start: 245 },
 ];
 
 /** How far, in vh, each card climbs across the pinned scroll. */
@@ -69,7 +69,7 @@ export function DesignSystem() {
           </h2>
 
           <p className="section-intro mt-6 max-w-[44ch] !text-bone/80 md:mt-8">
-            Interfaces are systems before they are screens. A shared set of decisions keeps products coherent as they grow.
+            Interfaces are systems before they are screens. Scalable Figma design systems of tokens, components and variants keep products coherent as they grow.
           </p>
 
           <ScrollDot progress={scrollYProgress} active={drifting} />
@@ -120,16 +120,12 @@ function LayerCard({ layer, index }: { layer: Layer; index: number }) {
   return (
     <article className="border border-line bg-ink/70 p-3 backdrop-blur-md">
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-ink-3">
-        {/* The sources are 1280×960 but a card is never wider than 20rem, so
-            this goes through the optimiser rather than carrying `unoptimized`:
-            raw, the four of them were 193 kB. The static export turns the
-            optimiser off globally in next.config.ts, so that build is
-            unaffected either way. */}
         <Image
           src={layer.img}
           alt=""
           fill
-          sizes="(min-width: 1024px) 20rem, (min-width: 640px) 45vw, 90vw"
+          sizes="(min-width: 768px) 22vw, 90vw"
+          unoptimized
           className="object-cover"
         />
       </div>

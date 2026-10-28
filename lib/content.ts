@@ -17,14 +17,14 @@ export const site = {
    */
   heroTitle: {
     lead: "I design complex",
-    mid: "digital products into",
-    tail: "clear experiences.",
+    mid: "enterprise products",
+    tail: "that feel simple.",
     /** Set in the accent colour wherever it appears in the headline. */
-    accent: "products",
+    accent: "enterprise",
   },
   brand: "Radhev R",
   /** One wording everywhere: the hero, the footer, the share card and structured data. */
-  role: "UI/UX & Product Designer",
+  role: "Senior UI/UX & Product Designer",
   /** The live address: canonical URL, sitemap, share cards and structured data are built on it. */
   url: "https://www.radhev.in",
   available: true,
@@ -37,7 +37,7 @@ export const site = {
   resume: "https://drive.google.com/file/d/1aZVd8yCqh1uFCw_0ubPjlkxiKlwqtgYv/view?usp=sharing",
   location: "Kollam, Kerala",
   statement:
-    "UI/UX & Product Designer specialising in enterprise SaaS, government platforms, dashboards, fintech products and scalable design systems.",
+    "Senior UI/UX & Product Designer with 5 years of experience delivering user-centred products across enterprise SaaS, fintech and government, with 18+ client projects for Qatar and the GCC.",
   /**
    * The hero's two actions. The CV is the primary — it is what a recruiter
    * opens first — and the secondary jumps to the work, the evidence behind it.
@@ -439,43 +439,45 @@ export type Role = {
 /** Roles in reverse chronological order; `to` of "Present" marks the current one. */
 export const experience: Role[] = [
   {
-    company: "Appstation",
+    company: "Appstation Pvt Ltd",
     location: "Technopark, Trivandrum",
-    title: "UI/UX Designer",
+    title: "Senior UI/UX Designer",
     from: "Jan 2025",
     to: "Present",
     points: [
-      "Translate complex client requirements into intuitive UX solutions for GCC-region clients across Government, Fintech, SaaS, HRTech, Media and Events.",
-      "Create wireframes, user flows and high-fidelity mockups in Figma using Auto Layout, components and variants for scalable design systems.",
-      "Use AI-assisted design workflows, including Figma MCP, to shorten delivery and iteration cycles.",
-      "Deliver front-end-ready specifications in HTML and CSS so developers can implement pixel-perfect.",
-      "Manage stakeholder expectations across cross-functional teams in fast-paced project environments.",
+      "Delivered end-to-end product design for 18+ client projects across 6 domains for Qatar and GCC clients.",
+      "Key clients: Invest Qatar, Milaha, MOCI, MOT, NPC, QOC, QFZ, Joud BNPL and Applabtracker CRM.",
+      "Designed information architecture, user flows, wireframes and interactive prototypes for 400+ screens.",
+      "Built scalable UI with design tokens, components, variants and Auto Layout.",
+      "Used Figma MCP and Figma AI to speed up design delivery by 30%.",
+      "Delivered developer-ready specs and ran design QA on built screens.",
+      "Mentored 2 junior designers and led design reviews in Agile/Scrum teams.",
     ],
   },
   {
-    company: "Beinex Consulting",
+    company: "Beinex Consulting Pvt Ltd",
     location: "Infopark, Kochi",
     title: "UI/UX Designer",
     from: "Apr 2023",
     to: "Nov 2024",
     points: [
-      "Designed a leading enterprise Governance, Risk and Compliance SaaS product across web, mobile and tablet.",
-      "Built and maintained a scalable Figma design system, keeping every product touchpoint consistent and faster to ship.",
-      "Worked closely with development teams on pixel-perfect, responsive and accessible implementation.",
-      "Ran usability testing sessions and refined concepts through competitive analysis and feedback-driven iteration.",
+      "Delivered a complete UX/UI redesign of Aurex (aurex.ai), an AI-powered B2B GRC SaaS platform.",
+      "Designed data-heavy dashboards and reporting views across 21 modules: 14 for web and tablet, 7 for mobile.",
+      "Built and maintained a Figma design system with tokens and variables.",
+      "Ran usability testing, heuristic evaluations and Hotjar analysis to drive design iterations.",
+      "Shipped responsive, accessible (WCAG) UI in close collaboration with developers.",
     ],
   },
   {
-    company: "OrisysIndia Consultancy Services",
+    company: "OrisysIndia Consultancy Services LLP",
     location: "Technopark, Trivandrum",
     title: "UI/UX Designer",
     from: "Oct 2021",
     to: "Apr 2023",
     points: [
-      "Designed interfaces for web apps, mobile apps and websites across Education and IT & Technology.",
-      "Delivered end-to-end artifacts: requirement gathering, user flows, wireframes, high-fidelity mockups and interactive prototypes.",
-      "Translated designs into front-end-ready specifications and supported developers through handoff.",
-      "Partnered with project managers, BA teams and clients to align designs with user needs and business goals.",
+      "Designed and delivered 10+ client projects across Education, IT and Government domains, including websites, dashboards and mobile applications.",
+      "Took projects from requirements and user flows to interactive Figma prototypes.",
+      "Prepared front-end-ready specs for pixel-perfect developer handoff.",
     ],
   },
 ];
