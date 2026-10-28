@@ -442,7 +442,7 @@ export const experience: Role[] = [
     company: "Appstation Pvt Ltd",
     location: "Technopark, Trivandrum",
     title: "Senior UI/UX Designer",
-    from: "Jan 2025",
+    from: "Dec 2025",
     to: "Present",
     points: [
       "Delivered end-to-end product design for 18+ client projects across 6 domains for Qatar and GCC clients.",
