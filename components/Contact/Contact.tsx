@@ -41,13 +41,13 @@ export function Contact() {
         {/* ── The ask ─────────────────────────────── */}
         <div className="lg:col-span-6">
           <h2 className="section-title max-w-[16ch]">
-            <TextReveal as="span" text="Let's build" className="block" />{" "}
-            <TextReveal as="span" text="something good." delay={0.1} className="block font-accent text-bone/60" />
+            <TextReveal as="span" text="Let's create meaningful" className="block" />{" "}
+            <TextReveal as="span" text="digital experiences." delay={0.1} className="block font-accent text-bone/60" />
           </h2>
 
           <Reveal delay={0.15}>
             <p className="section-intro mt-6 md:mt-8">
-              Have a complex product, ambitious idea or design challenge? Let&apos;s talk.
+              I&apos;m interested in opportunities where I can solve complex problems, collaborate with multidisciplinary teams, and build thoughtful, scalable digital products.
             </p>
           </Reveal>
 

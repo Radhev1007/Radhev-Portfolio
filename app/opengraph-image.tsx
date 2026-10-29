@@ -15,7 +15,7 @@ export const contentType = "image/png";
 const INK = "#0b0b0c", BONE = "#ece8e1", ACCENT = "#ff4d1a", DIM = "rgba(236,232,225,0.55)";
 
 export default function Image() {
-  const { lead, tail } = site.heroTitle;
+  const { lead, mid, tail, accent } = site.heroTitle;
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: INK, color: BONE, padding: "72px 80px" }}>
@@ -29,8 +29,9 @@ export default function Image() {
         <div style={{ display: "flex", flexDirection: "column", fontSize: 76, lineHeight: 1.04, letterSpacing: -2 }}>
           <div>{lead}</div>
           <div style={{ display: "flex", gap: 20 }}>
-            <span style={{ color: ACCENT }}>enterprise</span>
-            <span>products</span>
+            {mid.split(" ").map((w) => (
+              <span key={w} style={w === accent ? { color: ACCENT } : undefined}>{w}</span>
+            ))}
           </div>
           <div>{tail}</div>
         </div>

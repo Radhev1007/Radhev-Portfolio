@@ -8,19 +8,24 @@ import { experience, projects, site, specialisms, workPath, type Project } from 
  * about 155 characters so it is not cut in results.
  */
 export const fullName = `${site.name.first} ${site.name.last}`;
-export const seoTitle = `${fullName} — Senior UI/UX & Product Designer`;
-export const seoDescription = `${fullName} is a senior UI/UX and product designer in Kerala, India, with 5 years designing enterprise SaaS, fintech and government products for Qatar and the GCC.`;
+export const seoTitle = `${fullName} | Senior UI/UX & Product Designer`;
+export const seoDescription = `Explore the portfolio of ${fullName}, a Senior UI/UX and Product Designer with 5 years of experience in enterprise SaaS, product design, dashboards and scalable design systems.`;
 export const seoKeywords = [
   fullName,
   "Radhev",
-  "UI/UX designer",
-  "product designer",
+  "Senior UI/UX Designer",
+  "Senior Product Designer",
+  "UI/UX designer in India",
+  "product design",
   "UX designer Kerala",
   "UI designer Kochi",
   "UI/UX designer Trivandrum",
-  "enterprise SaaS design",
+  "enterprise SaaS UX",
   "dashboard design",
-  "design systems",
+  "UX design systems",
+  "Figma design systems",
+  "user-centred design",
+  "usability testing",
   "fintech UX",
   "government platform UX",
   "Figma",
@@ -85,7 +90,7 @@ export function homeJsonLd() {
         email: `mailto:${site.email}`,
         address: { "@type": "PostalAddress", addressLocality: "Kollam", addressRegion: "Kerala", addressCountry: "IN" },
         ...(current ? { worksFor: { "@type": "Organization", name: current.company } } : {}),
-        knowsAbout: [...specialisms.map((s) => s.title), "UI design", "UX design", "Figma", "Enterprise SaaS", "Dashboards", "Fintech"],
+        knowsAbout: [...specialisms.map((s) => s.title), "UI design", "UX design", "Figma", "Enterprise SaaS", "Dashboard design", "Usability testing", "Fintech"],
         sameAs: site.socials.map((s) => s.href),
         workExample: projects.map(creativeWork),
       },

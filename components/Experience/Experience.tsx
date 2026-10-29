@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Reveal } from "@/components/Animations/Reveal";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
-import { experience, type Role } from "@/lib/content";
+import { education, experience, skills, type Role } from "@/lib/content";
 import { ease } from "@/lib/motion";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -220,6 +220,39 @@ export function Experience() {
               );
             })}
           </ol>
+        </div>
+
+        {/* ── Skills & education ──────────────────── */}
+        <div className="mt-24 grid grid-cols-1 gap-12 md:mt-32 lg:grid-cols-12 lg:gap-8">
+          <Reveal className="lg:col-span-4">
+            <h3 className="text-item font-normal leading-[1.1] tracking-[-0.03em]">
+              Skills &amp; <span className="font-accent text-bone/60">education</span>
+            </h3>
+          </Reveal>
+
+          <div className="lg:col-span-7 lg:col-start-6">
+            <dl className="border-b border-line">
+              {skills.map((g) => (
+                <div key={g.group} className="grid grid-cols-1 gap-2 border-t border-line py-6 sm:grid-cols-[10rem_1fr] sm:gap-6">
+                  <dt className="label pt-1">{g.group}</dt>
+                  <dd className="text-body leading-relaxed text-mute">{g.items.join(" · ")}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <p className="label mt-16 !text-bone">Education &amp; certifications</p>
+            <ul className="mt-4 border-b border-line">
+              {education.map((e) => (
+                <li key={e.title} className="grid grid-cols-1 gap-2 border-t border-line py-6 sm:grid-cols-[1fr_auto] sm:gap-6">
+                  <span>
+                    <span className="block text-body text-bone">{e.title}</span>
+                    <span className="label mt-1.5 block">{e.issuer}</span>
+                  </span>
+                  <span className="label tabular-nums sm:text-right">{e.years}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </section>

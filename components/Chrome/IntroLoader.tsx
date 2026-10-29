@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { ScrambleText } from "@/components/Animations/ScrambleText";
 import { useLenis } from "@/components/Providers/SmoothScroll";
+import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, INTRO_HOLD } from "@/lib/motion";
 
@@ -140,7 +141,7 @@ export function IntroLoader() {
             transition={{ duration: 0.3 }}
           >
             <div className="mb-3 flex min-h-[1.25em] justify-between font-medium tabular-nums text-[0.75rem] uppercase tracking-[0.14em] text-mute">
-              <span>{live && "UI/UX & Product Designer"}</span>
+              <span>{live && site.role}</span>
               <span ref={pct} className="tabular-nums text-bone" />
             </div>
             <div className="h-px w-full bg-bone/15">

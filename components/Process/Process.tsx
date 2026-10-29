@@ -22,7 +22,7 @@ function Intro() {
       <TextReveal as="h2" text="How I Design" className="section-title mt-8 md:mt-12" />
       <Reveal delay={0.15} className="mt-6 md:mt-8">
         <p className="section-intro">
-          A flexible, evidence-led process — six stages that move from understanding to a refined, shippable product.
+          Six stages from business requirements to design QA: how complex products get from a brief to a build that matches the design.
         </p>
       </Reveal>
     </div>
@@ -78,7 +78,7 @@ function HorizontalProcess() {
           <div className="h-0.5 flex-1 bg-bone/15">
             <motion.div className="h-0.5 bg-accent" style={{ width: bar }} />
           </div>
-          <span className="label !text-bone/80">Refine</span>
+          <span className="label !text-bone/80">Deliver</span>
         </div>
       </div>
     </section>

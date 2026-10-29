@@ -17,10 +17,10 @@ export const site = {
    */
   heroTitle: {
     lead: "I design complex",
-    mid: "enterprise products",
-    tail: "that feel simple.",
+    mid: "digital products into",
+    tail: "clear experiences.",
     /** Set in the accent colour wherever it appears in the headline. */
-    accent: "enterprise",
+    accent: "products",
   },
   brand: "Radhev R",
   /** One wording everywhere: the hero, the footer, the share card and structured data. */
@@ -37,13 +37,13 @@ export const site = {
   resume: "https://drive.google.com/file/d/1aZVd8yCqh1uFCw_0ubPjlkxiKlwqtgYv/view?usp=sharing",
   location: "Kollam, Kerala",
   statement:
-    "Senior UI/UX & Product Designer with 5 years of experience delivering user-centred products across enterprise SaaS, fintech and government, with 18+ client projects for Qatar and the GCC.",
+    "I'm a Senior UI/UX and Product Designer with 5 years of experience creating user-centred digital products across enterprise SaaS, fintech, government and other business domains. I've contributed to 18+ client projects across Qatar and the GCC, specialising in product design, scalable design systems, complex dashboards and developer-ready experiences.",
   /**
    * The hero's two actions. The CV is the primary — it is what a recruiter
    * opens first — and the secondary jumps to the work, the evidence behind it.
    */
   heroCtas: {
-    secondary: { label: "View Work", target: "work" },
+    secondary: { label: "View Selected Work", target: "work" },
   },
   /** Shown as icons in the hero's social rail, in this order. */
   socials: [
@@ -485,7 +485,24 @@ export const experience: Role[] = [
 
 
 
-/** Text stands in until real marks are supplied; the strip renders either. */
+/* ── Skills & education ─────────────────────────────────────── */
+
+/** Grouped as on the résumé, without proficiency ratings. */
+export const skills: { group: string; items: string[] }[] = [
+  { group: "UX design", items: ["User research", "Usability testing", "A/B testing", "User journeys & flows", "Information architecture", "Wireframing", "Prototyping"] },
+  { group: "UI & product design", items: ["Visual design", "Interaction design", "Dashboard design", "Responsive UI", "Accessibility (WCAG)"] },
+  { group: "Design systems", items: ["Design tokens", "Figma variables", "Components & variants", "Auto Layout", "Scalable design systems"] },
+  { group: "Tools", items: ["Figma", "Adobe XD", "Photoshop", "Illustrator", "Miro", "Zeplin", "Jira", "Hotjar"] },
+  { group: "AI & front end", items: ["Figma MCP", "Figma AI", "Claude", "ChatGPT", "HTML", "CSS", "Bootstrap", "React (working knowledge)"] },
+  { group: "Product delivery", items: ["Agile/Scrum", "Developer handoff", "Design QA", "Design reviews", "Stakeholder collaboration", "Cross-functional collaboration"] },
+];
+
+export const education: { title: string; issuer: string; years: string }[] = [
+  { title: "B.Com with Computer Applications", issuer: "KVVS College of Science & Technology, Kerala University", years: "2017 – 2020" },
+  { title: "UI/UX Design and Visual Communications, General", issuer: "Professional Certification, Avodha", years: "2021" },
+  { title: "Enterprise Design Thinking Practitioner & Co-Creator", issuer: "IBM", years: "2022 – 2023" },
+  { title: "UX Foundations: Style Guides and Design Systems; Digital Skills: User Experience", issuer: "Certifications", years: "2023" },
+];
 /* ── Specialisms ───────────────────────────────────────────── */
 
 export type Specialism = { id: string; title: string; blurb: string };
@@ -495,28 +512,28 @@ export const specialisms: Specialism[] = [
   {
     id: "product",
     title: "Product design",
-    blurb: "Complex workflows, SaaS products, dashboards and enterprise platforms.",
+    blurb: "End-to-end design for enterprise SaaS and complex business applications, from requirements and user flows to interactive prototypes.",
   },
   {
     id: "systems",
     title: "Design systems",
-    blurb: "Tokens, components, variants, patterns and scalable UI libraries.",
+    blurb: "Scalable Figma design systems built on design tokens, variables, reusable components, variants and Auto Layout.",
   },
   {
     id: "strategy",
-    title: "UX strategy",
-    blurb: "Research, information architecture, user flows and usability.",
+    title: "UX research & usability",
+    blurb: "User research, usability testing, heuristic evaluation, A/B testing and Hotjar analysis that steer each iteration.",
   },
   {
     id: "visual",
-    title: "Visual design",
-    blurb: "Typography, hierarchy, responsive UI and interaction design.",
+    title: "Visual & interaction design",
+    blurb: "Data-heavy dashboards and responsive, accessible interfaces that follow WCAG principles.",
   },
   {
     id: "handoff",
     title: "Design → development",
     blurb:
-      "Developer handoff, HTML/CSS understanding and collaboration with engineering teams.",
+      "Developer-ready specs, design QA and AI-assisted workflows with Figma MCP, Figma AI, Claude and ChatGPT, backed by working HTML, CSS and React knowledge.",
   },
 ];
 
@@ -525,12 +542,12 @@ export const specialisms: Specialism[] = [
 /* ── Process ────────────────────────────────────────────────── */
 
 export const processSteps = [
-  { n: "01", title: "Discover", body: "Understand users, business objectives, constraints, and context." },
-  { n: "02", title: "Define", body: "Identify problems, opportunities, and product priorities." },
-  { n: "03", title: "Structure", body: "Build information architecture, user flows, and wireframes." },
-  { n: "04", title: "Design", body: "Create visual systems, components, and high-fidelity interfaces." },
-  { n: "05", title: "Prototype", body: "Build realistic interactions and validate the experience." },
-  { n: "06", title: "Refine", body: "Iterate based on feedback, testing, and product requirements." },
+  { n: "01", title: "Discover", body: "Understand business requirements, user needs and the constraints of the product." },
+  { n: "02", title: "Structure", body: "Define the information architecture and the user flows that hold it together." },
+  { n: "03", title: "Prototype", body: "Turn flows into wireframes and interactive Figma prototypes." },
+  { n: "04", title: "Systemise", body: "Build scalable interface components and the design system behind them." },
+  { n: "05", title: "Validate", body: "Test with usability evaluations, heuristic reviews and feedback, then iterate." },
+  { n: "06", title: "Deliver", body: "Work with developers through implementation and run design QA to keep quality consistent." },
 ] as const;
 
 
