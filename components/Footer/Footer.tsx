@@ -1,6 +1,7 @@
 "use client";
 
 import { ScrambleText } from "@/components/Animations/ScrambleText";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Magnetic } from "@/components/Animations/Magnetic";
@@ -15,8 +16,15 @@ export function Footer() {
 
   return (
     <footer className="relative overflow-hidden border-t border-line pt-10">
+      {/* The mark in 3D (radhev-3d-logo/build_logo.py), rising from the lower right behind everything, with
+          the accent glowing under it as in the render. Decorative, so hidden from assistive tech. */}
+      <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 z-0 w-[min(50vw,320px)] select-none md:-bottom-8 md:-right-4">
+        <div className="absolute -inset-[15%] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-accent)_38%,transparent),transparent)] blur-3xl" />
+        <Image src="/radhev-mark-3d.webp" alt="" width={831} height={900} sizes="(min-width: 768px) 320px, 50vw" className="relative h-auto w-full" />
+      </div>
+
       {/* Marquee */}
-      <div aria-hidden className="flex overflow-hidden whitespace-nowrap border-b border-line pb-10">
+      <div aria-hidden className="relative z-10 flex overflow-hidden whitespace-nowrap border-b border-line pb-10">
         <div className="flex shrink-0 [animation:marquee_38s_linear_infinite]">
           {Array.from({ length: 2 }, (_, k) => (
             <span key={k} className="flex shrink-0 items-center">
@@ -32,7 +40,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="gutter mx-auto grid max-w-[1600px] grid-cols-2 gap-10 py-14 md:grid-cols-12">
+      <div className="relative z-10 gutter mx-auto grid max-w-[1600px] grid-cols-2 gap-10 py-14 md:grid-cols-12">
         <div className="col-span-2 md:col-span-5">
           {/* The nav's lockup, at the nav's size. */}
           <Link
@@ -101,7 +109,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="gutter mx-auto flex max-w-[1600px] flex-col gap-2 border-t border-line py-6 text-caption text-mute md:flex-row md:justify-between">
+      <div className="relative z-10 gutter mx-auto flex max-w-[1600px] flex-col gap-2 border-t border-line py-6 text-caption text-mute md:flex-row md:justify-between">
         <p>
           © {year} — All rights reserved.
         </p>
