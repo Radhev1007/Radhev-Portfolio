@@ -444,24 +444,6 @@ export const experience: Role[] = [
 
 
 
-/* ── Skills & education ─────────────────────────────────────── */
-
-/** Grouped as on the résumé, without proficiency ratings. */
-export const skills: { group: string; items: string[] }[] = [
-  { group: "UX design", items: ["User research", "Usability testing", "A/B testing", "User journeys & flows", "Information architecture", "Wireframing", "Prototyping"] },
-  { group: "UI & product design", items: ["Visual design", "Interaction design", "Dashboard design", "Responsive UI", "Accessibility (WCAG)"] },
-  { group: "Design systems", items: ["Design tokens", "Figma variables", "Components & variants", "Auto Layout", "Scalable design systems"] },
-  { group: "Tools", items: ["Figma", "Adobe XD", "Photoshop", "Illustrator", "Miro", "Zeplin", "Jira", "Hotjar"] },
-  { group: "AI & front end", items: ["Figma MCP", "Figma AI", "Claude", "ChatGPT", "HTML", "CSS", "Bootstrap", "React (working knowledge)"] },
-  { group: "Product delivery", items: ["Agile/Scrum", "Developer handoff", "Design QA", "Design reviews", "Stakeholder collaboration", "Cross-functional collaboration"] },
-];
-
-export const education: { title: string; issuer: string; years: string }[] = [
-  { title: "B.Com with Computer Applications", issuer: "KVVS College of Science & Technology, Kerala University", years: "2017 – 2020" },
-  { title: "UI/UX Design and Visual Communications, General", issuer: "Professional Certification, Avodha", years: "2021" },
-  { title: "Enterprise Design Thinking Practitioner & Co-Creator", issuer: "IBM", years: "2022 – 2023" },
-  { title: "UX Foundations: Style Guides and Design Systems; Digital Skills: User Experience", issuer: "", years: "2023" },
-];
 /* ── Specialisms ───────────────────────────────────────────── */
 
 export type Specialism = { id: string; title: string; blurb: string };
