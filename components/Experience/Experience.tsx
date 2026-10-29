@@ -246,7 +246,7 @@ export function Experience() {
                 <li key={e.title} className="grid grid-cols-1 gap-2 border-t border-line py-6 sm:grid-cols-[1fr_auto] sm:gap-6">
                   <span>
                     <span className="block text-body text-bone">{e.title}</span>
-                    <span className="label mt-1.5 block">{e.issuer}</span>
+                    {e.issuer && <span className="label mt-1.5 block">{e.issuer}</span>}
                   </span>
                   <span className="label tabular-nums sm:text-right">{e.years}</span>
                 </li>

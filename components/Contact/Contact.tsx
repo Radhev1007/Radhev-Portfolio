@@ -14,7 +14,6 @@ import { ease } from "@/lib/motion";
 const channels = [
   { label: "Email", value: site.email, href: `mailto:${site.email}` },
   { label: "WhatsApp", value: site.phone, href: site.whatsapp, external: true },
-  { label: "Phone", value: site.phone, href: `tel:${site.phone.replace(/\s/g, "")}` },
   { label: "Résumé", value: "View CV", href: site.resume, external: true },
 ];
 

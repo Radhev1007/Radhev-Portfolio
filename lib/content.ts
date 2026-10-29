@@ -37,7 +37,7 @@ export const site = {
   resume: "https://drive.google.com/file/d/1aZVd8yCqh1uFCw_0ubPjlkxiKlwqtgYv/view?usp=sharing",
   location: "Kollam, Kerala",
   statement:
-    "I'm a Senior UI/UX and Product Designer with 5 years of experience creating user-centred digital products across enterprise SaaS, fintech, government and other business domains. I've contributed to 18+ client projects across Qatar and the GCC, specialising in product design, scalable design systems, complex dashboards and developer-ready experiences.",
+    "Senior UI/UX and Product Designer with 5 years of experience across enterprise SaaS, fintech and government. 18+ client projects for Qatar and the GCC, specialising in complex dashboards and scalable design systems.",
   /**
    * The hero's two actions. The CV is the primary — it is what a recruiter
    * opens first — and the secondary jumps to the work, the evidence behind it.
@@ -119,7 +119,7 @@ export type Project = {
 };
 
 const conceptScope =
-  "A self-initiated concept, published on Behance. This page describes the published screens and the decisions visible in them; no user research, testing or launch results are claimed.";
+  "A self-initiated concept, published on Behance.";
 
 export const projects: Project[] = [
   {
@@ -150,7 +150,7 @@ export const projects: Project[] = [
         "Gold is kept for the active state and for what needs attention, such as a maturing loan, on an otherwise near-black interface.",
       ],
       scope:
-        "Published on Behance. This page describes the published screens and the decisions visible in them; no user research, testing or launch results are claimed.",
+        "Published on Behance, where the full set of screens lives.",
     },
     image: "/projects/dilmon-property-dashboard.webp",
     imageAlt: "Dilmon property dashboard on a tablet: portfolio value, debt and equity cards, portfolio allocation, capital structure, a performance snapshot and a geographic exposure map",
@@ -192,7 +192,7 @@ export const projects: Project[] = [
         "Gold is held back for the funds' actions and the timeline's year; the rest of the page is blue, sand and black.",
       ],
       scope:
-        "A concept published on Behance, not the Kuwait Investment Authority's live website. This page describes the published design and the decisions visible in it; no user research, testing or launch results are claimed.",
+        "A concept published on Behance, not the Kuwait Investment Authority's live website.",
     },
     image: "/projects/kia-landing-page.webp",
     imageAlt: "Kuwait Investment Authority landing page concept on a laptop: the line Safeguarding Kuwait's Wealth for Future Generations over the Kuwait Towers",
@@ -236,7 +236,7 @@ export const projects: Project[] = [
         "The case study closes with its own usability review of the screens, listing what still needs fixing, such as figures that disagree between screens and a payment step that asks for a bank PIN inside the app.",
       ],
       scope:
-        "A self-initiated concept, published on Behance. The case study marks its personas as provisional, to be confirmed in interviews, and its usability review is an expert review of the screens; no launch results are claimed.",
+        "A self-initiated concept, published on Behance, with provisional personas and an expert usability review of the screens.",
     },
     image: "/projects/kw-university-dashboard-app.webp",
     imageAlt: "Kuwait University dashboard and mobile cover: the student app's home screen, with credit progress and today's schedule, on a phone between dark rocks",
@@ -280,7 +280,7 @@ export const projects: Project[] = [
         "The interface is built on one typeface, Archivo, and a four-colour palette — coral #F35746 for action and alerts, a lime accent, greyscale and white — on a 1920px grid with 40px margins.",
       ],
       scope:
-        "A self-initiated concept, published on Behance. The personas are role-based, built from the project brief rather than from interviews, and the outcomes the case study lists are stated as intended, not measured. No user research, testing or launch results are claimed.",
+        "A self-initiated concept, published on Behance, with role-based personas built from the brief and outcomes stated as goals.",
     },
     image: "/projects/stride-health-fitness.webp",
     imageAlt: "Stride health and fitness dashboard cover: the Health & Fitness Dashboard title beside a trainer, with heart-rate, weekly compliance and attention-required callouts",
@@ -359,7 +359,7 @@ export const projects: Project[] = [
         "The responder's job is laid out as four steps in the order they happen, from en route to the summary.",
       ],
       scope:
-        "Published on Behance. This page describes the published screens and the decisions visible in them; no user research, testing or launch results are claimed.",
+        "Published on Behance, where the full set of screens lives.",
     },
     image: "/projects/thuna-mobile-ui.webp",
     imageAlt: "Thuna.Care mobile app screens: splash, an elder's home screen with an SOS button and vitals, and an emergency responder's dispatch",
@@ -460,7 +460,7 @@ export const education: { title: string; issuer: string; years: string }[] = [
   { title: "B.Com with Computer Applications", issuer: "KVVS College of Science & Technology, Kerala University", years: "2017 – 2020" },
   { title: "UI/UX Design and Visual Communications, General", issuer: "Professional Certification, Avodha", years: "2021" },
   { title: "Enterprise Design Thinking Practitioner & Co-Creator", issuer: "IBM", years: "2022 – 2023" },
-  { title: "UX Foundations: Style Guides and Design Systems; Digital Skills: User Experience", issuer: "Certifications", years: "2023" },
+  { title: "UX Foundations: Style Guides and Design Systems; Digital Skills: User Experience", issuer: "", years: "2023" },
 ];
 /* ── Specialisms ───────────────────────────────────────────── */
 
