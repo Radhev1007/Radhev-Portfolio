@@ -1,6 +1,7 @@
 "use client";
 
 import { ScrambleText } from "@/components/Animations/ScrambleText";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,19 +9,43 @@ import { Magnetic } from "@/components/Animations/Magnetic";
 import { Logo } from "@/components/Chrome/Logo";
 import { useScrollTo } from "@/components/Providers/SmoothScroll";
 import { navItems, site } from "@/lib/content";
+import { usePrefersReducedMotion } from "@/lib/hooks";
 
 export function Footer() {
   const scrollTo = useScrollTo();
   const isHome = usePathname() === "/";
   const year = new Date().getFullYear();
 
+  // The mark turns toward the pointer anywhere over the footer, and its glow warms while it is there.
+  const reduced = usePrefersReducedMotion();
+  const px = useMotionValue(0), py = useMotionValue(0), hot = useMotionValue(0);
+  const spring = { stiffness: 90, damping: 16, mass: 0.6 };
+  const rotateY = useSpring(useTransform(px, (v) => v * 18), spring);
+  const rotateX = useSpring(useTransform(py, (v) => v * -12), spring);
+  const lift = useSpring(useTransform(hot, (v) => v * -14), spring);
+  const glow = useSpring(useTransform(hot, (v) => 0.55 + v * 0.45), spring);
+  const glowScale = useSpring(useTransform(hot, (v) => 1 + v * 0.15), spring);
+  const track = (e: React.PointerEvent<HTMLElement>) => {
+    if (reduced || e.pointerType === "touch") return;
+    const r = e.currentTarget.getBoundingClientRect();
+    px.set(((e.clientX - r.left) / r.width) * 2 - 1);
+    py.set(((e.clientY - r.top) / r.height) * 2 - 1);
+    hot.set(1);
+  };
+  const rest = () => { px.set(0); py.set(0); hot.set(0); };
+
   return (
-    <footer className="relative overflow-hidden border-t border-line pt-10">
+    <footer onPointerMove={track} onPointerLeave={rest} className="relative overflow-hidden border-t border-line pt-10">
       {/* The mark in 3D (radhev-3d-logo/build_logo.py), rising from the lower right behind everything, with
           the accent glowing under it as in the render. Decorative, so hidden from assistive tech. */}
-      <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 z-0 w-[min(50vw,320px)] select-none md:-bottom-8 md:-right-4">
-        <div className="absolute -inset-[15%] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-accent)_38%,transparent),transparent)] blur-3xl" />
-        <Image src="/radhev-mark-3d.webp" alt="" width={831} height={900} sizes="(min-width: 768px) 320px, 50vw" className="relative h-auto w-full" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 z-0 w-[min(50vw,320px)] select-none [perspective:900px] md:-bottom-8 md:-right-4">
+        <motion.div
+          style={{ opacity: glow, scale: glowScale }}
+          className="absolute -inset-[15%] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-accent)_38%,transparent),transparent)] blur-3xl"
+        />
+        <motion.div style={{ rotateX, rotateY, y: lift }} className="relative will-change-transform">
+          <Image src="/radhev-mark-3d.webp" alt="" width={831} height={900} sizes="(min-width: 768px) 320px, 50vw" className="h-auto w-full" />
+        </motion.div>
       </div>
 
       {/* Marquee */}
