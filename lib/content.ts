@@ -295,47 +295,6 @@ export const projects: Project[] = [
     palette: { from: "#2B1310", to: "#F35746", ink: "#FFE3DD" },
   },
   {
-    slug: "quickgrub-food-delivery",
-    story: {
-      seoTitle: "QuickGrub Food Delivery App — UX Case Study",
-      seoDescription:
-        "QuickGrub food delivery UX case study by Radhev R: stakeholder interviews, a survey, personas, user flows, wireframes, usability fixes and a style guide.",
-      published: "Dec 2023",
-      year: "2023",
-      tools: ["Figma", "Photoshop", "Illustrator"],
-      overview: [
-        "QuickGrub is a food delivery app, and this is the full case study behind it: from the questions asked of restaurants, drivers and customers to the finished screens.",
-        "It set out to fix three things: customisation for dietary needs and tastes, a checkout that discloses every fee, and menus and navigation that do not get in the way of finding a restaurant.",
-      ],
-      screens: [
-        { title: "Research", body: "Stakeholder interview questions for restaurant partners, delivery drivers and customers, and a survey of about 40 people on their age, city, which apps they use, how often they order and how they pay." },
-        { title: "Goals", body: "The first goals rewritten for each group, the business, restaurants, drivers and customers, from what the interviews raised." },
-        { title: "Competitor analysis", body: "Three delivery apps compared on strengths and weaknesses, and on sign-up, mobile optimisation, usability, reviews and technical performance." },
-        { title: "Empathy maps and personas", body: "Two personas, a working parent looking for healthy options and a student on a budget, each with an empathy map of what they say, think, do and feel." },
-        { title: "Flows and wireframes", body: "Task flows for login, location, exploring the menu and placing an order, joined into one user flow; then paper sketches and greyscale high-fidelity wireframes." },
-        { title: "Testing and UI", body: "The questions put to testers, the changes that came out of them, a style guide (Poppins, a red primary, a 4px spacing scale) and the final app screens." },
-      ],
-      decisions: [
-        "The bill lists every charge, item total, delivery fee, tip, platform fee and GST, before payment, answering the hidden-fees complaint the research turned up.",
-        "Categories and restaurants sit at the top of home under the search bar, so finding food does not depend on digging through menus.",
-        "After testing, the OTP step was shortened and voice search added to the search bar.",
-      ],
-      scope:
-        "Published on Behance. The research, personas and testing described here are as the case study presents them; no launch or business results are claimed.",
-    },
-    image: "/projects/quickgrub-food-delivery.webp",
-    imageAlt: "QuickGrub food delivery UX case study cover: the case study's goals beside a woman holding a phone showing the app's red splash screen",
-    href: "https://www.behance.net/gallery/187669415/UX-Case-Study-Food-Delivery-Application",
-    number: "05",
-    title: "QuickGrub Food Delivery App",
-    categories: ["UX Case Study", "Mobile", "Food Delivery"],
-    description:
-      "A full UX case study for a food delivery app: interviews, a survey, personas and flows through to a tested, fee-transparent checkout and the final screens.",
-    role: "UI/UX Designer",
-    visual: "tablet",
-    palette: { from: "#2A070B", to: "#FA0025", ink: "#FFE0E4" },
-  },
-  {
     slug: "dashboard-concept",
     status: "Concept",
     story: {
@@ -366,7 +325,7 @@ export const projects: Project[] = [
     image: "/projects/dashboard-concept.webp",
     imageAlt: "Employee self-service dashboard: loan and leave balances, an uncovered-hours gauge, recent requests and request forms",
     href: "https://www.behance.net/gallery/164544999/Dashboard-Concept",
-    number: "06",
+    number: "05",
     title: "Employee Self-Service Dashboard",
     categories: ["UI Design", "Dashboard", "HR"],
     description:
@@ -405,7 +364,7 @@ export const projects: Project[] = [
     image: "/projects/thuna-mobile-ui.webp",
     imageAlt: "Thuna.Care mobile app screens: splash, an elder's home screen with an SOS button and vitals, and an emergency responder's dispatch",
     href: "https://www.behance.net/gallery/128315087/UI-UX-Design-Thuna-Mobile-UI",
-    number: "07",
+    number: "06",
     title: "Thuna Care Mobile App",
     categories: ["UI/UX Design", "Mobile", "Healthcare"],
     description:
