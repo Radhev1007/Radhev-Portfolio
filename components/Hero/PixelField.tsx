@@ -4,11 +4,12 @@ import { useEffect, useRef } from "react";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
 /**
- * A design-tool canvas behind the hero, in pixels: a faint dot grid, and on it
- * little pieces of interface — cursors, toggles, buttons, checkboxes, sliders,
- * selection frames with handles, image placeholders, text blocks, a layout
- * grid, a "like" — that assemble pixel by pixel, hold, and dissolve, a few at
- * a time, mostly on the artwork's side. The pointer gets a soft hover glow.
+ * A design file mid-review, behind the hero, in pixels: a faint dot grid, and
+ * on it the traffic of a shared Figma canvas — collaborators' cursors gliding
+ * by with their name tags, comment pins dropping onto the work and their
+ * threads typing out beside them, reactions, a resolved tick, a selection
+ * with its size badge. Each piece assembles, holds and dissolves, a few at a
+ * time, mostly on the artwork's side. The pointer gets a soft hover glow.
  *
  * It is drawn one value per cell into a tiny canvas that the browser scales up
  * without smoothing, so each cell is one solid block; a CSS grid of ink lines
@@ -21,36 +22,94 @@ const ACCENT = [244, 60, 0];
 const WHITE = [255, 255, 255];
 const MASK = "linear-gradient(to bottom, black 50%, transparent 92%), linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.55) 40%, black 70%)";
 
-// pixel-art UI pieces: X bright, x dim, A accent, . off
-const GLYPHS: string[][] = [
-  // cursor
-  ["X.......", "XX......", "XAX.....", "XAAX....", "XAAAX...", "XAAAAX..", "XAAAAAX.", "XAAAXXXX", "XAXAX...", "XX.XAX..", "X...XX.."],
-  // toggle, on
-  ["..AAAAAAA..", ".AAAAAAXXX.", "AAAAAAXXXXX", ".AAAAAAXXX.", "..AAAAAAA.."],
-  // button with a label
-  ["XXXXXXXXXXXXXXX", "X.............X", "X..XXXXXXXXX..X", "X.............X", "XXXXXXXXXXXXXXX"],
-  // primary button, filled
-  ["AAAAAAAAAAAAAAA", "AAAAAAAAAAAAAAA", "AAAXXXXXXXXXAAA", "AAAAAAAAAAAAAAA", "AAAAAAAAAAAAAAA"],
-  // checkbox, ticked
-  ["XXXXXXX", "X....AX", "X...A.X", "XA.A..X", "X.A...X", "X.....X", "XXXXXXX"],
-  // slider
-  [".......XXX.....", "AAAAAAAXXXxxxxx", ".......XXX....."],
-  // selection frame with handles
-  ["XX.AAAAAAA.XX", "XX.........XX", "A...........A", "A...xxxxx...A", "A...........A", "A...xxx.....A", "A...........A", "XX.........XX", "XX.AAAAAAA.XX"],
-  // image placeholder
-  ["XXXXXXXXXXX", "X.........X", "X......A..X", "X.........X", "X...x.....X", "X..xxx..x.X", "X.xxxxxxxxX", "XXXXXXXXXXX"],
-  // text block
-  ["XXXXXXXXXXX..", ".............", "xxxxxxxxxxxxx", ".............", "xxxxxxxx....."],
-  // layout grid
-  ["xxxx.xxxx", "xxxx.xxxx", "xxxx.xxxx", ".........", "xxxx.AAAA", "xxxx.AAAA", "xxxx.AAAA"],
-  // like
-  [".AA.AA.", "AAAAAAA", "AAAAAAA", ".AAAAA.", "..AAA..", "...A..."],
-  // radio buttons
-  [".XXX.....xxx.", "XAAAX...x...x", "XAAAX...x...x", ".XXX.....xxx."],
+/**
+ * Pixel-art pieces: X bright, x dim, A accent, . off. `move` drifts a piece (cells per second), as a
+ * collaborator's cursor does; `type` reveals it left to right, as a comment being written, instead of
+ * pixel by pixel.
+ */
+type Glyph = { g: string[]; move?: [number, number]; type?: boolean; weight?: number };
+const pad = (rows: string[]) => {
+  const w = Math.max(...rows.map((r) => r.length));
+  return rows.map((r) => r.padEnd(w, "."));
+};
+const GLYPHS: Glyph[] = [
+  // a collaborator's cursor with its name tag, in the accent, gliding
+  {
+    g: pad(["A", "AA", "AXA", "AXXA", "AXXXA", "AXXXXA", "AXXAAA", "AA..AAAAAAAAAAA", "A...AXXXX.XXXXA", "....AAAAAAAAAAA"]),
+    move: [2.2, 0.9],
+    weight: 3,
+  },
+  // a second collaborator, outlined in white, gliding the other way
+  {
+    g: pad(["X", "XX", "X.X", "X..X", "X...X", "X....X", "X..XXX", "XX..XXXXXXXXXX", "X...X.xxx.xxxX", "....XXXXXXXXXX"]),
+    move: [-1.8, 0.7],
+    weight: 2,
+  },
+  // a comment: the pin drops, then its thread types out beside it
+  {
+    g: pad([
+      ".XXXXX...XXXXXXXXXXXXXXXXXXX",
+      "XXAAAXX..X.................X",
+      "XAAAAAX..X.AA..XXXXXX......X",
+      "XAAAAAX..X.AA..............X",
+      "XXAAAXX..X.....xxxxxxxxxxx.X",
+      "X.XXXX...X.....xxxxxxx.....X",
+      "X........X.................X",
+      ".........XXXXXXXXXXXXXXXXXXX",
+    ]),
+    type: true,
+    weight: 3,
+  },
+  // a reply box being written, with the send button lit
+  {
+    g: pad([
+      "XXXXXXXXXXXXXXXXXXXXXX",
+      "X....................X",
+      "X.xxxxxxxxxx.....AAA.X",
+      "X................AAA.X",
+      "XXXXXXXXXXXXXXXXXXXXXX",
+    ]),
+    type: true,
+    weight: 2,
+  },
+  // a lone comment pin, numbered
+  { g: pad([".XXXXX.", "XXAAAXX", "XAAXAAX", "XAAXAAX", "XXAAAXX", "X.XXXX.", "X"]), weight: 2 },
+  // reactions: a heart and a +1
+  {
+    g: pad([
+      ".XXXXXXXXXX..XXXXXXXXXX.",
+      "X.AA.AA...X..X..X......X",
+      "X.AAAAA.x.X..X.XXX.x...X",
+      "X..AAA..x.X..X..X..x...X",
+      "X...A.....X..X.........X",
+      ".XXXXXXXXXX..XXXXXXXXXX.",
+    ]),
+  },
+  // resolved: a ticked circle
+  { g: pad(["..XXXXX..", ".X.....X.", "X......AX", "X.....A.X", "XA..A...X", "X.AA....X", ".X.....X.", "..XXXXX.."]) },
+  // a selection with handles and its size badge
+  {
+    g: pad([
+      "XX.AAAAAAAAA.XX",
+      "XX...........XX",
+      "A.............A",
+      "A...xxxxxxx...A",
+      "A...xxxx......A",
+      "A.............A",
+      "XX...........XX",
+      "XX.AAAAAAAAA.XX",
+      "...............",
+      "....AAAAAAA....",
+      "....AXX.XXA....",
+      "....AAAAAAA....",
+    ]),
+  },
 ];
+const POOL = GLYPHS.flatMap((gl) => Array(gl.weight ?? 1).fill(gl) as Glyph[]);
 const LIFE = 5.5, IN = 0.9, OUT = 0.9;   // seconds: whole life, assembling, dissolving
+const TYPE = 1.8;                        // seconds a comment takes to write itself out
 
-type Piece = { g: string[]; x: number; y: number; t0: number };
+type Piece = Glyph & { x: number; y: number; t0: number };
 
 export function PixelField({ cell = 4, gap = 1 }: { cell?: number; gap?: number }) {
   const box = useRef<HTMLDivElement>(null);
@@ -88,14 +147,14 @@ export function PixelField({ cell = 4, gap = 1 }: { cell?: number; gap?: number 
       });
     };
     const spawn = (t: number) => {
-      const g = GLYPHS[Math.floor(Math.random() * GLYPHS.length)], h = g.length, w = g[0].length, keepOut = avoid();
+      const glyph = POOL[Math.floor(Math.random() * POOL.length)], g = glyph.g, h = g.length, w = g[0].length, keepOut = avoid();
       for (let tries = 0; tries < 24; tries++) {
         const x = 1 + Math.floor(Math.random() * Math.max(1, cols - w - 2));
         const top = Math.ceil(96 / cell);   // below the navigation bar
         const y = top + Math.floor(Math.random() * Math.max(1, rows * 0.75 - h - top));
         const free = (a: { x0: number; y0: number; x1: number; y1: number }) => x + w < a.x0 || a.x1 < x || y + h < a.y0 || a.y1 < y;
         const clear = keepOut.every(free) && pieces.every((p) => free({ x0: p.x - 2, y0: p.y - 2, x1: p.x + p.g[0].length + 2, y1: p.y + p.g.length + 2 }));
-        if (clear) { pieces.push({ g, x, y, t0: t }); return; }
+        if (clear) { pieces.push({ ...glyph, x, y, t0: t }); return; }
       }
     };
 
@@ -120,20 +179,23 @@ export function PixelField({ cell = 4, gap = 1 }: { cell?: number; gap?: number 
           d[o] = d[o + 1] = d[o + 2] = 255; d[o + 3] = a * 255;
         }
       }
-      // the interface pieces: each pixel switches on at its own moment while a piece assembles, and off
-      // again while it dissolves
+      // the pieces: each pixel switches on at its own moment while a piece assembles (left to right for a
+      // comment being written), and off again while it dissolves; cursors drift as they go
       pieces = pieces.filter((p) => t - p.t0 < LIFE);
       for (const p of pieces) {
         const age = t - p.t0;
+        const ox = p.x + Math.round((p.move?.[0] ?? 0) * age), oy = p.y + Math.round((p.move?.[1] ?? 0) * age);
+        const w = p.g[0].length;
         for (let gy = 0; gy < p.g.length; gy++) {
           const row = p.g[gy];
           for (let gx = 0; gx < row.length; gx++) {
             const ch = row[gx];
             if (ch === ".") continue;
-            const x = p.x + gx, y = p.y + gy;
+            const x = ox + gx, y = oy + gy;
             if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
-            const i = y * cols + x, r = rnd[i];
-            const on = age > r * IN && age < LIFE - OUT + r * OUT;
+            const i = y * cols + x, r = rnd[(p.y + gy) * cols + p.x + gx] ?? rnd[i];
+            const enter = p.type ? (gx / w) * TYPE + r * 0.15 : r * IN;
+            const on = age > enter && age < LIFE - OUT + r * OUT;
             if (!on) continue;
             const c = ch === "A" ? ACCENT : WHITE, o = i * 4;
             const a = ch === "x" ? 0.22 : ch === "A" ? 0.75 : 0.5;
