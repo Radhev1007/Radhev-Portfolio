@@ -125,6 +125,7 @@ export class UI {
     $('#menu-cards').innerHTML = levels.map((l) => html(l, true)).join('');
     $$('.card').forEach((c) => (c.onclick = () => onPick(c.dataset.id)));
   }
+  setMedals(n) { $('#h-medals').textContent = `MEDALS ${n}`; }
   // locked terrains: greyed cards with what they need (open-world unlocks, world/progress.js)
   setLocks(locks, medals) {
     $$('.card').forEach((c) => {

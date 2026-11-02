@@ -88,6 +88,9 @@ export class Minimap {
     b.title = this.mode === 'big' ? 'Back to the small map (N)' : 'Expand map (N)';
   }
 
+  /** Open-world marks drawn over the map: { level, rings: [{x,z,r,medal}], gateways: [{x,z,yaw,name,locked}] }. */
+  setWorldMarks(m) { this.worldMarks = m; }
+
   // ---------- terrain layer, built in slices
   setLevel(level) {
     this.level = level; this.ready = false;
@@ -220,6 +223,25 @@ export class Minimap {
       for (const st of lvl.activities?.sites || []) {
         const c = lvl.challenges?.find((q) => q.id === st.id);
         if (c) this.label(g, c.name, X(st.cx), Z(st.cz) - text * dpr, 'rgba(255,255,255,0.92)');
+      }
+    }
+    // open world (world/gateways.js, world/challengeRings.js): gateway arches, open or locked, and a gold
+    // ring round every challenge already medalled
+    const wm = this.worldMarks;
+    if (wm && wm.level === lvl) {
+      for (const r of wm.rings) {
+        if (!r.medal) continue;
+        g.strokeStyle = 'rgba(242, 201, 76, 0.95)'; g.lineWidth = 2 * px;
+        g.beginPath(); g.arc(X(r.x), Z(r.z), Math.max(r.r * s, 5 * px), 0, Math.PI * 2); g.stroke();
+      }
+      for (const gw of wm.gateways) {
+        const x = X(gw.x), z = Z(gw.z), a = 5 * px;
+        g.save(); g.translate(x, z); g.rotate(-gw.yaw);
+        g.strokeStyle = gw.locked ? 'rgba(150, 140, 130, 0.95)' : 'rgba(201, 178, 122, 1)'; g.lineWidth = 2.2 * px; g.lineCap = 'square';
+        g.beginPath(); g.moveTo(-a, a * 0.6); g.lineTo(-a, -a * 0.6); g.lineTo(a, -a * 0.6); g.lineTo(a, a * 0.6); g.stroke();
+        if (gw.locked) { g.fillStyle = 'rgba(240, 160, 112, 1)'; g.fillRect(-a * 0.35, -a * 0.1, a * 0.7, a * 0.6); }
+        g.restore();
+        if (big) { g.font = font(600); g.textAlign = 'center'; g.textBaseline = 'middle'; this.label(g, gw.name + (gw.locked ? ' (locked)' : ''), x, z + text * dpr * 1.6, gw.locked ? 'rgba(240,160,112,0.95)' : 'rgba(255,240,200,0.95)'); }
       }
     }
     // start

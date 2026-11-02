@@ -521,3 +521,4 @@ body:has(#hud.touch-on) .mm:not(.big) .mm-ctl button { width: 22px; height: 22px
 .card.locked .lock { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #f0a070; margin-bottom: 4px; }
 .ring-prompt { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; pointer-events: auto; padding: 12px 14px 12px 20px; border-radius: 10px; background: var(--glass-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font: 500 16px var(--cond); letter-spacing: 1.5px; white-space: nowrap; }
 .ring-prompt .rp-text b { color: var(--accent); font-weight: 600; }
+.medals { font: 600 12px var(--cond); letter-spacing: 2px; color: #f2c94c; margin: 2px 0 4px; }

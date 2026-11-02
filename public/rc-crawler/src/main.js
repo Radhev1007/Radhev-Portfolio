@@ -302,6 +302,12 @@ function refreshProgress() {
   const best = challenges.best;
   gateways?.refresh(best);
   ui.setLocks(lockInfo(), countMedals(best));
+  ui.setMedals(countMedals(best));
+  if (gateways && rings) minimap?.setWorldMarks({
+    level,
+    rings: rings.rings,
+    gateways: gateways.list.map((it) => ({ x: it.g.x, z: it.g.z, yaw: it.g.yaw, locked: !!it.locked, name: it.g.to === 'hub' ? 'Trailhead Valley' : LEVEL_BY_ID[it.g.to]?.name || it.g.to })),
+  });
   if (gateways) drawBoard(gateways, LEVELS.filter((l) => l.id !== 'hub').map((l) => {
     const locked = !isUnlocked(l.id, best);
     return [l.name, locked ? `Earn ${needFor(l.id)} medals` : `${medalsIn(best, l.id)} / ${availableIn(l.id) ?? '—'}`, locked];
