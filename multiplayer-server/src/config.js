@@ -28,7 +28,7 @@ export const iceServers = () => {
   return out;
 };
 
-export const MAPS = ['canyon', 'forest', 'mud', 'desert', 'creek', 'ultimate'];
+export const MAPS = ['hub', 'canyon', 'forest', 'mud', 'desert', 'creek', 'ultimate'];
 export const MODES = ['free', 'race', 'timed', 'stunt', 'checkpoint', 'coop'];
 // session length per mode (ms); free roam is open-ended
 export const MODE_LIMIT = { free: 0, race: 6 * 60e3, timed: 4 * 60e3, stunt: 3 * 60e3, checkpoint: 5 * 60e3, coop: 8 * 60e3 };
