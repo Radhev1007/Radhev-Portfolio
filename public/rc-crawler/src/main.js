@@ -20,6 +20,7 @@ import { ChallengeManager, fmtTime } from './challenges/challenges.js';
 import { buildGateways, drawBoard } from './world/gateways.js';
 import { buildRings, busy as challengeBusy } from './world/challengeRings.js';
 import { buildCrowd } from './world/crowd.js';
+import { TowRecovery } from './world/towTruck.js';
 import { countMedals, medalsIn, isUnlocked, needFor, newlyUnlocked, recordAvailable, availableIn } from './world/progress.js';
 import { UI } from './ui/ui.js';
 import { Multiplayer } from './net/multiplayer.js';
@@ -127,7 +128,8 @@ let minimap = null;   // created with the multiplayer objects below; reads them 
 let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
 let gateways = null;   // world/gateways.js, rebuilt with each level
-let crowd = null, wasRolled = false;   // world/crowd.js: spectators at the starts, gateways and basecamp
+let crowd = null, wasRolled = false;
+let tow = null;   // world/towTruck.js: rights a rolled truck where it lies   // world/crowd.js: spectators at the starts, gateways and basecamp
 let rings = null, ringHere = null;   // world/challengeRings.js: the ring the truck is in
 let travelling = false, arriveFrom = null, gwPrev = null, blockedToastAt = -10;
 let medalSnapshot = { ...challenges.best };   // to spot terrains a new medal unlocks
@@ -146,6 +148,7 @@ async function loadLevel(id, { keepState = false, arriveAt = null } = {}) {
   level = lvl;
   settings.level = id; saveSettings();
   recordAvailable(id, level.challenges.length);
+  tow?.cancel();
   arriveFrom = arriveAt;
   scene.add(level.group);
   // gateway arches (and the hub's basecamp): their posts join the level's before physics and net ids
@@ -462,9 +465,14 @@ async function rebuildForQuality() {
 }
 
 function recover() {
-  if (!phys) return;
+  if (!phys || tow?.active) return;
   gwPrev = null;
   audio.uiClick();
+  // on its side or roof: call the tow truck, which rights it where it lies (unless a race puts it back at a gate)
+  if (!mp.spectating && phys.up.y < 0.5 && !(mp.active && modes.recoverPose())) {
+    tow ||= new TowRecovery(scene);
+    if (tow.start(phys, level.hf)) { ui.toast('Tow truck on its way', 'It will put you back on your wheels'); return; }
+  }
   tracks.reset();
   if (mp.active) {
     mp.flagRecover();
@@ -573,7 +581,7 @@ function updateHud(dt) {
     dir: phys.omega > 0.3 ? 'F' : phys.omega < -0.3 ? 'R' : 'N',
     throttle: Math.abs(phys.throttle), battery: phys.battery, traction: s.traction,
     temp: 22 + phys.motorTemp * 55, surface: s.surface,
-    rolled: phys.upsideTimer > 1.2,
+    rolled: phys.upsideTimer > 1.2 && !tow?.active,
   });
   if (challenges.active && challenges.state === 'running') ui.challengeTime(fmtTime(challenges.time));
 }
@@ -595,10 +603,22 @@ function tick(dt, forced) {
   if (mp.spectating && !forced) inp = { throttle: 0, steer: 0, handbrake: true };   // watching: our truck stays parked and hidden
   if (mp.active) inp = modes.inputOverride(inp);
   mp.preStep(dt);
-  phys.update(dt, inp);
+  // while the tow truck has hold of our truck, it poses the truck and the physics wait
+  const towing = !!tow?.active && tow.phase !== 'leave';
+  if (towing) {
+    if (tow.update(dt, model) === 'release') {
+      phys.placeAt(tow.to.x, tow.to.z, tow.to.yaw);
+      if (mp.active) mp.flagRecover();
+      tracks.reset(); gwPrev = null;
+      ui.toast('Back on its wheels', 'Recovered where it rolled');
+    }
+  } else {
+    if (tow?.active) tow.update(dt, model);   // driving away
+    phys.update(dt, inp);
+  }
 
   // drive the visual model from the interpolated pose (smooth between physics substeps)
-  phys.renderPose(model.group.position, model.group.quaternion);
+  if (!towing) phys.renderPose(model.group.position, model.group.quaternion);
   model.update({ hubY: [0, 1, 2, 3].map((i) => phys.hubLocalY(i)), steer: phys.steer, spin: phys.wheels.map((w) => w.spin), tyres: phys.wheels.map((w) => ({ contact: w.contact, p: w.p, n: w.n, defl: w.defl })), dt });
   model.setBrake(inp.handbrake || (phys.omega > 0.5 && inp.throttle < -0.1) || (phys.omega < -0.5 && inp.throttle > 0.1) ? 1 : 0.12);
 
