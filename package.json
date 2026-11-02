@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "build:static": "STATIC_EXPORT=1 next build"
+    "build:static": "STATIC_EXPORT=1 next build",
+    "test:game": "node --import ./tools/rc-crawler-tests/register.mjs --test \"tools/rc-crawler-tests/*.test.mjs\""
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
