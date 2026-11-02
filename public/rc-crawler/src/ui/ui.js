@@ -276,6 +276,8 @@ export class UI {
     seg('s-dof', 'v', s.dof, 'dof');
     seg('s-fps', 'v', s.fps, 'fps');
     seg('s-amb', 'v', s.ambience || 'on', 'ambience');
+    seg('s-diff', 'v', s.difficulty || 'normal', 'difficulty');
+    seg('s-tyres', 'v', s.tyres || 'standard', 'tyres');
     // drag brake, on the instrument cluster: the button shows the strength. With the full cluster it switches the
     // drag brake on / off and the slider sets the strength; the compact (phone) cluster has no room for a slider,
     // so there a tap steps 100 -> 75 -> 50 -> 25 -> off -> 100

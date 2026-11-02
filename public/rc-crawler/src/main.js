@@ -6,7 +6,7 @@ import { sharedTerrainUniforms } from './terrain/terrainMaterial.js';
 import { windUniforms } from './terrain/vegetation.js';
 import { waterUniforms } from './terrain/water.js';
 import { SURF_NAMES } from './terrain/heightfield.js';
-import { CrawlerPhysics, GEARS, DIFF_MODES } from './physics/vehicle.js';
+import { CrawlerPhysics, GEARS, DIFF_MODES, DIFFICULTY, TYRE_PRESSURE } from './physics/vehicle.js';
 import { createCrawler } from './vehicles/crawlerModel.js';
 import { CameraRig, CAM_MODES } from './camera/cameraRig.js';
 import { Environment, PRESETS } from './env/environment.js';
@@ -30,7 +30,7 @@ import { LIVERIES, liveryCss } from './net/config.js';
 // ------------------------------------------------------------ settings
 const SET_KEY = 'rccrawler.settings.v1';
 const isTouch = matchMedia('(pointer: coarse)').matches;
-const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, ambience: 'on', dragBrake: 'on', dragPct: 100, vehicle: 'scx30', level: 'creek' };
+const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, ambience: 'on', dragBrake: 'on', dragPct: 100, difficulty: 'normal', tyres: 'standard', vehicle: 'scx30', level: 'creek' };
 let settings = { ...defaults };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || '{}')); } catch { /* ignore */ }
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch { /* ignore */ } };
@@ -283,6 +283,8 @@ function applyDrivetrain() {
   if (!phys) return;
   phys.gear = dtState.gear === 'LOW' ? GEARS.LOW : GEARS.HIGH; phys.diffMode = dtState.diffMode; phys.dig = dtState.dig;
   phys.dragBrake = settings.dragBrake === 'off' ? 0 : Math.max(0, Math.min(100, settings.dragPct ?? 100)) / 100;
+  Object.assign(phys, DIFFICULTY[settings.difficulty] || DIFFICULTY.normal);
+  phys.tyre = TYRE_PRESSURE[settings.tyres] || TYRE_PRESSURE.standard;
   ui.drivetrain({ gear: phys.gear.name, diff: DIFF_MODES[phys.diffMode].name, dig: phys.dig });
 }
 ui.on('range', () => {
@@ -312,6 +314,14 @@ ui.on('volume', (v) => { settings.volume = v; saveSettings(); audio.setMasterVol
 ui.on('ambience', (v) => { settings.ambience = v; saveSettings(); audio.setAmbience(v === 'on'); });
 ui.on('dragBrake', (v) => { settings.dragBrake = v; saveSettings(); applyDrivetrain(); });
 ui.on('dragPct', (v) => { settings.dragPct = v; saveSettings(); applyDrivetrain(); });
+ui.on('tyres', (v) => {
+  settings.tyres = v; saveSettings(); applyDrivetrain();
+  ui.toast({ soft: 'Soft tyres', standard: 'Standard tyres', firm: 'Firm tyres' }[v], { soft: 'Wrap over rocks, most grip, slower', standard: 'Balanced grip and speed', firm: 'Quick and precise, less grip' }[v]);
+});
+ui.on('difficulty', (v) => {
+  settings.difficulty = v; saveSettings(); applyDrivetrain();
+  ui.toast({ easy: 'Easy', normal: 'Normal', hard: 'Hard' }[v] + ' difficulty', { easy: 'Planted: it slides before it tips', normal: 'Swerve at speed and it rolls', hard: 'Any hard turn or rock can roll it' }[v]);
+});
 // the vehicle: a body shell on the same RC chassis (bodies.js); other players see it too
 ui.on('vehicle', (id) => {
   if (!VEHICLE_IDS.includes(id)) return;
@@ -474,7 +484,7 @@ function tick(dt, forced) {
 
   // drive the visual model from the interpolated pose (smooth between physics substeps)
   phys.renderPose(model.group.position, model.group.quaternion);
-  model.update({ hubY: [0, 1, 2, 3].map((i) => phys.hubLocalY(i)), steer: phys.steer, spin: phys.wheels.map((w) => w.spin), dt });
+  model.update({ hubY: [0, 1, 2, 3].map((i) => phys.hubLocalY(i)), steer: phys.steer, spin: phys.wheels.map((w) => w.spin), tyres: phys.wheels.map((w) => ({ contact: w.contact, p: w.p, n: w.n, defl: w.defl })), dt });
   model.setBrake(inp.handbrake || (phys.omega > 0.5 && inp.throttle < -0.1) || (phys.omega < -0.5 && inp.throttle > 0.1) ? 1 : 0.12);
 
   // suspension activity for camera shake/audio

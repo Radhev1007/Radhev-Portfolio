@@ -88,6 +88,30 @@ export const GEARS = {
   HIGH: { name: 'H', wmax: 56, tstall: 12, fric: 0.08 },
 };
 
+// Difficulty: how readily the truck tips (tuned with standard tyre pressure; soft tyres lean more). comLift raises the centre of mass (metres above the body origin);
+// gripDepth sets how low the tyre forces act. Measured on flat ground in high range at full speed:
+//   easy   - never tips; full lock just leans it ~10 deg and the tyres slide (the original handling)
+//   normal - a quick left-right swerve rolls it, as do 35 deg side slopes and 60 deg climbs; steady full
+//            lock leans ~22 deg and holds
+//   hard   - any hard turn at speed rolls it, so does a rock under one side; side slopes from ~25 deg
+// Low range stays stable on all three, so slow crawling is always possible.
+// Tyre pressure. A crawler tyre is soft: under load it squashes (deflects) toward the rim, in series with the
+// suspension spring, and wraps over rock edges. k is the tyre's radial stiffness (N/m), maxDefl how far it can
+// squash before the rim takes the hit; grip and roll scale the surface's grip and rolling resistance (a
+// softer tyre lays down a longer contact patch: more grip, more drag). At rest the tyres squash about 3 cm
+// (soft), 1.8 cm (standard) and 0.8 cm (firm) of their 20 cm radius.
+export const TYRE_PRESSURE = {
+  soft: { k: 250, maxDefl: 0.06, grip: 1.1, roll: 1.4 },
+  standard: { k: 420, maxDefl: 0.05, grip: 1, roll: 1 },
+  firm: { k: 950, maxDefl: 0.035, grip: 0.94, roll: 0.8 },
+};
+
+export const DIFFICULTY = {
+  easy: { comLift: 0, gripDepth: 0.6 },
+  normal: { comLift: 0.1, gripDepth: 1 },
+  hard: { comLift: 0.13, gripDepth: 1 },
+};
+
 export class CrawlerPhysics {
   constructor(hf) {
     this.hf = hf;
@@ -128,6 +152,16 @@ export class CrawlerPhysics {
     this.posts = [];         // marker stakes, gate and sign posts: [{x,z,r,y0,top,mat,kind,id,enabled}]
     this.touched = new Set();// posts in contact during the last update (challenge rules read this)
     this.vPs = V(); this.wPs = V();                          // split-impulse pseudo velocities
+    // Centre of mass, raised `comLift` above the body origin along the body's up axis. The geometry (wheel
+    // mounts, probes, collision boxes, the drawn model) stays on the origin; only the dynamics pivot about
+    // the higher point, so a taller lift tips more readily in turns, on side slopes and over rocks.
+    // `vel` is the centre of mass's velocity. Set from the game's difficulty setting.
+    this.comLift = 0;
+    // where the tyre's spring and grip forces act, as a fraction of the radius below the hub: 1 = the contact
+    // patch (cornering grip levers the truck over), less = nearer the hub (a steadier, more forgiving truck)
+    this.gripDepth = 0.6;
+    this.tyre = TYRE_PRESSURE.standard;
+    this.com = V();
     this.prevPos = V(); this.prevQ = new THREE.Quaternion();  // previous substep, for render interpolation
   }
 
@@ -170,21 +204,22 @@ export class CrawlerPhysics {
     return out.applyQuaternion(this.q);
   }
 
-  _pointVel(p, out) { return out.copy(p).sub(this.pos).cross(this.ang).negate().add(this.vel); } // v + w x r
+  _syncCom() { return this.com.set(0, this.comLift, 0).applyQuaternion(this.q).add(this.pos); }
+  _pointVel(p, out) { return out.copy(p).sub(this.com).cross(this.ang).negate().add(this.vel); } // v + w x r
   // contact point velocity relative to what it touches: an obstacle that moves itself (another player's
   // truck, c.ov = its velocity) closes or opens the gap too; static ground and posts have no c.ov
   _relVel(c, out) { this._pointVel(c.p, out); if (c.ov) out.sub(c.ov); return out; }
 
   _applyImpulse(J, p) {
     this.vel.addScaledVector(J, 1 / PHYS.mass);
-    _r.copy(p).sub(this.pos).cross(J);
+    _r.copy(p).sub(this.com).cross(J);
     this._applyInvI(_r, _v4);
     this.ang.add(_v4);
   }
   _applyForce(F, p, dt) { _v3.copy(F).multiplyScalar(dt); this._applyImpulse(_v3, p); }
 
   _effMass(p, dir) {
-    _r.copy(p).sub(this.pos);
+    _r.copy(p).sub(this.com);
     _v4.copy(_r).cross(dir);
     this._applyInvI(_v4, _v5);
     _v5.cross(_r);
@@ -268,6 +303,7 @@ export class CrawlerPhysics {
   _step(dt) {
     const hf = this.hf;
     const q = this.q;
+    this._syncCom();
     const up = _v1.set(0, 1, 0).applyQuaternion(q).clone();
     const fwdC = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
     const leftC = new THREE.Vector3(1, 0, 0).applyQuaternion(q);
@@ -306,7 +342,8 @@ export class CrawlerPhysics {
       if (this.handbrake) for (const w of this.wheels) w.om -= Math.sign(w.om) * Math.min(Math.abs(w.om), maxD);
     }
 
-    // ---- wheel contacts
+    // ---- wheel contacts (only while the truck is within ~75 deg of upright)
+    const tipped = up.y < 0.25;
     const steerL = this.steer * (this.steer > 0 ? 1.08 : 0.92), steerR = this.steer * (this.steer > 0 ? 0.92 : 1.08);
     for (const w of this.wheels) {
       const front = w.mz > 0;
@@ -318,6 +355,12 @@ export class CrawlerPhysics {
       // hub at full droop
       const Hd = new THREE.Vector3(w.mx, PHYS.hubMin, w.mz).applyQuaternion(q).add(this.pos);
       w.hub.copy(Hd);
+      if (tipped) {
+        // on its side or roof the tyre model is meaningless: it read the ground on the far side of the body
+        // as a rock against the tyre face and fired the truck into the air. The tyres are solid probes instead.
+        w.contact = false; w.fn = 0; w.c = 0; w.cPrev = 0; w.water = 0; w.defl = 0;
+        continue;
+      }
       let cMax = -1, bestP = null, frontPen = 0, frontN = null;
       w.water = 0;
       for (let ai = -1; ai <= 1; ai++) {
@@ -348,9 +391,15 @@ export class CrawlerPhysics {
         w.surf = hf.surfaceAt(bestP.x, bestP.z);
         const props = SURF_PROPS[w.surf];
         // sinkage in soft surfaces
-        const c = Math.max(0, cMax - props.sink);
-        w.contact = c > 0;
-        if (!w.contact) { w.fn = 0; w.c = 0; w.cPrev = Math.max(0, w.cPrev - dt * 2); continue; }
+        const cg = Math.max(0, cMax - props.sink);
+        w.contact = cg > 0;
+        if (!w.contact) { w.fn = 0; w.c = 0; w.defl = 0; w.cPrev = Math.max(0, w.cPrev - dt * 2); continue; }
+        // the overlap is shared between the tyre squashing and the suspension compressing, two springs in
+        // series carrying the same load; past maxDefl the rim bottoms out and the rest is suspension
+        const tk = this.tyre.k;
+        const defl = Math.min(cg * 0.9, this.tyre.maxDefl, PHYS.spring * (cg + PHYS.preload) / (PHYS.spring + tk));
+        w.defl = defl;
+        const c = cg - defl;
         const cc = Math.min(c, PHYS.travel);
         const Hc = _v3.copy(Hd).addScaledVector(up, cc);
         const n = _n.copy(Hc).sub(bestP);
@@ -385,11 +434,11 @@ export class CrawlerPhysics {
         const N = Fs / Math.max(0.35, n.dot(up));
         w.fn = N + (w.bumpF || 0);
         const F = _v4.copy(n).multiplyScalar(N);
-        const app = Hc.clone().addScaledVector(n, -R * 0.6);
+        const app = Hc.clone().addScaledVector(n, -R * this.gripDepth);
         this._applyForce(F, app, dt);
         w.fwd = fwd; w.app = app;
       } else {
-        w.contact = false; w.fn = 0; w.c = 0; w.cPrev = Math.max(0, w.cPrev - dt * 2);
+        w.contact = false; w.fn = 0; w.c = 0; w.defl = 0; w.cPrev = Math.max(0, w.cPrev - dt * 2);
       }
       if (frontPen > 0.002) {
         // tyre face pressed into a wall (log, ledge): a hard contact at the hub
@@ -454,7 +503,7 @@ export class CrawlerPhysics {
         if (!w.contact) { w.slip = w.om * R; continue; }
         const props = SURF_PROPS[w.surf];
         const wetMu = 1 - (hf.wetGlobal || 0) * (w.surf === SURF.ROCK ? 0.3 : 0.18) - w.water * 0.12;
-        const mu = props.mu * wetMu * (0.92 + 0.08 * this.battery);
+        const mu = props.mu * wetMu * (0.92 + 0.08 * this.battery) * this.tyre.grip;
         const n = w.n;
         const tl = _v1.copy(w.fwd).addScaledVector(n, -w.fwd.dot(n)).normalize();
         const tt = _v2.crossVectors(n, tl).normalize();
@@ -469,7 +518,7 @@ export class CrawlerPhysics {
         // longitudinal: wheel inertia boosted by what the driveline couples to it
         const Ieff = Iw * (mode.front && mode.rear && !dig ? 4 + It / Iw : 2) * 0.25;
         let Jl = slip / (1 / ml + R * R / Ieff);
-        let Jroll = -Math.sign(vl) * Math.min(Math.abs(vl) * ml, props.roll * w.fn * dt / ITER);
+        let Jroll = -Math.sign(vl) * Math.min(Math.abs(vl) * ml, props.roll * this.tyre.roll * w.fn * dt / ITER);
         let Jt = -vt * mt * 0.9 * (2 / ITER);
         const mag = Math.hypot(Jl, Jt);
         if (mag > maxJ) { const sc = maxJ / mag; Jl *= sc; Jt *= sc; }
@@ -492,6 +541,23 @@ export class CrawlerPhysics {
         this.contacts.push({ p: P.clone(), n, e: (h - P.y) * Math.max(0.25, n.y), mu: PHYS.chassisMu, part: PROBE_PART[pi], mat: SURF_NAMES[hf.surfaceAt(P.x, P.z)] || 'dirt', scrape: true });
       }
     }
+    if (tipped) {
+      // the tyres as solid rubber: points on each tread and outer sidewall
+      const yh = PHYS.hubRestY;
+      for (const w of this.wheels) {
+        const sx = Math.sign(w.mx), ox = w.mx + sx * HW;
+        for (const [x, y, z] of [[ox, yh, w.mz], [w.mx, yh + R, w.mz], [w.mx, yh - R, w.mz], [w.mx, yh, w.mz + R], [w.mx, yh, w.mz - R],
+          [ox, yh + R * 0.7, w.mz + R * 0.7], [ox, yh + R * 0.7, w.mz - R * 0.7], [ox, yh - R * 0.7, w.mz + R * 0.7], [ox, yh - R * 0.7, w.mz - R * 0.7]]) {
+          const P = _p.set(x, y, z).applyQuaternion(q).add(this.pos);
+          const h = hf.heightAt(P.x, P.z);
+          if (P.y < h) {
+            const n = hf.normalAt(P.x, P.z, _n).clone();
+            this.contacts.push({ p: P.clone(), n, e: (h - P.y) * Math.max(0.25, n.y), mu: 0.8, part: 'tyre', mat: SURF_NAMES[hf.surfaceAt(P.x, P.z)] || 'dirt', scrape: true });
+          }
+        }
+      }
+    }
+    this._terrainInBody(hf, q);
 
     // ---- upright posts (tree trunks, marker stakes, gate and sign posts) against the body boxes and the
     // four tyres. Each post is tested along its height, so a part only collides with what is level with
@@ -534,21 +600,25 @@ export class CrawlerPhysics {
       }
     }
 
-    // ---- light damping
-    this.ang.multiplyScalar(1 - 0.35 * dt);
+    // ---- light damping. On its side or roof, touching the ground, the body scrubs its spin off (sheet metal
+    // and the roof rack dig in where tyres would roll), so a rollover ends in a roll or two, not a tumble.
+    const scrubbing = tipped && this.contacts.length > 0;
+    this.ang.multiplyScalar(1 - (scrubbing ? 6 : 0.35) * dt);
+    if (scrubbing) this.vel.multiplyScalar(1 - 1.2 * dt);
     this.vel.multiplyScalar(1 - 0.02 * dt);
 
     // ---- integrate (real velocity, then the split-impulse pseudo velocity, which only repairs overlap
     // and is discarded so it can't add energy)
-    this.pos.addScaledVector(this.vel, dt);
-    const w = this.ang;
-    _q.set(w.x * dt * 0.5, w.y * dt * 0.5, w.z * dt * 0.5, 0).multiply(q);
-    q.x += _q.x; q.y += _q.y; q.z += _q.z; q.w += _q.w; q.normalize();
-    if (this.vPs.lengthSq() + this.wPs.lengthSq() > 0) {
-      this.pos.addScaledVector(this.vPs, dt);
-      const wp = this.wPs;
-      _q.set(wp.x * dt * 0.5, wp.y * dt * 0.5, wp.z * dt * 0.5, 0).multiply(q);
+    // the centre of mass moves with vel and the body turns about it; the origin is placed back under it
+    const integrate = (v, w) => {
+      this.com.addScaledVector(v, dt);
+      _q.set(w.x * dt * 0.5, w.y * dt * 0.5, w.z * dt * 0.5, 0).multiply(q);
       q.x += _q.x; q.y += _q.y; q.z += _q.z; q.w += _q.w; q.normalize();
+      this.pos.copy(_v4.set(0, -this.comLift, 0).applyQuaternion(q).add(this.com));
+    };
+    integrate(this.vel, this.ang);
+    if (this.vPs.lengthSq() + this.wPs.lengthSq() > 0) {
+      integrate(this.vPs, this.wPs);
       this.vPs.set(0, 0, 0); this.wPs.set(0, 0, 0);
     }
 
@@ -562,6 +632,48 @@ export class CrawlerPhysics {
     // safety: never fall through the world
     const gh = hf.heightAt(this.pos.x, this.pos.z);
     if (this.pos.y < gh - 0.6) { this.pos.y = gh + 0.5; this.vel.set(0, 0, 0); }
+  }
+
+  // Sharp terrain (spires, ledge corners) inside the body. The probes above are points, so anything narrower
+  // than their spacing slipped between them and through the truck. Every terrain vertex under the body (the
+  // heightfield's local maxima, 10 cm apart) is tested against the collision boxes; per box the deepest one
+  // pushes the body out through the face it came in by (judged from the previous substep's pose, so a spire
+  // is never pushed out through the far side), as the posts do.
+  _terrainInBody(hf, q) {
+    if (!hf.cell) return;
+    const cell = hf.cell, half = hf.half, r = 1.05;   // body reach from the origin, all boxes included
+    const i0 = Math.ceil((this.pos.x - r + half) / cell), i1 = Math.floor((this.pos.x + r + half) / cell);
+    const j0 = Math.ceil((this.pos.z - r + half) / cell), j1 = Math.floor((this.pos.z + r + half) / cell);
+    const floorY = this.pos.y - 0.62;   // nothing of the body reaches lower than this in any orientation
+    _q.copy(q).invert();
+    const inv = (this._tibInv || (this._tibInv = new THREE.Quaternion())).copy(this.prevQ).invert();
+    const best = this._tibBest || (this._tibBest = BOXES.map(() => ({ pen: 0 })));
+    for (const b of best) b.pen = 0;
+    const L = _v4, Lp = _v5;
+    for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+      const x = i * cell - half, z = j * cell - half, h = hf.heightAt(x, z);
+      if (h < floorY) continue;
+      L.set(x - this.pos.x, h - this.pos.y, z - this.pos.z).applyQuaternion(_q);
+      for (let bi = 0; bi < BOXES.length; bi++) {
+        const [hx, by0, by1, bz0, bz1] = BOXES[bi];
+        if (L.x <= -hx || L.x >= hx || L.y <= by0 || L.y >= by1 || L.z <= bz0 || L.z >= bz1) continue;
+        Lp.set(x - this.prevPos.x, h - this.prevPos.y, z - this.prevPos.z).applyQuaternion(inv);
+        // [depth, local normal pushing the body away from the point, point was outside this face last substep]
+        const faces = [[hx - L.x, -1, 0, 0, Lp.x >= hx], [L.x + hx, 1, 0, 0, Lp.x <= -hx], [by1 - L.y, 0, -1, 0, Lp.y >= by1],
+          [L.y - by0, 0, 1, 0, Lp.y <= by0], [bz1 - L.z, 0, 0, -1, Lp.z >= bz1], [L.z - bz0, 0, 0, 1, Lp.z <= bz0]];
+        let f = null;
+        for (const fc of faces) if (fc[4] && (!f || fc[0] < f[0])) f = fc;
+        if (!f) for (const fc of faces) if (!f || fc[0] < f[0]) f = fc;
+        const B = best[bi];
+        if (f[0] > B.pen) { B.pen = f[0]; B.nx = f[1]; B.ny = f[2]; B.nz = f[3]; B.x = x; B.y = h; B.z = z; }
+      }
+    }
+    for (let bi = 0; bi < BOXES.length; bi++) {
+      const B = best[bi];
+      if (B.pen <= 0) continue;
+      const n = new THREE.Vector3(B.nx, B.ny, B.nz).applyQuaternion(q);
+      this.contacts.push({ p: new THREE.Vector3(B.x, B.y, B.z), n, e: Math.min(B.pen, 0.15), mu: PHYS.chassisMu, part: BOXES[bi][5], mat: SURF_NAMES[hf.surfaceAt(B.x, B.z)] || 'rock', scrape: true });
+    }
   }
 
   // One upright post against the body boxes and the tyres. Samples the post every 4 cm up its height; per
@@ -669,7 +781,7 @@ export class CrawlerPhysics {
     for (let it = 0; it < 6; it++) {
       for (const c of C) {
         if (c.e <= PHYS.slop) continue;
-        _r.copy(c.p).sub(this.pos);
+        _r.copy(c.p).sub(this.com);
         const vpn = _v3.copy(_r).cross(this.wPs).negate().add(this.vPs).dot(c.n);
         let dj = (PHYS.beta * (c.e - PHYS.slop) / dt - vpn) * c.mn;
         const old = c.jp; c.jp = Math.max(0, old + dj); dj = c.jp - old;

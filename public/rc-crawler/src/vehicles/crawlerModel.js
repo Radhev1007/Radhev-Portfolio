@@ -15,6 +15,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries, mergeVertices, toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
+import { prepareWheel, setWheelContact } from './tyreDeform.js';
 
 const DEFAULT_PAINT = 0xf1f1ee;   // Axial SCX30 JLU, gloss white (the first livery)
 
@@ -2001,6 +2002,8 @@ export function createCrawler(opts = {}) {
     knuckles.push(k);
     spinners.push(spinner);
   }
+  // each road wheel squashes against the ground on its own (tyreDeform.js); the spare stays round
+  const tyreU = spinners.map((sp) => prepareWheel(sp));
 
   // --------------------------------------------------- 4-link suspension ----
   const _a = V(), _b = V(), _d = V();
@@ -2161,6 +2164,8 @@ export function createCrawler(opts = {}) {
       k.rotation.set(0, i === 0 ? sl : i === 1 ? sr : 0, axles[a].rotation.z);
       k.updateMatrix();
       spinners[i].rotation.x = spin[i];
+      const ty = state.tyres?.[i];
+      setWheelContact(tyreU[i], ty?.contact, ty?.p, ty?.n, ty?.defl || 0);
     }
 
     // Links
@@ -2228,6 +2233,7 @@ export function createCrawler(opts = {}) {
       const w = src.clone();
       if (HUB_X[i] < 0) w.rotation.y = PI;   // outer face toward -X on the right side
       sp.add(w);
+      prepareWheel(w, tyreU[i]);
       ownWheels.push(w);
     });
   }
