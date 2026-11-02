@@ -50,3 +50,16 @@ test('the return gateway sits 4 m behind the spawn on a levelled pad', () => {
   for (let a = 0; a < 24; a++) for (const f of [0.3, 0.6, 1]) { const h = ctx.hf.baseHeightAt(gateway.x + Math.cos(a / 24 * 6.283) * 1.6 * f, gateway.z + Math.sin(a / 24 * 6.283) * 1.6 * f); lo = Math.min(lo, h); hi = Math.max(hi, h); }
   assert.ok(hi - lo <= 0.05, `pad spread ${(hi - lo).toFixed(3)}`);
 });
+
+test('in a multiplayer room no barrier stands, whatever this player has unlocked', async () => {
+  const { buildGateways } = await import('../../public/rc-crawler/src/world/gateways.js');
+  const level = { hf: { heightAt: () => 0 }, gateways: [{ id: 'mud', to: 'mud', x: 0, z: 10, yaw: 0, width: 3.2 }], basecamp: null };
+  const solo = buildGateways(level, {});
+  assert.ok(solo.list[0].barrier.every((p) => p.enabled), 'locked solo: barrier stands');
+  const room = buildGateways(level, {}, { multiplayer: true });
+  assert.ok(room.list[0].barrier.every((p) => !p.enabled && !p.mesh.visible), 'in a room: barrier down');
+  solo.refresh({}, { multiplayer: true });
+  assert.ok(solo.list[0].barrier.every((p) => !p.enabled), 'joining a room lowers it');
+  solo.refresh({}, { multiplayer: false });
+  assert.ok(solo.list[0].barrier.every((p) => p.enabled), 'leaving the room raises it again');
+});

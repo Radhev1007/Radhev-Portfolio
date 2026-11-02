@@ -6,11 +6,18 @@ import * as THREE from 'three';
 export const TIER_COLOR = { Beginner: 0x3ccf6e, Intermediate: 0xf5a623, Expert: 0xe5484d };
 const MEDAL_COLOR = { gold: 0xf2c94c, silver: 0xd6dbe0, bronze: 0xc98a52 };
 
-/** Where and how big challenge `c`'s ring is: on its start gate, a little wider than the gate. */
+/**
+ * Where and how big challenge `c`'s ring is: a little wider than its start gate, set just before the start
+ * line (gates are crossed along their yaw), so a truck parked in it is clear of the gate posts and the timer
+ * starts only once it drives through the gate.
+ */
 export function ringFor(c) {
-  const g = c.gates[0];
-  return { id: c.id, x: g.x, z: g.z, r: Math.max(1.6, g.width / 2 + 0.4), tier: c.tier || 'Intermediate' };
+  const g = c.gates[0], r = Math.max(1.6, g.width / 2 + 0.4), back = r + 0.5;
+  return { id: c.id, x: g.x - Math.sin(g.yaw) * back, z: g.z - Math.cos(g.yaw) * back, r, tier: c.tier || 'Intermediate' };
 }
+
+/** A challenge is under way (and the rings stand aside) only while it is armed or running, not once done. */
+export const busy = (challenges) => !!challenges.active && (challenges.state === 'armed' || challenges.state === 'running');
 
 /** The closest ring that (x, z) is inside, or null. */
 export function nearestRing(rings, x, z) {
@@ -58,14 +65,14 @@ export function buildRings(level, challenges) {
     },
     update(dt, phys, camera) {
       t += dt;
-      const busy = !!challenges.active;
+      const isBusy = busy(challenges);
       for (const r of rings) {
         const mine = challenges.active?.id === r.id;
-        r.band.material.opacity = busy && !mine ? 0.2 : 0.65 + Math.sin(t * 3) * 0.2;
-        r.beacon.material.opacity = busy && !mine ? 0.04 : 0.18;
+        r.band.material.opacity = isBusy && !mine ? 0.2 : 0.65 + Math.sin(t * 3) * 0.2;
+        r.beacon.material.opacity = isBusy && !mine ? 0.04 : 0.18;
         if (camera && r.disc.visible) r.disc.lookAt(camera.position);
       }
-      if (busy || !phys) return null;
+      if (isBusy || !phys) return null;
       return nearestRing(rings, phys.pos.x, phys.pos.z);
     },
   };

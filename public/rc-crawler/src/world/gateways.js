@@ -59,10 +59,14 @@ function drawSign({ c, t }, lines, locked) {
   t.needsUpdate = true;
 }
 
-/** The sign's text for gateway `g` with progress `best`, and whether the way is barred. */
-function signFor(g, best) {
+/**
+ * The sign's text for gateway `g` with progress `best`, and whether the way is barred. In a multiplayer room
+ * nothing is barred (players' own unlocks differ, and the room shares one physics world) and the sign says so.
+ */
+function signFor(g, best, multiplayer) {
   const def = LEVEL_BY_ID[g.to];
-  const name = def ? def.name : g.to;
+  const name = g.to === 'hub' ? 'Trailhead Valley' : def ? def.name : g.to;
+  if (multiplayer) return { lines: [name, 'Multiplayer room', 'Gateways open when you leave the room'], locked: false };
   if (g.to === 'hub') return { lines: ['Trailhead Valley', 'Back to basecamp'], locked: false };
   const avail = availableIn(g.to);
   const tally = `Medals ${medalsIn(best, g.to)} / ${avail ?? '—'}`;
@@ -75,7 +79,7 @@ function signFor(g, best) {
  * props. `posts` must join level.posts before the physics starts. Each frame, `update` returns the gateway
  * the truck just drove out through (open ones only); pushing against a barrier sets `lastBlocked`.
  */
-export function buildGateways(level, best) {
+export function buildGateways(level, best, opts = {}) {
   const group = new THREE.Group(); group.name = 'gateways';
   const hf = level.hf, posts = [];
   const wood = new THREE.MeshStandardMaterial({ color: 0x5a4330, roughness: 0.85 });
@@ -120,9 +124,11 @@ export function buildGateways(level, best) {
 
   const api = {
     group, posts, list, lastBlocked: null,
-    refresh(b) {
+    multiplayer: !!opts.multiplayer,
+    refresh(b, o) {
+      if (o && 'multiplayer' in o) api.multiplayer = !!o.multiplayer;
       for (const it of list) {
-        const { lines, locked } = signFor(it.g, b);
+        const { lines, locked } = signFor(it.g, b, api.multiplayer);
         drawSign(it.tex, lines, locked);
         it.locked = locked;
         for (const p of it.barrier) { p.enabled = locked; p.mesh.visible = locked; }

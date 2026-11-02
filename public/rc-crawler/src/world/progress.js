@@ -31,19 +31,23 @@ export function newlyUnlocked(before, after) {
   return Object.keys(UNLOCKS).filter((id) => UNLOCKS[id] > a && UNLOCKS[id] <= b);
 }
 
+// localStorage itself can throw on access (site data blocked, sandboxed frames), so it is only ever looked
+// up inside a try
+const storage = (store) => { try { return store === undefined ? globalThis.localStorage : store; } catch { return null; } };
+
 function readAvail(store) {
-  try { return JSON.parse(store?.getItem(AVAIL_KEY) || '{}') || {}; } catch { return {}; }
+  try { return JSON.parse(storage(store)?.getItem(AVAIL_KEY) || '{}') || {}; } catch { return {}; }
 }
 
-export function recordAvailable(levelId, n, store = globalThis.localStorage) {
+export function recordAvailable(levelId, n, store) {
   try {
     const all = readAvail(store);
     all[levelId] = n;
-    store?.setItem(AVAIL_KEY, JSON.stringify(all));
+    storage(store)?.setItem(AVAIL_KEY, JSON.stringify(all));
   } catch { /* storage unavailable: signs fall back to "4 / —" */ }
 }
 
-export function availableIn(levelId, store = globalThis.localStorage) {
+export function availableIn(levelId, store) {
   const n = readAvail(store)[levelId];
   return typeof n === 'number' ? n : null;
 }

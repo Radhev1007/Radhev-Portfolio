@@ -46,3 +46,14 @@ test('a storage that throws never breaks progress', () => {
   assert.equal(availableIn('canyon', bad), null);
   assert.equal(availableIn('canyon', undefined), null);
 });
+
+test('a browser that throws on reading localStorage itself never breaks progress', () => {
+  const desc = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('SecurityError'); } });
+  try {
+    assert.doesNotThrow(() => recordAvailable('canyon', 10));
+    assert.equal(availableIn('canyon'), null);
+  } finally {
+    if (desc) Object.defineProperty(globalThis, 'localStorage', desc); else delete globalThis.localStorage;
+  }
+});

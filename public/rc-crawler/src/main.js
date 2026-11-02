@@ -18,7 +18,7 @@ import { AudioEngine } from './audio/audio.js';
 import { Input } from './core/input.js';
 import { ChallengeManager, fmtTime } from './challenges/challenges.js';
 import { buildGateways, drawBoard } from './world/gateways.js';
-import { buildRings } from './world/challengeRings.js';
+import { buildRings, busy as challengeBusy } from './world/challengeRings.js';
 import { countMedals, medalsIn, isUnlocked, needFor, newlyUnlocked, recordAvailable, availableIn } from './world/progress.js';
 import { UI } from './ui/ui.js';
 import { Multiplayer } from './net/multiplayer.js';
@@ -147,7 +147,7 @@ async function loadLevel(id, { keepState = false, arriveAt = null } = {}) {
   arriveFrom = arriveAt;
   scene.add(level.group);
   // gateway arches (and the hub's basecamp): their posts join the level's before physics and net ids
-  gateways = buildGateways(level, challenges.best);
+  gateways = buildGateways(level, challenges.best, { multiplayer: mp.active });
   level.group.add(gateways.group);
   level.posts.push(...gateways.posts);
   phys = new CrawlerPhysics(level.hf);
@@ -300,7 +300,7 @@ function travel(to) {
 const lockInfo = () => Object.fromEntries(LEVELS.map((l) => [l.id, { locked: !isUnlocked(l.id, challenges.best) && l.id !== urlLevel, need: needFor(l.id) }]));
 function refreshProgress() {
   const best = challenges.best;
-  gateways?.refresh(best);
+  gateways?.refresh(best, { multiplayer: mp.active });
   ui.setLocks(lockInfo(), countMedals(best));
   ui.setMedals(countMedals(best));
   if (gateways && rings) minimap?.setWorldMarks({
@@ -325,7 +325,7 @@ function checkRings(dt) {
   ui.ringPrompt(`<b>${r.c.name}</b> · ${TIER_SHORT[r.tier] || r.tier} · Best: ${bestTxt}`);
 }
 function startRing() {
-  if (state !== 'play' || !ringHere || challenges.active) return;
+  if (state !== 'play' || !ringHere || challengeBusy(challenges)) return;
   audio.uiClick();
   challenges.select(ringHere.id);
   ui.refreshChallenges(challenges);
@@ -753,8 +753,8 @@ if (level) minimap.setLevel(level);
 voice.on('change', () => mp.onState());   // speaking / mic indicators on name tags follow voice right away
 // while another player talks, the game's own sound dips so their voice comes through
 voice.on('change', () => { const me = mp.room?.sessionId; audio.setDuck([...(voice.speaking || [])].some((s) => s !== me) ? 0.45 : 1); });
-mp.on('joined', () => { audio.start(); if (level) placeAtSpawn(); });
-mp.on('left', () => { modes.teardown(); voice.leave(); myLivery = null; applyLivery(); audio.setDuck(1); });
+mp.on('joined', () => { audio.start(); if (level) { placeAtSpawn(); refreshProgress(); } });   // in a room the gateways stand open
+mp.on('left', () => { modes.teardown(); voice.leave(); myLivery = null; applyLivery(); audio.setDuck(1); if (level) refreshProgress(); });
 
 // In a room, this truck wears the livery the player picked, exactly as everyone else sees it; white again solo.
 // (The last livery is kept through a reconnect, so the paint doesn't flash white.)
