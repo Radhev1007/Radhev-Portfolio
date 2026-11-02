@@ -47,6 +47,7 @@ export function CaseStudy({ project, next }: Props) {
                 alt={project.imageAlt ?? `${project.title} cover`}
                 fill
                 preload
+                fetchPriority="high"
                 sizes="(min-width: 768px) 66vw, 100vw"
                 className="object-cover"
               />

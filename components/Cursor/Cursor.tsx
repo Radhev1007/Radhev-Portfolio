@@ -45,19 +45,23 @@ export function Cursor() {
     const current = { x: -100, y: -100 };
     let frame = 0;
 
+    // The easing loop runs only while the dot is catching up with the pointer: once it has settled it stops,
+    // and the next pointer move wakes it. (It used to run every frame for as long as the page was open.)
     const loop = () => {
       current.x += (target.x - current.x) * 0.22;
       current.y += (target.y - current.y) * 0.22;
+      const settled = Math.abs(target.x - current.x) < 0.1 && Math.abs(target.y - current.y) < 0.1;
+      if (settled) { current.x = target.x; current.y = target.y; }
       if (dotRef.current) {
         dotRef.current.style.transform = `translate3d(${current.x}px, ${current.y}px, 0)`;
       }
-      frame = requestAnimationFrame(loop);
+      frame = settled ? 0 : requestAnimationFrame(loop);
     };
-    frame = requestAnimationFrame(loop);
 
     const onMove = (e: PointerEvent) => {
       target.x = e.clientX;
       target.y = e.clientY;
+      if (!frame) frame = requestAnimationFrame(loop);
       setVisible(true);
     };
     const onOver = (e: PointerEvent) => {

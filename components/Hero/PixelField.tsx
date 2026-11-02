@@ -220,18 +220,23 @@ export function PixelField({ cell = 4, gap = 1 }: { cell?: number; gap?: number 
       return () => ro.disconnect();
     }
 
+    // ~30 fps, and only while it can be seen: scrolled away or in a background tab the loop stops altogether
+    // (rather than waking every frame to do nothing) and resumes when the field is back in view
     let raf = 0, last = 0, visible = true;
     const loop = (now: number) => {
+      if (!visible || document.hidden) { raf = 0; return; }
       raf = requestAnimationFrame(loop);
-      if (!visible || document.hidden || now - last < 33) return;   // ~30 fps, and only while it can be seen
+      if (now - last < 33) return;
       last = now;
       const t = now / 1000;
       if (t > nextAt && pieces.length < (cols > 210 ? 7 : 4)) { spawn(t); nextAt = t + 0.7 + Math.random() * 0.8; }
       draw(t);
     };
+    const wake = () => { if (!raf && visible && !document.hidden) raf = requestAnimationFrame(loop); };
     raf = requestAnimationFrame(loop);
-    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
+    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; wake(); });
     io.observe(el);
+    document.addEventListener("visibilitychange", wake);
     const ro = new ResizeObserver(size);
     ro.observe(el);
     window.addEventListener("pointermove", onMove, { passive: true });
@@ -240,6 +245,7 @@ export function PixelField({ cell = 4, gap = 1 }: { cell?: number; gap?: number 
     return () => {
       cancelAnimationFrame(raf);
       io.disconnect(); ro.disconnect();
+      document.removeEventListener("visibilitychange", wake);
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerleave", onLeave);
     };

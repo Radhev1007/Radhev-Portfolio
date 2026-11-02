@@ -16,9 +16,11 @@ import { ease, INTRO_HOLD } from "@/lib/motion";
  * the hero's entrance (timed from INTRO_HOLD, lib/motion) plays as it is
  * revealed.
  *
- * The page is rendered underneath the whole time, so search engines and the
- * page-speed metrics see the content at once; only scrolling waits. Reduced
- * motion gets the finished logo and a short fade.
+ * The page is rendered underneath the whole time, so search engines read the
+ * content at once. Paint metrics do not: Chrome records nothing as painted
+ * while this screen covers the page, so first and largest contentful paint
+ * land when it lifts (~2.5 s, measured Nov 2026) — a deliberate trade for the
+ * opening. Reduced motion gets the finished logo and a short fade.
  *
  * Its words (name, role, percentage) are drawn only once the page runs in the
  * browser: in the server HTML they were the first text on the page, ahead of
