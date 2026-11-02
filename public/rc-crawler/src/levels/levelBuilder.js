@@ -9,6 +9,7 @@ import { loadForestKit } from '../terrain/forestKit.js';
 import { createTerrainMaterial, createRockMaterial, sharedTerrainUniforms } from '../terrain/terrainMaterial.js';
 import { createWaterMesh, createWaterfall } from '../terrain/water.js';
 import { buildActivities } from './activities.js';
+import { placeReturnGateway } from '../world/gateways.js';
 
 const yieldFrame = () => new Promise((r) => setTimeout(r, 0));
 
@@ -325,6 +326,13 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   activities.trailDelta = layout.path ? Math.max(0, ...layout.path.pts.map((p, i) => Math.abs(ctx.hf.baseHeightAt(p.x, p.z) - trailBefore[i]))) : 0;
   if (activities.trailDelta > 0.005) console.warn(`[activities] ${def.id}: trail centreline moved by ${activities.trailDelta.toFixed(3)} m`);
   layout.challenges = [...(layout.challenges || []), ...activities.challenges];
+  // every terrain has a gateway just behind its spawn back to the hub (after the activities, whose trail guard
+  // above has already run)
+  if (def.id !== 'hub' && layout.spawn) {
+    const { gateway } = placeReturnGateway(ctx, layout.spawn);
+    layout.gateways = [gateway];
+    layout.arrivals = {};
+  }
   // murky puddles inside mud pits
   for (const pd of ctx.pendingPuddles || []) {
     let mn = 1e9;
