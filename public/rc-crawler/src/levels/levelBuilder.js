@@ -38,7 +38,7 @@ export class TrailPath {
 }
 
 // ---------------------------------------------------------------- Context
-class LevelContext {
+export class LevelContext {
   constructor(def, quality) {
     this.def = def;
     this.quality = quality;
@@ -424,6 +424,7 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
     def, hf, group, ctx, trunks, posts: ctx.posts || [], dynamics: ctx.dynamics || [], activities,
     spawn: layout.spawn, intro: layout.intro || layout.spawn, path: layout.path || null,
     challenges: layout.challenges || [],
+    gateways: layout.gateways || [], arrivals: layout.arrivals || {}, basecamp: layout.basecamp || null,
     markers: ctx.markers,
     env: def.env || {},
   };

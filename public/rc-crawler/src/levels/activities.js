@@ -23,6 +23,7 @@ const pick3 = (tier, a) => a[Math.min(2, Math.max(0, tier))];
 // Each terrain gets the six signature categories adapted to its style, plus activities that suit it.
 // [kind, tier, style] in priority order: if a terrain runs out of room, the tail is dropped.
 const PROGRAMME = {
+  hub: [['slalom', 0], ['rockCrawl', 0], ['jump', 0], ['logPile', 1], ['slopes', 1]],
   canyon: [['rockCrawl', 2], ['slopes', 2], ['jump', 1], ['bridge', 1, 'timber'], ['logPile', 0, 'beams'], ['mudRuts', 0, 'clay'],
     ['rockStairs', 2], ['precision', 2], ['flex', 1], ['ridge', 2]],
   forest: [['logPile', 2], ['bridge', 1, 'timber'], ['mudRuts', 1], ['rockCrawl', 0, 'mossy'], ['slopes', 1], ['jump', 0],
@@ -145,6 +146,7 @@ export function buildActivities(ctx, def, layout, TrailPath) {
   const sites = [], challenges = [], placed = [], skipped = [], spurs = [], gully = new Set();
   for (const r of ctx.rocks.instances) r._y0 = hf.baseHeightAt(r.x, r.z);     // to re-seat rocks after earthworks
   const spawn = path.at(0);
+  const keepClear = layout.keepClear || [];
   const water = ctx.water || [];
   const inWater = (x, z) => water.some((w) => x > w.x0 && x < w.x1 && z > w.z0 && z < w.z1 && hf.baseHeightAt(x, z) < w.y + 0.25);
 
@@ -172,6 +174,8 @@ export function buildActivities(ctx, def, layout, TrailPath) {
         if (dTrail < 4.6 + wid / 2 || dTrail > 22) continue;
         if (Math.hypot(gx - spawn.x, gz - spawn.z) < 10) continue;
         const R = Math.hypot(len, wid) / 2 + 2;
+        // ground the level keeps for itself (the hub's basecamp and gateway pads)
+        if (keepClear.some((c) => Math.hypot(c.x - gx, c.z - gz) < c.r + R)) continue;
         if (sites.some((s) => Math.hypot(s.cx - gx, s.cz - gz) < R + s.R + 1.5)) continue;
         const ni = nearest(gx, gz), t = ni / path.N;
         const T = path.tan[ni], Nn = path.normal(t);
