@@ -19,6 +19,7 @@ import { Input } from './core/input.js';
 import { ChallengeManager, fmtTime } from './challenges/challenges.js';
 import { buildGateways, drawBoard } from './world/gateways.js';
 import { buildRings, busy as challengeBusy } from './world/challengeRings.js';
+import { buildCrowd } from './world/crowd.js';
 import { countMedals, medalsIn, isUnlocked, needFor, newlyUnlocked, recordAvailable, availableIn } from './world/progress.js';
 import { UI } from './ui/ui.js';
 import { Multiplayer } from './net/multiplayer.js';
@@ -126,6 +127,7 @@ let minimap = null;   // created with the multiplayer objects below; reads them 
 let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
 let gateways = null;   // world/gateways.js, rebuilt with each level
+let crowd = null, wasRolled = false;   // world/crowd.js: spectators at the starts, gateways and basecamp
 let rings = null, ringHere = null;   // world/challengeRings.js: the ring the truck is in
 let travelling = false, arriveFrom = null, gwPrev = null, blockedToastAt = -10;
 let medalSnapshot = { ...challenges.best };   // to spot terrains a new medal unlocks
@@ -162,6 +164,8 @@ async function loadLevel(id, { keepState = false, arriveAt = null } = {}) {
   // challenge rings read medals through the manager, so after it knows the level
   rings = buildRings(level, challenges); ringHere = null; ui.ringPrompt(null);
   level.group.add(rings.group);
+  crowd = buildCrowd(level, rings.rings);
+  level.group.add(crowd.group);
   setChallengeMarkers(null);
   minimap?.setLevel(level);
   tracks.reset();
@@ -271,10 +275,12 @@ function setChallengeMarkers(id) {
 function onChallengeEvent(type, c, a, b, medal) {
   if (mp.active) modes.onChallengeEvent(type, c, a, b);
   if (type === 'select') { setChallengeMarkers(c ? c.id : null); ui.setChallenge(c, c ? 'Drive through the start gate' : ''); }
-  if (type === 'start') { ui.toast(c.name, 'Go! Timer started'); ui.setChallenge(c, 'In progress'); }
+  if (type === 'start') { crowd?.cheer(c.gates[0], 14, 1.6); ui.toast(c.name, 'Go! Timer started'); ui.setChallenge(c, 'In progress'); }
   if (type === 'checkpoint') ui.toast(`Checkpoint ${a + 1}/${b}`, '');
   if (type === 'fail') { ui.toast('Challenge failed', a); ui.setChallenge(c, `Failed — ${a}. Return to the start gate`); audio.impact(0.2, 'thud'); }
   if (type === 'complete') {
+    crowd?.cheer(c.gates[c.gates.length - 1], 30, 3.5);
+    crowd?.cheer(c.gates[0], 14, 3);
     const m = medal ? ` · ${medal[0].toUpperCase() + medal.slice(1)} medal` : '';
     ui.toast('Challenge complete', `${fmtTime(a)}${m}${b ? ' · New best!' : ''}`);
     ui.setChallenge(c, `Complete · ${fmtTime(a)}${m}`);
@@ -619,6 +625,13 @@ function tick(dt, forced) {
   // every collision, tyre touchdown/lift-off and landing comes straight from the physics step that
   // produced it; the audio engine merges and rate-limits them
   audio.events(phys.events);
+  if (crowd) {
+    crowd.events(phys.events);
+    const rolled = phys.upsideTimer > 1.2;
+    if (rolled && !wasRolled) crowd.flinch(phys.pos);
+    wasRolled = rolled;
+    crowd.update(dt, mp.spectating ? spectateTarget()?.pos : phys.pos, mp.spectating ? spectateTarget()?.vel : phys.vel);
+  }
   phys.events.length = 0;
   if (phys.stats.water > 0.2 && Math.abs(phys.stats.speed) > 0.5 && Math.random() < 0.03) audio.impact(0.4, 'splash');
 
@@ -723,7 +736,7 @@ const game = {
   remoteEvent: (m) => {
     const p = new THREE.Vector3(m.x, m.y, m.z);
     if (m.k === 'hit') audio.events([{ type: 'hit', mat: m.mat || 'metal', part: 'body', speed: m.s, impulse: m.s * 0.4, p }]);
-    if (m.k === 'land') audio.events([{ type: 'land', air: 0.5, speed: m.s, p }]);
+    if (m.k === 'land') { audio.events([{ type: 'land', air: 0.5, speed: m.s, p }]); crowd?.cheer(p, 20, 1.5); }
   },
   selectChallenge: (id) => { challenges.select(id); ui.refreshChallenges(challenges); },
   voiceInfo: (sid) => voice.info(sid),
@@ -799,7 +812,7 @@ else loadLevel(urlLevel || 'hub').then(async () => {
   if (code && mp.available) { mpUI.invite(code); mpUI.show(); }
 });
 window.__game = {
-  mp, modes, voice, mpUI, minimap, audio, challenges, get gateways() { return gateways; },
+  mp, modes, voice, mpUI, minimap, audio, challenges, get gateways() { return gateways; }, get crowd() { return crowd; },
   get phys() { return phys; }, get level() { return level; }, get resScale() { return resScale; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
   step(n, inp, dt = 1 / 60) { for (let i = 0; i < n; i++) tick(dt, inp); },
   // dev: save the current frame to assets/previews/<name>.jpg (localhost only)
