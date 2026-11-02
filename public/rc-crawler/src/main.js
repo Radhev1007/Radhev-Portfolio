@@ -288,6 +288,25 @@ function onChallengeEvent(type, c, a, b, medal) {
   }
 }
 
+// ------------------------------------------------------------ spectating: follow another player's truck
+let spectateIdx = 0;
+const spectatePhys = { yaw: 0, stats: { speed: 0 } }, _spF = new THREE.Vector3();
+function spectateList() { return [...mp.fleet.trucks.values()].filter((t) => t.model); }
+function spectateTarget() {
+  const list = spectateList();
+  if (!list.length) return null;
+  spectateIdx = ((spectateIdx % list.length) + list.length) % list.length;
+  return list[spectateIdx];
+}
+function spectateStep(d) {
+  const list = spectateList();
+  if (!list.length) { ui.toast('Nobody to watch yet', 'Players appear here when they join'); return; }
+  spectateIdx += d;
+  const t = spectateTarget();
+  const p = mp.players.find((q) => q.sid === t.sid)?.p;
+  ui.toast(`Watching ${p?.name || 'a driver'}`, `${list.length} driving · A / D to switch`);
+}
+
 // ------------------------------------------------------------ open world: travel and progress
 function travel(to) {
   if (!level || travelling || !LEVEL_BY_ID[to]) return;
@@ -316,7 +335,7 @@ function refreshProgress() {
 const TIER_SHORT = { Beginner: 'Beginner', Intermediate: 'Intermediate', Expert: 'Expert' };
 function checkRings(dt) {
   if (!rings) return;
-  const r = rings.update(dt, state === 'play' ? phys : null, camera);
+  const r = rings.update(dt, state === 'play' && !mp.spectating ? phys : null, camera);
   if (r === ringHere) return;
   ringHere = r;
   if (!r) { ui.ringPrompt(null); return; }
@@ -473,6 +492,7 @@ input.on('press', (k) => {
   if (k === 'escape') { if (state === 'play') openMenu(); else if (state === 'paused') { ui.closeMenu(); setState('play'); } return; }
   if (state === 'title' && (k === 'enter')) { ui.emit('start'); return; }
   if (state !== 'play') return;
+  if (mp.spectating) { if (k === 'a' || k === 'arrowleft') spectateStep(-1); if (k === 'd' || k === 'arrowright') spectateStep(1); return; }
   if (k === 'r') recover();
   if (k === 'e') startRing();
   if (k === 'c') ui.emit('camera');
@@ -566,6 +586,7 @@ function tick(dt, forced) {
   if (!level || !phys) { if (post) post.render(dt); return; }
   time += dt;
   let inp = forced || (state === 'play' && !mpUI.open ? input.state : { throttle: 0, steer: 0, handbrake: true });
+  if (mp.spectating && !forced) inp = { throttle: 0, steer: 0, handbrake: true };   // watching: our truck stays parked and hidden
   if (mp.active) inp = modes.inputOverride(inp);
   mp.preStep(dt);
   phys.update(dt, inp);
@@ -609,7 +630,10 @@ function tick(dt, forced) {
   }, dt);
 
   // camera
-  rig.update(dt, model.group, phys);
+  model.group.visible = !mp.spectating;
+  const watched = mp.spectating ? spectateTarget() : null;
+  if (watched) { spectatePhys.yaw = Math.atan2(_spF.set(0, 0, 1).applyQuaternion(watched.q).x, _spF.z); spectatePhys.stats.speed = watched.vel.length(); }
+  rig.update(dt, watched ? watched.model.group : model.group, watched ? spectatePhys : phys);
   // 3D audio: the camera listens, the truck's own sounds come from the truck
   camera.getWorldDirection(_aFwd);
   audio.setListener(camera.position, _aFwd, camera.up);
@@ -753,7 +777,10 @@ if (level) minimap.setLevel(level);
 voice.on('change', () => mp.onState());   // speaking / mic indicators on name tags follow voice right away
 // while another player talks, the game's own sound dips so their voice comes through
 voice.on('change', () => { const me = mp.room?.sessionId; audio.setDuck([...(voice.speaking || [])].some((s) => s !== me) ? 0.45 : 1); });
-mp.on('joined', () => { audio.start(); if (level) { placeAtSpawn(); refreshProgress(); } });   // in a room the gateways stand open
+mp.on('joined', () => {
+  audio.start(); if (level) { placeAtSpawn(); refreshProgress(); }
+  if (mp.spectating) setTimeout(() => spectateStep(0), 1500);   // say who we are watching once the trucks arrive
+});   // in a room the gateways stand open
 mp.on('left', () => { modes.teardown(); voice.leave(); myLivery = null; applyLivery(); audio.setDuck(1); if (level) refreshProgress(); });
 
 // In a room, this truck wears the livery the player picked, exactly as everyone else sees it; white again solo.

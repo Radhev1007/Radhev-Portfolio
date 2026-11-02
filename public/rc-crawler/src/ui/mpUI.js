@@ -40,6 +40,28 @@ export class MpUI {
     t.id = 'btn-mp'; t.className = 'btn-mp'; t.innerHTML = 'MULTIPLAYER <span>· drive with friends</span>';
     start.insertAdjacentElement('afterend', t);
     t.onclick = () => this.show();
+    // the open world: one click into the public session everyone online shares (or just watch it)
+    const ow = document.createElement('button');
+    ow.id = 'btn-open'; ow.className = 'btn-mp btn-open'; ow.innerHTML = 'PLAY ONLINE <span id="ow-count">· open world</span>';
+    t.insertAdjacentElement('beforebegin', ow);
+    ow.onclick = () => this.joinOpen(false);
+    const wb = document.createElement('button');
+    wb.id = 'btn-watch'; wb.className = 'btn-mp'; wb.innerHTML = 'WATCH LIVE <span id="ow-watch">· spectate the open world</span>';
+    t.insertAdjacentElement('afterend', wb);
+    wb.onclick = () => this.joinOpen(true);
+    const mo = document.createElement('button');
+    mo.id = 'm-open'; mo.className = 'btn'; mo.textContent = 'PLAY ONLINE';
+    $('#m-restart').insertAdjacentElement('beforebegin', mo);
+    mo.onclick = () => { this.game.closeMenu(); this.joinOpen(false); };
+    if (!this.mp.available) for (const b of [ow, wb, mo]) b.classList.add('hidden');
+    const count = async () => {
+      if (document.hidden) return;
+      const n = await this.mp.onlineCount();
+      if (!n) return;
+      $('#ow-count').textContent = `· ${n.online} online`;
+      $('#ow-watch').textContent = n.watching ? `· ${n.watching} watching` : '· spectate the open world';
+    };
+    count(); setInterval(count, 20000);
     const m = document.createElement('button');
     m.id = 'm-mp'; m.className = 'btn'; m.textContent = 'MULTIPLAYER';
     $('#m-restart').insertAdjacentElement('beforebegin', m);
@@ -167,6 +189,15 @@ export class MpUI {
   }
 
   status(t, err = false) { const s = $('#mp-status'); s.textContent = t || ''; s.classList.toggle('err', !!err && !!t); }
+
+  async joinOpen(spectate) {
+    if (this.mp.active) { this.game.toast(`In room ${this.mp.code}`, 'Leave it first to join the open world'); return; }
+    this.game.toast(spectate ? 'Joining as a spectator…' : 'Joining the open world…', '');
+    const ok = await this.mp.openWorldJoin(spectate);
+    if (!ok) return;
+    this.game.panelOpen(false);
+    this.game.toast(spectate ? 'Watching the open world' : 'Open world', spectate ? 'A / D switch drivers · Esc for the menu' : 'Everyone online drives here');
+  }
 
   show() {
     if (!this.mp.available) this.status('Multiplayer needs a server. See multiplayer-server/README.md to run one.', true);

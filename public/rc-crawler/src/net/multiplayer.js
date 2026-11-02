@@ -73,6 +73,8 @@ export class Multiplayer {
   get state() { return this.room?.state?.players ? this.room.state : null; }
   get me() { return this.state ? this.state.players.get(this.room.sessionId) : null; }
   get isHost() { return !!this.me?.host; }
+  get spectating() { return !!this.me?.watch; }          // watching only: no truck of ours in the room
+  get openWorld() { return !!this.state?.open; }          // the public open world (always free roam in the hub)
   get code() { return this.room?.roomId || ''; }
   get players() { return this.state ? [...this.state.players.entries()].map(([sid, p]) => ({ sid, p })) : []; }
   serverNow() { return performance.now() + this.offset; }
@@ -81,6 +83,18 @@ export class Multiplayer {
 
   // ------------------------------------------------------------ connect / leave
   async create() { return this.connect((c, opts) => c.create('rc', { ...opts, map: this.game.levelId() })); }
+  // the open world: join whichever public session has room (the server opens a new one when they are full),
+  // driving or, with `spectate`, only watching
+  async openWorldJoin(spectate = false) { return this.connect((c, opts) => c.joinOrCreate('open', { ...opts, spectate: !!spectate })); }
+  // how many people are online right now (drivers + watchers), from the server's health check; null offline
+  async onlineCount() {
+    if (!this.url) return null;
+    try {
+      const r = await fetch(this.url.replace(/^ws/, 'http').replace(/\/$/, '') + '/health', { cache: 'no-store' });
+      const h = await r.json();
+      return { online: h.online ?? h.players ?? 0, watching: h.watching ?? 0 };
+    } catch { return null; }
+  }
   async join(code) {
     code = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (code.length !== 5) { this.setError('Room codes are 5 letters/numbers'); return false; }
@@ -185,7 +199,7 @@ export class Multiplayer {
     // remote trucks: create / restyle / remove to match the player list
     const live = new Set();
     for (const [sid, p] of st.players) {
-      if (sid === this.room.sessionId) continue;
+      if (sid === this.room.sessionId || p.watch) continue;   // spectators have no truck
       live.add(p.slot);
       const t = this.fleet.get(p.slot);
       const v = this.game.voiceInfo?.(sid) || {};
@@ -240,6 +254,7 @@ export class Multiplayer {
     const now = performance.now();
     if (now - this.pingT > PING_EVERY) { this.pingT = now; this.room.send('ping', { c: now, rtt: Math.round(this.rtt) }); }
     this.sendAcc += dt;
+    if (this.spectating) return;   // nothing of ours to send or relay
     if (this.sendAcc >= 1 / SEND_HZ) {
       this.sendAcc %= 1 / SEND_HZ;
       const s = this.pose;

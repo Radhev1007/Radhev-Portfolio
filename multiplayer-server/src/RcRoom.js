@@ -17,7 +17,7 @@ import { voiceConfigured, voiceToken } from './voice.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no 0/O/1/I
 const activeCodes = new Set();
-export const roomStats = { rooms: 0, players: 0 };
+export const roomStats = { rooms: 0, players: 0, watching: 0 };   // players counts everyone connected, watchers too
 
 function newCode() {
   for (let n = 0; n < 1000; n++) {
@@ -46,6 +46,12 @@ export class RcRoom extends Room {
     this.setState(new RoomState());
     this.state.code = this.roomId;
     if (MAPS.includes(options.map)) this.state.map = options.map;
+    // the open world is one endless free-roam session in the hub that anyone can drop into
+    this.openWorld = !!options.open;
+    if (this.openWorld) {
+      const s = this.state;
+      s.open = true; s.map = 'hub'; s.mode = 'free'; s.phase = 'running'; s.startAt = Date.now(); s.endAt = 0;
+    }
     this.setPatchRate(100);
 
     this.guests = new Map();       // sessionId -> guestId (kept off the shared state)
@@ -63,9 +69,9 @@ export class RcRoom extends Room {
     });
     this.onMessage('profile', (client, m) => this.onProfile(client, m));
     this.onMessage('ready', (client, m) => { const p = this.player(client); if (p && this.state.phase !== 'running') p.ready = !!(m && m.ready); });
-    this.onMessage('config', (client, m) => this.onConfig(client, m));
-    this.onMessage('start', (client, m) => this.onStart(client, m));
-    this.onMessage('lobby', (client) => { if (this.isHost(client)) this.toLobby(); });
+    this.onMessage('config', (client, m) => { if (!this.openWorld) this.onConfig(client, m); });
+    this.onMessage('start', (client, m) => { if (!this.openWorld) this.onStart(client, m); });
+    this.onMessage('lobby', (client) => { if (!this.openWorld && this.isHost(client)) this.toLobby(); });
     this.onMessage('cp', (client, m) => this.onGate(client, m));
     this.onMessage('runFail', (client) => { const p = this.player(client); if (p && this.state.mode === 'timed') { p.cp = -1; this.moves.get(client.sessionId).runStart = 0; } });
     this.onMessage('score', (client, m) => this.onScore(client, m));
@@ -118,7 +124,9 @@ export class RcRoom extends Room {
     // joining mid-session: drive along in free roam, or watch (driving, unscored) until the next start
     const live = this.state.phase === 'countdown' || this.state.phase === 'running';
     p.status = !live ? 'lobby' : this.state.mode === 'free' ? 'driving' : 'spectating';
-    if (![...this.state.players.values()].some((q) => q.host)) { p.host = true; p.ready = true; }
+    // a spectator watches the room: no truck, nothing it sends moves anything
+    if (options.spectate === true) { p.watch = true; p.status = 'spectating'; p.ready = true; roomStats.watching++; }
+    if (options.spectate !== true && ![...this.state.players.values()].some((q) => q.host)) { p.host = true; p.ready = true; }
     this.state.players.set(client.sessionId, p);
     this.guests.set(client.sessionId, auth.guestId);
     this.moves.set(client.sessionId, { seq: -1, t: 0, has: false, rejects: 0, rejectT: 0, recoverT: 0, runStart: 0, tokens: 1500, tokT: Date.now() });
@@ -167,13 +175,14 @@ export class RcRoom extends Room {
     this.state.players.delete(sid);
     this.guests.delete(sid); this.moves.delete(sid); this.limits.delete(sid);
     roomStats.players = Math.max(0, roomStats.players - 1);
+    if (p.watch) roomStats.watching = Math.max(0, roomStats.watching - 1);
     if (wasHost) this.passHost(sid);
     console.log(`[${this.roomId}] left ${p.name} — ${this.state.players.size} players`);
   }
 
   passHost(fromSid) {
     const from = this.state.players.get(fromSid);
-    const next = [...this.state.players.entries()].filter(([sid, q]) => sid !== fromSid && q.connected).sort((a, b) => a[1].joinedAt - b[1].joinedAt)[0];
+    const next = [...this.state.players.entries()].filter(([sid, q]) => sid !== fromSid && q.connected && !q.watch).sort((a, b) => a[1].joinedAt - b[1].joinedAt)[0];
     if (!next) return;                       // nobody else here: keep the host until they come back or leave
     if (from) from.host = false;
     next[1].host = true; next[1].ready = true;
@@ -200,7 +209,7 @@ export class RcRoom extends Room {
   // ------------------------------------------------------------ movement
   onMove(client, bytes) {
     const mv = this.moves.get(client.sessionId), p = this.player(client);
-    if (!mv || !p || !p.connected || !(bytes instanceof Uint8Array)) return;
+    if (!mv || !p || !p.connected || p.watch || !(bytes instanceof Uint8Array)) return;
     if (!this.allow(client, 'm', MOVE_RATE)) return;
     const s = decodeMove(bytes);
     if (!s || !poseSane(s)) return this.reject(client, mv);

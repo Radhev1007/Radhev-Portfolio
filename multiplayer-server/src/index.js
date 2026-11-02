@@ -12,7 +12,7 @@ const app = express();
 app.disable('x-powered-by');
 app.get('/health', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
-  res.json({ ok: true, rooms: roomStats.rooms, players: roomStats.players, voice: voiceConfigured(), maxPlayers: config.maxPlayers });
+  res.json({ ok: true, rooms: roomStats.rooms, players: roomStats.players - roomStats.watching, watching: roomStats.watching, online: roomStats.players, voice: voiceConfigured(), maxPlayers: config.maxPlayers });
 });
 app.get('/', (req, res) => res.type('text').send('RC Crawler multiplayer server is running.'));
 
@@ -21,6 +21,8 @@ const gameServer = new Server({
   transport: new WebSocketTransport({ server, pingInterval: 4000, pingMaxRetries: 3, maxPayload: 32 * 1024 }),
 });
 gameServer.define('rc', RcRoom);
+// the open world: visitors joinOrCreate it, filling one session before the next is opened
+gameServer.define('open', RcRoom, { open: true });
 
 await gameServer.listen(config.port, config.host);
 console.log(`RC Crawler multiplayer listening on ${config.host}:${config.port} — max ${config.maxPlayers} per room, voice ${voiceConfigured() ? 'LiveKit' : 'direct (LIVEKIT_* not set)'}`);

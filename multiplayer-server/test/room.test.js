@@ -200,3 +200,45 @@ test('race: gate order, timing and recovery teleports are validated', async () =
   assert.equal(me().cp, 1);
   await host.leave();
 });
+
+test('open world: everyone lands in one running free-roam hub session; nobody can reconfigure it', async () => {
+  const a = await new Client(URL).joinOrCreate('open', { name: 'A', guestId: gid() });
+  const b = await new Client(URL).joinOrCreate('open', { name: 'B', guestId: gid() });
+  await sleep(300);
+  assert.equal(a.roomId, b.roomId, 'the second visitor joins the same session');
+  const s = a.state;
+  assert.equal(s.open, true);
+  assert.deepEqual([s.map, s.mode, s.phase], ['hub', 'free', 'running']);
+  assert.deepEqual([...s.players.values()].map((p) => p.status).sort(), ['driving', 'driving']);
+  a.send('config', { map: 'canyon', mode: 'race' }); a.send('lobby'); a.send('start', {});
+  await sleep(300);
+  assert.deepEqual([s.map, s.mode, s.phase], ['hub', 'free', 'running'], 'host controls are ignored in the open world');
+  const priv = await new Client(URL).create('rc', { name: 'P', guestId: gid() });
+  assert.notEqual(priv.roomId, a.roomId, 'private rooms stay separate');
+  await sleep(100);
+  assert.equal(priv.state.open, false);
+  await Promise.all([a.leave(), b.leave(), priv.leave()]);
+});
+
+test('spectators: no truck, moves ignored, counted apart in /health', async () => {
+  const d = await new Client(URL).joinOrCreate('open', { name: 'Driver', guestId: gid() });
+  const w = await new Client(URL).joinOrCreate('open', { name: 'Watcher', guestId: gid(), spectate: true });
+  await sleep(300);
+  assert.equal(w.roomId, d.roomId);
+  const me = d.state.players.get(w.sessionId);
+  assert.equal(me.watch, true);
+  assert.equal(me.status, 'spectating');
+  let watcherSeen = false;
+  d.onMessage('s', (bytes) => decodeSnapshot(bytes, (slot) => { if (slot === me.slot) watcherSeen = true; }));
+  for (let i = 0; i < 5; i++) { w.sendBytes('m', encodeMove(i, pose(5, 5))); await sleep(40); }
+  await sleep(300);
+  assert.equal(watcherSeen, false, "a spectator's movement is never relayed");
+  const h = await (await fetch(`http://127.0.0.1:${PORT}/health`)).json();
+  assert.equal(h.watching, 1);
+  assert.ok(h.players >= 1);
+  assert.ok(h.online >= 2, 'online counts drivers and watchers');
+  await Promise.all([d.leave(), w.leave()]);
+  await sleep(300);
+  const h2 = await (await fetch(`http://127.0.0.1:${PORT}/health`)).json();
+  assert.equal(h2.watching, 0);
+});
