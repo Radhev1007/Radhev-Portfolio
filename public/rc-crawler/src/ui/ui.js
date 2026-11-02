@@ -11,6 +11,7 @@ function stars(n) {
 }
 
 const GRADIENTS = {
+  hub: 'linear-gradient(160deg,#8fae6a,#3f5a2c 60%,#16220f)',
   canyon: 'linear-gradient(160deg,#c98a4b,#6b3f22 60%,#2a1a10)', forest: 'linear-gradient(160deg,#6f8a5a,#2c3d22 60%,#121a0e)',
   mud: 'linear-gradient(160deg,#7a6a4a,#3d2f1f 60%,#1a130b)', desert: 'linear-gradient(160deg,#e3c08a,#a8733f 60%,#4a2e18)',
   creek: 'linear-gradient(160deg,#7fa3a0,#2f4a3e 60%,#101a16)', ultimate: 'linear-gradient(160deg,#9a8f80,#3e3a33 60%,#141210)',
@@ -82,6 +83,7 @@ export class UI {
     $('#m-resume').onclick = () => this.emit('resume');
     $('#m-close').onclick = () => this.emit('resume');
     $('#m-restart').onclick = () => this.emit('restart');
+    $('#m-hub').onclick = () => this.emit('hub');
     $('#m-title').onclick = () => this.emit('title');
     $$('.tabs button').forEach((b) => (b.onclick = () => this.tab(b.dataset.tab)));
     this.toastT = null;
@@ -122,9 +124,22 @@ export class UI {
     $('#menu-cards').innerHTML = levels.map((l) => html(l, true)).join('');
     $$('.card').forEach((c) => (c.onclick = () => onPick(c.dataset.id)));
   }
+  // locked terrains: greyed cards with what they need (open-world unlocks, world/progress.js)
+  setLocks(locks, medals) {
+    $$('.card').forEach((c) => {
+      const lk = locks[c.dataset.id];
+      c.classList.toggle('locked', !!lk?.locked);
+      let tag = c.querySelector('.lock');
+      if (lk?.locked) {
+        if (!tag) { tag = document.createElement('div'); tag.className = 'lock'; c.querySelector('.body').prepend(tag); }
+        tag.textContent = `Earn ${lk.need} medals · you have ${medals}`;
+      } else tag?.remove();
+    });
+  }
   setCardLoading(id, on) { $$('.card').forEach((c) => c.classList.toggle('loading', on && c.dataset.id === id)); }
 
   setLevel(def, ch) {
+    $('#m-hub').classList.toggle('hidden', def.id === 'hub');
     $$('.card').forEach((c) => c.classList.toggle('sel', c.dataset.id === def.id));
     $('#h-terrain').textContent = def.name;
     $('#h-stars').innerHTML = stars(def.stars);

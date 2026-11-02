@@ -17,7 +17,8 @@ import { ContactShadow } from './effects/contactShadow.js';
 import { AudioEngine } from './audio/audio.js';
 import { Input } from './core/input.js';
 import { ChallengeManager, fmtTime } from './challenges/challenges.js';
-import { buildGateways } from './world/gateways.js';
+import { buildGateways, drawBoard } from './world/gateways.js';
+import { countMedals, medalsIn, isUnlocked, needFor, newlyUnlocked, recordAvailable, availableIn } from './world/progress.js';
 import { UI } from './ui/ui.js';
 import { Multiplayer } from './net/multiplayer.js';
 import { Modes } from './net/modes.js';
@@ -124,8 +125,12 @@ let minimap = null;   // created with the multiplayer objects below; reads them 
 let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
 let gateways = null;   // world/gateways.js, rebuilt with each level
+let travelling = false, arriveFrom = null, gwPrev = null, blockedToastAt = -10;
+let medalSnapshot = { ...challenges.best };   // to spot terrains a new medal unlocks
+// ?level=<id> opens that terrain directly, locked or not (sharing, testing)
+const urlLevel = params.get('level') && LEVEL_BY_ID[params.get('level')] ? params.get('level') : null;
 
-async function loadLevel(id, { keepState = false } = {}) {
+async function loadLevel(id, { keepState = false, arriveAt = null } = {}) {
   const def = LEVEL_BY_ID[id] || LEVELS[0];
   const token = ++loadToken;
   ui.showLoading(!!level, `Loading ${def.name}`);
@@ -136,6 +141,8 @@ async function loadLevel(id, { keepState = false } = {}) {
   if (level) { scene.remove(level.group); disposeGroup(level.group); }
   level = lvl;
   settings.level = id; saveSettings();
+  recordAvailable(id, level.challenges.length);
+  arriveFrom = arriveAt;
   scene.add(level.group);
   // gateway arches (and the hub's basecamp): their posts join the level's before physics and net ids
   gateways = buildGateways(level, challenges.best);
@@ -157,6 +164,7 @@ async function loadLevel(id, { keepState = false } = {}) {
   for (let i = 0; i < 90; i++) phys.update(1 / 60, { throttle: 0, steer: 0, handbrake: true });
   rig.pos.copy(phys.pos).add(new THREE.Vector3(3, 1.5, 3));
   ui.setLevel(def, challenges);
+  refreshProgress();
   ui.setCardLoading(id, false);
   ui.hideLoading();
   if (mp.active) { for (const i of mp.broken) breakPost(i, 0, 0, 1, true); placeAtSpawn(); modes.sync(); }
@@ -164,7 +172,9 @@ async function loadLevel(id, { keepState = false } = {}) {
 }
 
 function placeAtSpawn() {
-  const s = mp.active ? modes.spawnPose(mpOrder()) : level.spawn;
+  // coming back from a terrain, the hub puts you at that terrain's gateway, facing basecamp
+  const s = mp.active ? modes.spawnPose(mpOrder()) : (arriveFrom && level.arrivals?.[arriveFrom]) || level.spawn;
+  arriveFrom = null; gwPrev = null;
   phys.placeAt(s.x, s.z, s.yaw);
   if (mp.active) mp.flagRecover();
   resetStakes();
@@ -264,6 +274,42 @@ function onChallengeEvent(type, c, a, b, medal) {
     ui.toast('Challenge complete', `${fmtTime(a)}${m}${b ? ' · New best!' : ''}`);
     ui.setChallenge(c, `Complete · ${fmtTime(a)}${m}`);
     ui.refreshChallenges(challenges);
+    // a new medal can open terrains
+    const opened = newlyUnlocked(medalSnapshot, challenges.best);
+    medalSnapshot = { ...challenges.best };
+    for (const id of opened) ui.toast(`${LEVEL_BY_ID[id]?.name || id} unlocked`, 'Its gateway is open');
+    refreshProgress();
+  }
+}
+
+// ------------------------------------------------------------ open world: travel and progress
+function travel(to) {
+  if (!level || travelling || !LEVEL_BY_ID[to]) return;
+  if (mp.active) { ui.toast(`${level.def.name} room`, 'Gateways are closed in multiplayer'); return; }
+  if (challenges.active) { challenges.select(null); ui.refreshChallenges(challenges); }
+  travelling = true;
+  const from = level.def.id;
+  loadLevel(to, { keepState: true, arriveAt: from }).then(() => setState('play')).finally(() => { travelling = false; });
+}
+const lockInfo = () => Object.fromEntries(LEVELS.map((l) => [l.id, { locked: !isUnlocked(l.id, challenges.best) && l.id !== urlLevel, need: needFor(l.id) }]));
+function refreshProgress() {
+  const best = challenges.best;
+  gateways?.refresh(best);
+  ui.setLocks(lockInfo(), countMedals(best));
+  if (gateways) drawBoard(gateways, LEVELS.filter((l) => l.id !== 'hub').map((l) => {
+    const locked = !isUnlocked(l.id, best);
+    return [l.name, locked ? `Earn ${needFor(l.id)} medals` : `${medalsIn(best, l.id)} / ${availableIn(l.id) ?? '—'}`, locked];
+  }), countMedals(best));
+}
+function checkGateways() {
+  if (state !== 'play' || !gateways || travelling || !phys) return;
+  const cur = { x: phys.pos.x, z: phys.pos.z }, prev = gwPrev || cur; gwPrev = cur;
+  const g = gateways.update(prev, cur, phys);
+  if (g) { travel(g.to); return; }
+  const b = gateways.lastBlocked;
+  if (b && time - blockedToastAt > 3) {
+    blockedToastAt = time;
+    ui.toast(`Earn ${needFor(b.to)} medals`, `You have ${countMedals(challenges.best)} · ${LEVEL_BY_ID[b.to]?.name || b.to} is locked`);
   }
 }
 
@@ -275,6 +321,8 @@ ui.buildCards(LEVELS, (id) => {
     else ui.toast('In a room', mp.isHost ? 'Change the map between sessions' : 'Only the host can change the map');
     return;
   }
+  const lk = lockInfo()[id];
+  if (lk?.locked) { ui.toast(`Earn ${lk.need} medals`, `You have ${countMedals(challenges.best)} · finish challenges to unlock it`); return; }
   if (state === 'paused') { ui.closeMenu(); loadLevel(id, { keepState: true }).then(() => setState('play')); }
   else if (!level || id !== level.def.id) loadLevel(id, { keepState: true });
 });
@@ -314,6 +362,7 @@ ui.on('orient', () => landscape.toggle());
 ui.on('resume', () => { ui.closeMenu(); setState('play'); });
 ui.on('restart', () => { ui.closeMenu(); placeAtSpawn(); tracks.reset(); setState('play'); });
 ui.on('title', () => { ui.closeMenu(); placeAtSpawn(); setState('title'); });
+ui.on('hub', () => { ui.closeMenu(); setState('play'); travel('hub'); });
 ui.on('challenge', (id) => { audio.uiClick(); challenges.select(challenges.active?.id === id ? null : id); ui.refreshChallenges(challenges); ui.closeMenu(); setState('play'); });
 ui.on('quality', (q) => { settings.quality = q; saveSettings(); rebuildForQuality(); });
 ui.on('volume', (v) => { settings.volume = v; saveSettings(); audio.setMasterVolume(v / 100); });
@@ -358,6 +407,7 @@ async function rebuildForQuality() {
 
 function recover() {
   if (!phys) return;
+  gwPrev = null;
   audio.uiClick();
   tracks.reset();
   if (mp.active) {
@@ -498,6 +548,7 @@ function tick(dt, forced) {
   phys.stats.suspension = Math.min(1, act * 0.15);
 
   if (state === 'play') challenges.update(dt, phys);
+  checkGateways();
   updateEffects(dt);
   updateStakes(dt);
   for (const d of level.dynamics || []) if (d.mesh) d.mesh.rotation.x = -d.a;
@@ -682,13 +733,13 @@ mp.on('change', () => { const c = mp.me?.color; if (c !== undefined && c !== myL
 // ------------------------------------------------------------ boot
 requestAnimationFrame(frame);
 if (params.has('capture')) capturePreviews();
-else loadLevel(settings.level).then(async () => {
+else loadLevel(urlLevel || 'hub').then(async () => {
   const code = params.get('join');
   if (await mp.resume()) { if (state === 'title') game.panelOpen(false); ui.toast('Rejoined room', mp.code); return; }
   if (code && mp.available) { mpUI.invite(code); mpUI.show(); }
 });
 window.__game = {
-  mp, modes, voice, mpUI, minimap, audio,
+  mp, modes, voice, mpUI, minimap, audio, challenges, get gateways() { return gateways; },
   get phys() { return phys; }, get level() { return level; }, get resScale() { return resScale; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
   step(n, inp, dt = 1 / 60) { for (let i = 0; i < n; i++) tick(dt, inp); },
   // dev: save the current frame to assets/previews/<name>.jpg (localhost only)

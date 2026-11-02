@@ -515,3 +515,7 @@ body:has(#hud.touch-on) .mm:not(.big) .mm-ctl button { width: 22px; height: 22px
   .mm.big .mm-legend { display: none; }
 }
 @media (max-width: 720px) { .tabs button { padding: 8px 9px; font-size: 13px; letter-spacing: 1px; } }
+
+/* open world: locked terrain cards */
+.card.locked { filter: grayscale(0.85) brightness(0.7); }
+.card.locked .lock { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #f0a070; margin-bottom: 4px; }
