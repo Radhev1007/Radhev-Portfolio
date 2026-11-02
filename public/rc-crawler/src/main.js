@@ -17,6 +17,7 @@ import { ContactShadow } from './effects/contactShadow.js';
 import { AudioEngine } from './audio/audio.js';
 import { Input } from './core/input.js';
 import { ChallengeManager, fmtTime } from './challenges/challenges.js';
+import { buildGateways } from './world/gateways.js';
 import { UI } from './ui/ui.js';
 import { Multiplayer } from './net/multiplayer.js';
 import { Modes } from './net/modes.js';
@@ -122,6 +123,7 @@ let level = null, phys = null;
 let minimap = null;   // created with the multiplayer objects below; reads them for other players and courses
 let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
+let gateways = null;   // world/gateways.js, rebuilt with each level
 
 async function loadLevel(id, { keepState = false } = {}) {
   const def = LEVEL_BY_ID[id] || LEVELS[0];
@@ -135,6 +137,10 @@ async function loadLevel(id, { keepState = false } = {}) {
   level = lvl;
   settings.level = id; saveSettings();
   scene.add(level.group);
+  // gateway arches (and the hub's basecamp): their posts join the level's before physics and net ids
+  gateways = buildGateways(level, challenges.best);
+  level.group.add(gateways.group);
+  level.posts.push(...gateways.posts);
   phys = new CrawlerPhysics(level.hf);
   level.posts.forEach((t, i) => { t.netId = i; });       // stable ids: every client builds the same level
   phys.trunks = level.trunks.concat(remoteColliders);
