@@ -84,6 +84,7 @@ export class UI {
     $('#m-close').onclick = () => this.emit('resume');
     $('#m-restart').onclick = () => this.emit('restart');
     $('#m-hub').onclick = () => this.emit('hub');
+    $('#b-ring').onclick = () => this.emit('ringStart');
     $('#m-title').onclick = () => this.emit('title');
     $$('.tabs button').forEach((b) => (b.onclick = () => this.tab(b.dataset.tab)));
     this.toastT = null;
@@ -243,6 +244,13 @@ export class UI {
     $('#tc-dig').classList.toggle('on', d.dig);
   }
 
+  // the "drive into a ring" prompt (world/challengeRings.js); null hides it
+  ringPrompt(html) {
+    const el = $('#ring-prompt');
+    if (!html) { el.classList.add('hidden'); return; }
+    el.querySelector('.rp-text').innerHTML = html;
+    el.classList.remove('hidden');
+  }
   setChallenge(c, stateText = '') {
     const el = $('#h-challenge');
     if (!c) { el.classList.add('hidden'); return; }

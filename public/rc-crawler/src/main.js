@@ -18,6 +18,7 @@ import { AudioEngine } from './audio/audio.js';
 import { Input } from './core/input.js';
 import { ChallengeManager, fmtTime } from './challenges/challenges.js';
 import { buildGateways, drawBoard } from './world/gateways.js';
+import { buildRings } from './world/challengeRings.js';
 import { countMedals, medalsIn, isUnlocked, needFor, newlyUnlocked, recordAvailable, availableIn } from './world/progress.js';
 import { UI } from './ui/ui.js';
 import { Multiplayer } from './net/multiplayer.js';
@@ -125,6 +126,7 @@ let minimap = null;   // created with the multiplayer objects below; reads them 
 let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
 let gateways = null;   // world/gateways.js, rebuilt with each level
+let rings = null, ringHere = null;   // world/challengeRings.js: the ring the truck is in
 let travelling = false, arriveFrom = null, gwPrev = null, blockedToastAt = -10;
 let medalSnapshot = { ...challenges.best };   // to spot terrains a new medal unlocks
 // ?level=<id> opens that terrain directly, locked or not (sharing, testing)
@@ -157,6 +159,9 @@ async function loadLevel(id, { keepState = false, arriveAt = null } = {}) {
   rig.setHeightfield(level.hf);
   applyLevelEnv();
   challenges.setLevel(level);
+  // challenge rings read medals through the manager, so after it knows the level
+  rings = buildRings(level, challenges); ringHere = null; ui.ringPrompt(null);
+  level.group.add(rings.group);
   setChallengeMarkers(null);
   minimap?.setLevel(level);
   tracks.reset();
@@ -279,6 +284,7 @@ function onChallengeEvent(type, c, a, b, medal) {
     medalSnapshot = { ...challenges.best };
     for (const id of opened) ui.toast(`${LEVEL_BY_ID[id]?.name || id} unlocked`, 'Its gateway is open');
     refreshProgress();
+    rings?.refresh();
   }
 }
 
@@ -301,6 +307,25 @@ function refreshProgress() {
     return [l.name, locked ? `Earn ${needFor(l.id)} medals` : `${medalsIn(best, l.id)} / ${availableIn(l.id) ?? '—'}`, locked];
   }), countMedals(best));
 }
+const TIER_SHORT = { Beginner: 'Beginner', Intermediate: 'Intermediate', Expert: 'Expert' };
+function checkRings(dt) {
+  if (!rings) return;
+  const r = rings.update(dt, state === 'play' ? phys : null, camera);
+  if (r === ringHere) return;
+  ringHere = r;
+  if (!r) { ui.ringPrompt(null); return; }
+  const medal = challenges.medalOf(r.c), best = challenges.bestFor(r.c);
+  const bestTxt = medal ? `${medal[0].toUpperCase() + medal.slice(1)} ${best !== undefined ? fmtTime(best) : ''}`.trim() : '—';
+  ui.ringPrompt(`<b>${r.c.name}</b> · ${TIER_SHORT[r.tier] || r.tier} · Best: ${bestTxt}`);
+}
+function startRing() {
+  if (state !== 'play' || !ringHere || challenges.active) return;
+  audio.uiClick();
+  challenges.select(ringHere.id);
+  ui.refreshChallenges(challenges);
+  ringHere = null; ui.ringPrompt(null);
+}
+ui.on('ringStart', () => startRing());
 function checkGateways() {
   if (state !== 'play' || !gateways || travelling || !phys) return;
   const cur = { x: phys.pos.x, z: phys.pos.z }, prev = gwPrev || cur; gwPrev = cur;
@@ -443,6 +468,7 @@ input.on('press', (k) => {
   if (state === 'title' && (k === 'enter')) { ui.emit('start'); return; }
   if (state !== 'play') return;
   if (k === 'r') recover();
+  if (k === 'e') startRing();
   if (k === 'c') ui.emit('camera');
   if (k === 'l') ui.emit('lights');
   if (k === 'g') ui.emit('range');
@@ -549,6 +575,7 @@ function tick(dt, forced) {
 
   if (state === 'play') challenges.update(dt, phys);
   checkGateways();
+  checkRings(dt);
   updateEffects(dt);
   updateStakes(dt);
   for (const d of level.dynamics || []) if (d.mesh) d.mesh.rotation.x = -d.a;
