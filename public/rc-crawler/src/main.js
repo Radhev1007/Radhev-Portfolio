@@ -31,6 +31,8 @@ import { Landscape } from './ui/landscape.js';
 import { Minimap } from './ui/minimap.js';
 import { VEHICLES, VEHICLE_IDS, mountBody, vehicleColor } from './vehicles/bodies.js';
 import { vehicleGeometry } from './vehicles/geometry.js';
+import { loadDriver, DriverFigure } from './vehicles/driver.js';
+import { OnFoot, canExit, exitSpot, ENTER_DIST } from './world/onFoot.js';
 import { LIVERIES, liveryCss } from './net/config.js';
 
 // ------------------------------------------------------------ settings
@@ -130,6 +132,29 @@ let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
 let gateways = null;   // world/gateways.js, rebuilt with each level
 let crowd = null, wasRolled = false;
+// on foot (world/onFoot.js): the driver out of the truck, walking; null while he is driving
+let foot = null;
+function getOut() {
+  if (foot || !phys || tow?.active || mp.spectating || state !== 'play') return;
+  if (!canExit(phys)) { ui.toast('Stop first', 'Get out when the truck is stopped and on its wheels'); return; }
+  loadDriver().then((shared) => {
+    if (!shared || foot) return;
+    const walker = new OnFoot(), at = exitSpot(level.hf, phys.pos, phys.yaw);
+    walker.place(new THREE.Vector3(at.x, level.hf.heightAt(at.x, at.z), at.z), at.yaw);
+    const fig = new DriverFigure(shared);
+    fig.walk(walker); scene.add(fig.group);
+    model.setDriverVisible(false);
+    foot = { walker, fig };
+    ui.toast('On foot', 'W / S walk, A / D turn, Shift runs, F gets back in');
+  });
+}
+function getIn(force = false) {
+  if (!foot) return;
+  if (!force && foot.walker.pos.distanceTo(phys.pos) > ENTER_DIST) { ui.toast('Too far', 'Walk up to the truck to get in'); return; }
+  scene.remove(foot.fig.group);
+  foot = null;
+  model.setDriverVisible(true);
+}
 let tow = null;   // world/towTruck.js: rights a rolled truck where it lies   // world/crowd.js: spectators at the starts, gateways and basecamp
 let rings = null, ringHere = null;   // world/challengeRings.js: the ring the truck is in
 let travelling = false, arriveFrom = null, gwPrev = null, blockedToastAt = -10;
@@ -156,6 +181,7 @@ async function loadLevel(id, { keepState = false, arriveAt = null } = {}) {
   gateways = buildGateways(level, challenges.best, { multiplayer: mp.active });
   level.group.add(gateways.group);
   level.posts.push(...gateways.posts);
+  getIn(true);   // (a new level: back in the truck)
   phys = new CrawlerPhysics(level.hf);
   phys.setGeometry(vehicleGeometry(settings.vehicle));   // a vehicle driven as modelled has its own track and tyres
   level.posts.forEach((t, i) => { t.netId = i; });       // stable ids: every client builds the same level
@@ -510,8 +536,9 @@ input.on('press', (k) => {
   if (state === 'title' && (k === 'enter')) { ui.emit('start'); return; }
   if (state !== 'play') return;
   if (mp.spectating) { if (k === 'a' || k === 'arrowleft') spectateStep(-1); if (k === 'd' || k === 'arrowright') spectateStep(1); return; }
+  if (k === 'f') { if (foot) getIn(); else getOut(); return; }
   if (k === 'r') recover();
-  if (k === 'e') startRing();
+  if (k === 'e' && !foot) startRing();
   if (k === 'c') ui.emit('camera');
   if (k === 'l') ui.emit('lights');
   if (k === 'g') ui.emit('range');
@@ -604,6 +631,7 @@ function tick(dt, forced) {
   time += dt;
   let inp = forced || (state === 'play' && !mpUI.open ? input.state : { throttle: 0, steer: 0, handbrake: true });
   if (mp.spectating && !forced) inp = { throttle: 0, steer: 0, handbrake: true };   // watching: our truck stays parked and hidden
+  if (foot && !forced) inp = { throttle: 0, steer: 0, handbrake: true };             // nobody at the wheel: parked
   if (mp.active) inp = modes.inputOverride(inp);
   mp.preStep(dt);
   // while the tow truck has hold of our truck, it poses the truck and the physics wait
@@ -671,7 +699,15 @@ function tick(dt, forced) {
   model.group.visible = !mp.spectating;
   const watched = mp.spectating ? spectateTarget() : null;
   if (watched) { spectatePhys.yaw = Math.atan2(_spF.set(0, 0, 1).applyQuaternion(watched.q).x, _spF.z); spectatePhys.stats.speed = watched.vel.length(); }
-  rig.update(dt, watched ? watched.model.group : model.group, watched ? spectatePhys : phys);
+  if (foot) {
+    const walking = state === 'play' && !mpUI.open;
+    const fw = walking ? (input.down('w', 'arrowup') ? 1 : 0) - (input.down('s', 'arrowdown') ? 1 : 0) : 0;
+    const tn = walking ? (input.down('a', 'arrowleft') ? 1 : 0) - (input.down('d', 'arrowright') ? 1 : 0) : 0;
+    foot.walker.update(dt, { forward: fw, turn: tn, run: walking && input.down('shift') }, level.hf, level.trunks.concat(level.posts));
+    foot.fig.walk(foot.walker);
+  }
+  if (foot && !watched) rig.update(dt, foot.fig.group, foot.walker);
+  else rig.update(dt, watched ? watched.model.group : model.group, watched ? spectatePhys : phys);
   // 3D audio: the camera listens, the truck's own sounds come from the truck
   camera.getWorldDirection(_aFwd);
   audio.setListener(camera.position, _aFwd, camera.up);
@@ -837,7 +873,7 @@ else loadLevel(urlLevel || 'hub').then(async () => {
   if (code && mp.available) { mpUI.invite(code); mpUI.show(); }
 });
 window.__game = {
-  mp, modes, voice, mpUI, minimap, audio, challenges, get gateways() { return gateways; }, get crowd() { return crowd; },
+  mp, modes, voice, mpUI, minimap, audio, challenges, get gateways() { return gateways; }, get crowd() { return crowd; }, get foot() { return foot; },
   get phys() { return phys; }, get level() { return level; }, get resScale() { return resScale; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
   step(n, inp, dt = 1 / 60) { for (let i = 0; i < n; i++) tick(dt, inp); },
   // dev: save the current frame to assets/previews/<name>.jpg (localhost only)

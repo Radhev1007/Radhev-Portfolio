@@ -10,11 +10,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { CRAWLER_DIMS } from './crawlerModel.js';
 import { vehicleGeometry, WILLYS_MODEL } from './geometry.js';
-
-// The driver in the open Willys: restore50's "Casual Confidence" (CC BY 4.0, credited in Help), seated by bending the
-// figure at the hips and knees (tools/rc-driver.mjs), simplified for the web.
-export const DRIVER_CREDIT = { title: 'Casual Confidence', author: 'restore50', changes: 'seated, simplified', url: 'https://sketchfab.com/3d-models/casual-confidence-cddbbc7660454ec9997cacb9ab6cf58d', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' };
-const DRIVER_FILE = 'assets/driver.glb';
+import { loadDriver, DriverFigure } from './driver.js';
 
 export const VEHICLES = [
   { id: 'scx30', name: 'SCX30 Jeep Wrangler JLU', short: 'WRANGLER', color: 0xf1f1ee },   // gloss white
@@ -28,7 +24,7 @@ export const VEHICLES = [
     // track, tyre size and ride height (geometry.js); its wheels turn and steer on the hubs and its axle housings,
     // tie rods and knuckles ride on the axles
     id: 'willys', name: 'Willys Mountain Buggy', short: 'WILLYS', file: 'assets/vehicles/willys.glb', paint: null, own: true,
-    // the driver in the left (driver's) seat, in the model's units: his hip line over the seat cushion
+    // the driver (driver.js) in the left (driver's) seat, in the model's units: his hip line over the seat cushion
     driver: { at: [0.38, 0.15, -0.4], scale: 0.92 },
     wheels: WILLYS_MODEL.wheels,
     credit: { title: 'Willys mountain buggy 1', author: 'Rustam T', changes: 'textures resized for the web; its wheels and axles move with the suspension', url: 'https://sketchfab.com/3d-models/willys-mountain-buggy-1-f536a233a3d84735ab4b967f90e212db', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
@@ -53,8 +49,7 @@ const templates = new Map();   // id -> Promise<Object3D> (loaded once, shared b
 function template(v) {
   if (!templates.has(v.id)) {
     const url = new URL(`../../${v.file}`, import.meta.url).href;
-    const driver = v.driver ? loader.loadAsync(new URL(`../../${DRIVER_FILE}`, import.meta.url).href).then((g) => g.scene).catch((e) => { console.warn('[bodies] driver failed to load', e); return null; }) : null;
-    templates.set(v.id, Promise.all([loader.loadAsync(url), driver]).then(([gltf, d]) => { if (d) seatDriver(gltf.scene, d, v.driver); return fit(gltf.scene, v); }).catch((e) => { templates.delete(v.id); throw e; }));
+    templates.set(v.id, loader.loadAsync(url).then((gltf) => fit(gltf.scene, v)).catch((e) => { templates.delete(v.id); throw e; }));
   }
   return templates.get(v.id);
 }
@@ -108,15 +103,6 @@ function fit(scene, v) {
   return holder;
 }
 
-// the driver goes in as part of the body (it moves, rolls and is recovered with it)
-function seatDriver(scene, d, at) {
-  d.name = 'Driver';
-  d.position.fromArray(at.at);
-  d.scale.setScalar(at.scale);
-  d.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
-  scene.add(d);
-}
-
 // a body driven as modelled: one uniform scale (its axles on the RC wheelbase), its hubs on the truck's hub line,
 // its own four wheels each at its own size; the physics take the same geometry (geometry.js)
 function fitOwn(scene, v) {
@@ -125,6 +111,13 @@ function fitOwn(scene, v) {
   holder.name = `Body:${v.id}`;
   scene.scale.setScalar(s);
   scene.position.set(0, g.originY, g.originZ);
+  // materials first, while the wheels and axle pieces are still part of the scene (they have their own copies)
+  scene.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    const ms = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of ms) { m.envMapIntensity = 1; groundShade(m); if (m.transparent) o.castShadow = false; }   // as modelled: no dark-inside tweak
+  });
   const sized = (node, name) => {
     node.removeFromParent();
     const grp = new THREE.Group();
@@ -139,13 +132,29 @@ function fitOwn(scene, v) {
   holder.add(scene);
   holder.updateMatrixWorld(true);
   holder.userData.noseZ = new THREE.Box3().setFromObject(scene).max.z;
-  scene.traverse((o) => {
-    if (!o.isMesh) return;
-    o.castShadow = true; o.receiveShadow = true;
-    const ms = Array.isArray(o.material) ? o.material : [o.material];
-    for (const m of ms) { m.envMapIntensity = 1; if (m.transparent) o.castShadow = false; }   // as modelled: no dark-inside tweak
-  });
   return holder;
+}
+
+// Sky light on a body driven as modelled. The sky lights and reflects from every direction, so without help the
+// underbody, the frame under the tub and the brackets behind the axles shone with reflected sky (seen as white
+// slits through the gaps round the axles). The model carries how much open sky each vertex sees past the buggy
+// itself (_SKY, baked by tools/rc-bodies.mjs): sky light and sky reflections are cut by it, and a surface facing
+// the ground gets no sky reflection (the environment is bright below the horizon too, where the ground should be).
+function groundShade(m) {
+  m.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float _sky;\nvarying float vSky;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n  vSky = _sky;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vSky;')
+      .replace('#include <lights_fragment_maps>', `#include <lights_fragment_maps>
+  #if defined( USE_ENVMAP )
+  { float upW = inverseTransformDirection( geometryNormal, viewMatrix ).y; float sky = clamp( vSky, 0.0, 1.0 );
+    radiance *= sky * sky * smoothstep( -0.55, 0.25, upW ); iblIrradiance *= mix( 0.25, 1.0, sky ); }
+  #endif`);
+  };
+  m.customProgramCacheKey = () => 'body-sky-shade';
+  return m;
 }
 
 // The inside of the shell renders dark: from below (on its side, cresting a rock, through the arches) a body shows
@@ -165,11 +174,12 @@ export async function mountBody(model, id, color) {
   const token = (model._bodyToken = (model._bodyToken || 0) + 1);
   const unmount = () => {
     if (model._body) { model.group.remove(model._body); model._body = null; }
+    model.setDriver(null);
     for (const list of [model.extraPaint, model.extraLamps]) { for (const m of list) m.dispose(); list.length = 0; }
   };
   if (!v.file) { unmount(); model.setShellVisible(true); model.setLampZ(); model.setWheelVisual(null); model.setRunningGear(null); model.setTrack(); model._bodyId = v.id; return; }
-  let tpl;
-  try { tpl = await template(v); } catch (e) { console.warn('[bodies] could not load', v.id, e); return; }
+  let tpl, drv = null;
+  try { [tpl, drv] = await Promise.all([template(v), v.driver ? loadDriver() : null]); } catch (e) { console.warn('[bodies] could not load', v.id, e); return; }
   if (token !== model._bodyToken || model.disposed) return;   // another body was asked for meanwhile, or the truck is gone
   unmount();
   const body = tpl.clone(true);
@@ -195,4 +205,12 @@ export async function mountBody(model, id, color) {
   model.setWheelVisual(tpl.userData.wheel || null);
   model.setRunningGear(tpl.userData.gear || null);
   model.setTrack(vehicleGeometry(v.id)?.halfTrack);
+  // the driver rides as part of the body (rolls and is recovered with it); his own bones, animated by the truck
+  if (drv) {
+    const fig = new DriverFigure(drv);
+    fig.group.position.fromArray(v.driver.at);
+    fig.group.scale.setScalar(v.driver.scale);
+    body.children[0].add(fig.group);   // the model's scene, in the model's units
+    model.setDriver(fig);
+  }
 }

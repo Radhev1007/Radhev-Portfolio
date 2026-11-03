@@ -2138,6 +2138,11 @@ export function createCrawler(opts = {}) {
     for (const sp of spots) sp.intensity = lightsOn ? 30 : 0;
   };
 
+  // the driver riding in a mounted body (bodies.js, driver.js): he steers with the truck and feels its motion
+  let driver = null;
+  function setDriver(d) { driver = d; }
+  function setDriverVisible(v) { if (driver) driver.group.visible = v; }
+
   // ----------------------------------------------------------- update -------
   const tmpM = new THREE.Matrix4();
   const tieA = V(), tieB = V(), dragA = V(), dragB = V();
@@ -2203,6 +2208,7 @@ export function createCrawler(opts = {}) {
       orient(ds.outer, TRANS_OUT[a], _b, ds.L0);
       ds.inner.rotation.y = (spin[a * 2] + spin[a * 2 + 1]) * 0.5 * 3.2 * (a === 0 ? 1 : -1);
     }
+    if (driver?.group.visible) driver.drive(state, group);
   }
 
   // ------------------------------------------------------------- API --------
@@ -2305,6 +2311,9 @@ export function createCrawler(opts = {}) {
     setWheelVisual,
     setRunningGear,
     setTrack,
+    setDriver,
+    setDriverVisible,
+    get driver() { return driver; },
     get paintHex() { return paintHex; },
     extraPaint,
     extraLamps,

@@ -312,6 +312,50 @@ if (wheelSource) {
   console.log('  saved wheel RCWheel:', wt, 'triangles, hub', hub.map((v) => +v.toFixed(3)), '| spare:', st, 'triangles');
 }
 
+// ---------------------------------------------------------------- sky visibility (the willys)
+// How much open sky each vertex sees past the buggy itself, baked as the attribute _SKY (0..1): the game cuts sky
+// light and sky reflections by it, so the underbody, the brackets behind the axles and the frame under the tub are
+// in the buggy's own shade instead of shining with reflected sky. Rays go up and out over the hemisphere through a
+// voxel copy of the whole buggy (body, axle pieces and wheels in place).
+if (wheelSources) {
+  const offsetOf = (n) => { const nm = n.getName(); if (nm === 'AxleFront') return [0, wheels.y, wheels.front]; if (nm === 'AxleRear') return [0, wheels.y, wheels.rear]; const k = nm.match(/^RCWheel_(FL|FR|RL|RR)$/); return k ? wheels[k[1]] : [0, 0, 0]; };
+  const nodes = root.listNodes().filter((n) => n.getMesh());
+  const V = 0.03, lo = [-1.1, -0.7, -1.7], dim = [Math.ceil(2.2 / V), Math.ceil(1.9 / V), Math.ceil(3.6 / V)];
+  const grid = new Uint8Array(dim[0] * dim[1] * dim[2]);
+  const cell = (x, y, z) => { const i = Math.floor((x - lo[0]) / V), j = Math.floor((y - lo[1]) / V), k = Math.floor((z - lo[2]) / V); return i < 0 || j < 0 || k < 0 || i >= dim[0] || j >= dim[1] || k >= dim[2] ? -1 : (k * dim[1] + j) * dim[0] + i; };
+  const worldPts = (n, p) => { const m = n.getWorldMatrix(), off = offsetOf(n), a = p.getAttribute('POSITION'), e = [0, 0, 0], out = new Float32Array(a.getCount() * 3);
+    for (let i = 0; i < a.getCount(); i++) { a.getElement(i, e); for (let q = 0; q < 3; q++) out[i * 3 + q] = m[q] * e[0] + m[4 + q] * e[1] + m[8 + q] * e[2] + m[12 + q] + off[q]; } return out; };
+  const cache = new Map();
+  for (const n of nodes) for (const p of n.getMesh().listPrimitives()) {
+    if (p.getMaterial()?.getAlphaMode() === 'BLEND') continue;   // glass lets the sky through
+    const W = worldPts(n, p); cache.set(p, W); const idx = p.getIndices(), N = idx ? idx.getCount() : W.length / 3, g = (k) => (idx ? idx.getScalar(k) : k);
+    for (let k = 0; k + 2 < N; k += 3) {
+      const a = g(k) * 3, b = g(k + 1) * 3, c = g(k + 2) * 3;
+      const len = Math.max(Math.hypot(W[b] - W[a], W[b + 1] - W[a + 1], W[b + 2] - W[a + 2]), Math.hypot(W[c] - W[a], W[c + 1] - W[a + 1], W[c + 2] - W[a + 2]));
+      const st = Math.max(1, Math.ceil(len / (V * 0.5)));
+      for (let u = 0; u <= st; u++) for (let v = 0; u + v <= st; v++) { const fu = u / st, fv = v / st, fw = 1 - fu - fv;
+        const ci = cell(W[a] * fw + W[b] * fu + W[c] * fv, W[a + 1] * fw + W[b + 1] * fu + W[c + 1] * fv, W[a + 2] * fw + W[b + 2] * fu + W[c + 2] * fv); if (ci >= 0) grid[ci] = 1; }
+    }
+  }
+  // 16 directions over the upper hemisphere, each weighted by its rise squared: the sky overhead counts most (it is
+  // the brightest, and what a part tucked under the tub is shaded from), the horizon least
+  const dirs = []; for (let i = 0; i < 16; i++) { const el = Math.asin(Math.sqrt((i % 4 + 0.5) / 4)), az = (i * 2.399963) % (Math.PI * 2); dirs.push([Math.cos(el) * Math.cos(az), Math.sin(el), Math.cos(el) * Math.sin(az)]); }
+  const reach = Math.ceil(1.6 / V);
+  let sum = 0, count = 0;
+  for (const n of nodes) for (const p of n.getMesh().listPrimitives()) {
+    const W = cache.get(p) || worldPts(n, p), nor = p.getAttribute('NORMAL'), e = [0, 0, 0], sky = new Float32Array(W.length / 3);
+    for (let i = 0; i < sky.length; i++) {
+      if (nor) nor.getElement(i, e); else e[0] = e[2] = 0, e[1] = 1;
+      const x0 = W[i * 3] + e[0] * V * 1.6, y0 = W[i * 3 + 1] + e[1] * V * 1.6, z0 = W[i * 3 + 2] + e[2] * V * 1.6;   // start just off the surface
+      let open = 0, all = 0;
+      for (const d of dirs) { let hit = false; all += d[1] * d[1]; for (let s = 1; s <= reach; s++) { const ci = cell(x0 + d[0] * s * V, y0 + d[1] * s * V, z0 + d[2] * s * V); if (ci < 0) break; if (grid[ci]) { hit = true; break; } } if (!hit) open += d[1] * d[1]; }
+      sky[i] = open / all; sum += sky[i]; count++;
+    }
+    p.setAttribute('_SKY', doc.createAccessor().setType('SCALAR').setArray(sky).setBuffer(root.listBuffers()[0]));
+  }
+  console.log('  sky visibility baked: mean', (sum / count).toFixed(2), 'over', count, 'vertices');
+}
+
 // the body's shape for the game's collision probes (the willys): its box and the lowest point between the axles
 if (wheelSources) {
   const pts = root.listNodes().filter((n) => n.getMesh() && !/^(RCWheel|Axle)/.test(n.getName())).flatMap((n) => nodePoints(n, 3));
