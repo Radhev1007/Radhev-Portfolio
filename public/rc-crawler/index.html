@@ -61,7 +61,7 @@
   <div id="hud" class="hidden">
     <div class="hud-tl">
       <div class="terrain-name" id="h-terrain">ROCKY CANYON</div>
-      <div id="h-medals" class="medals">MEDALS 0</div>
+      <div id="h-medals" class="medals">MEDALS 0</div><div id="h-rank" class="rank-chip"></div>
       <div class="terrain-meta"><span id="h-stars"></span><span id="h-diff">Difficulty: High</span><span id="h-surface" class="chip">DIRT</span></div>
       <div id="h-challenge" class="challenge hidden">
         <div class="ch-top"><span class="ch-name"></span><span class="ch-time">0:00.0</span></div>
@@ -153,6 +153,7 @@
         <button data-tab="m-main" class="on">GAME</button>
         <button data-tab="m-terrain">TERRAINS</button>
         <button data-tab="m-ch">CHALLENGES</button>
+        <button data-tab="m-career">CAREER</button>
         <button data-tab="m-set">SETTINGS</button>
         <button data-tab="m-help">CONTROLS</button>
       </div>
@@ -164,6 +165,7 @@
       </div>
       <div id="m-terrain" class="tab"><div class="cards grid" id="menu-cards"></div></div>
       <div id="m-ch" class="tab"><div id="ch-list" class="ch-list"></div></div>
+      <div id="m-career" class="tab"><div id="career" class="career"></div></div>
       <div id="m-set" class="tab">
         <div class="set-row"><label>Graphics</label><div class="seg" id="s-quality"><button data-q="low">LOW</button><button data-q="medium">MEDIUM</button><button data-q="high">HIGH</button><button data-q="ultra">ULTRA</button></div></div>
         <div class="set-row"><label>Volume</label><input type="range" id="s-vol" min="0" max="100" value="80" /></div>

@@ -5,7 +5,8 @@ import { buildLevel } from './levels/levelBuilder.js';
 import { sharedTerrainUniforms } from './terrain/terrainMaterial.js';
 import { windUniforms } from './terrain/vegetation.js';
 import { waterUniforms } from './terrain/water.js';
-import { SURF_NAMES } from './terrain/heightfield.js';
+import { SURF_NAMES, SURF } from './terrain/heightfield.js';
+import { Career, trailFraction } from './world/career.js';
 import { CrawlerPhysics, GEARS, DIFF_MODES, DIFFICULTY, TYRE_PRESSURE } from './physics/vehicle.js';
 import { createCrawler } from './vehicles/crawlerModel.js';
 import { CameraRig, CAM_MODES } from './camera/cameraRig.js';
@@ -129,6 +130,12 @@ let level = null, phys = null;
 let minimap = null;   // created with the multiplayer objects below; reads them for other players and courses
 let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
+// career (world/career.js): XP, rank, achievements, trail completion and driving statistics, from real driving
+const career = new Career();
+career.syncMedals(challenges.best);   // medals won before the career existed count once
+career.onUnlock = (a) => { ui.toast(`Achievement: ${a.name}`, `${a.desc} · +100 XP`); audio.uiClick(); ui.setRank?.(career.rank); };
+career.onRank = (rk) => { ui.toast(`Rank ${rk.level}: ${rk.title}`, 'Rank up'); ui.setRank?.(rk); };
+let trailT = 0;
 let gateways = null;   // world/gateways.js, rebuilt with each level
 // the truck's own geometry for the cameras mounted on it (bumper, wheel, driver): see camera/cameraRig.js
 const _eye = new THREE.Vector3();
@@ -318,6 +325,7 @@ function onChallengeEvent(type, c, a, b, medal) {
   if (type === 'fail') { ui.toast('Challenge failed', a); ui.setChallenge(c, `Failed — ${a}. Return to the start gate`); audio.impact(0.2, 'thud'); }
   if (type === 'complete') {
     const m = medal ? ` · ${medal[0].toUpperCase() + medal.slice(1)} medal` : '';
+    if (medal) career.medal(level.def.id + ':' + c.id, medal);
     ui.toast('Challenge complete', `${fmtTime(a)}${m}${b ? ' · New best!' : ''}`);
     ui.setChallenge(c, `Complete · ${fmtTime(a)}${m}`);
     ui.refreshChallenges(challenges);
@@ -364,6 +372,7 @@ function refreshProgress() {
   gateways?.refresh(best, { multiplayer: mp.active });
   ui.setLocks(lockInfo(), countMedals(best));
   ui.setMedals(countMedals(best));
+  ui.setRank?.(career.rank);
   if (gateways && rings) minimap?.setWorldMarks({
     level,
     rings: rings.rings,
@@ -485,7 +494,7 @@ ui.on('fps', (v) => { settings.fps = v; saveSettings(); ui.showFps(v === 'on'); 
 ui.initSettings(settings);
 input.bindTouchUI(document.getElementById('touch'));
 
-function openMenu() { if (state !== 'play') return; setState('paused'); ui.openMenu(challenges); }
+function openMenu() { if (state !== 'play') return; setState('paused'); career.save(); ui.openMenu(challenges, career); }
 
 async function rebuildForQuality() {
   applyQuality();
@@ -649,6 +658,7 @@ function tick(dt, forced) {
       if (mp.active) mp.flagRecover();
       tracks.reset(); gwPrev = null;
       ui.toast('Back on its wheels', 'Recovered where it rolled');
+      career.recovered();
     }
   } else {
     if (tow?.active) tow.update(dt, model);   // driving away
@@ -665,6 +675,10 @@ function tick(dt, forced) {
   phys.stats.suspension = Math.min(1, act * 0.15);
 
   if (state === 'play') challenges.update(dt, phys);
+  if (state === 'play' && !foot && !mp.spectating && !towing) {
+    career.update(dt, { vehicle: settings.vehicle, level: level.def.id, speed: phys.stats.speed, onWood: phys.wheels.some((w) => w.contact && w.surf === SURF.WOOD), water: phys.stats.water, upsideTimer: phys.upsideTimer });
+    if ((trailT += dt) > 0.5 && level.path && level.def.id !== 'hub') { trailT = 0; career.trail(level.def.id, trailFraction(level.path, phys.pos)); }
+  }
   checkGateways();
   checkRings(dt);
   updateEffects(dt);
@@ -870,7 +884,7 @@ else loadLevel(urlLevel || 'hub').then(async () => {
   if (code && mp.available) { mpUI.invite(code); mpUI.show(); }
 });
 window.__game = {
-  mp, modes, voice, mpUI, minimap, audio, challenges, get gateways() { return gateways; }, get foot() { return foot; },
+  mp, modes, voice, mpUI, minimap, audio, challenges, get gateways() { return gateways; }, get foot() { return foot; }, career,
   get phys() { return phys; }, get level() { return level; }, get resScale() { return resScale; }, get post() { return post; }, rig, renderer, scene, camera, settings, setState, loadLevel, input, model: () => model,
   step(n, inp, dt = 1 / 60) { for (let i = 0; i < n; i++) tick(dt, inp); },
   // dev: save the current frame to assets/previews/<name>.jpg (localhost only)

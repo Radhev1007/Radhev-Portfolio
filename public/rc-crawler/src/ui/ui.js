@@ -2,6 +2,7 @@
 import { CRANE_CREDIT } from '../world/towTruck.js';
 import { DRIVER_CREDIT } from '../vehicles/driver.js';
 import { fmtTime } from '../challenges/challenges.js';
+import { ACHIEVEMENTS, TERRAINS } from '../world/career.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -123,11 +124,35 @@ export class UI {
           <div class="more">Technical: <b>${l.technical}</b> · Max slope: <b>${l.maxSlope}</b><br/>Est. time: <b>${l.est}</b> · Best for: <b>${l.bestFor}</b></div></div>
         </div>
       </button>`;
+    this.levelNames = Object.fromEntries(levels.map((l) => [l.id, l.name]));
     $('#cards').innerHTML = levels.map((l) => html(l)).join('');
     $('#menu-cards').innerHTML = levels.map((l) => html(l, true)).join('');
     $$('.card').forEach((c) => (c.onclick = () => onPick(c.dataset.id)));
   }
   setMedals(n) { $('#h-medals').textContent = `MEDALS ${n}`; }
+  // career rank under the medal count (world/career.js)
+  setRank(r) { const el = $('#h-rank'); if (el && r) el.innerHTML = `RANK ${r.level} · ${r.title}<i style="--p:${(r.into / r.need * 100).toFixed(1)}%"></i>`; }
+
+  // the Career tab: rank and XP, driving statistics overall and per vehicle, trail completion, achievements
+  renderCareer(c, names = {}) {
+    if (!c) return;
+    const r = c.rank, st = c.stats, km = (m) => (m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`);
+    const hm = (s) => `${Math.floor(s / 3600)}h ${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}m`;
+    const stat = (k, v) => `<div class="cs"><span>${k}</span><b>${v}</b></div>`;
+    const vehicles = Object.entries(c.vehicles).filter(([, v]) => v.distance > 0.5).map(([id, v]) => {
+      const name = this.vehicles?.find((x) => x.id === id)?.short || id.toUpperCase();
+      return `<tr><td>${name}</td><td>${km(v.distance)}</td><td>${hm(v.time)}</td><td>${v.topSpeed.toFixed(1)} km/h</td><td>${v.rollovers}</td></tr>`;
+    }).join('');
+    const trails = TERRAINS.map((t) => { const f = Math.round((c.trail_[t] || 0) * 100); return `<div class="ct"><span>${names[t] || t}</span><i style="--p:${f}%"></i><b>${f}%</b></div>`; }).join('');
+    const got = ACHIEVEMENTS.filter((a) => c.unlocked[a.id]).length;
+    const ach = ACHIEVEMENTS.map((a) => `<div class="ca${c.unlocked[a.id] ? ' on' : ''}"><b>${a.name}</b><span>${a.desc}</span></div>`).join('');
+    $('#career').innerHTML = `
+      <div class="c-rank"><div><small>RANK ${r.level}</small><h3>${r.title}</h3></div><div class="c-xp"><i style="--p:${(r.into / r.need * 100).toFixed(1)}%"></i><span>${r.into} / ${r.need} XP to rank ${r.level + 1} · ${c.xp} XP in all</span></div></div>
+      <h4>Driving</h4><div class="c-stats">${stat('Distance', km(st.distance))}${stat('Time', hm(st.time))}${stat('Top speed', st.topSpeed.toFixed(1) + ' km/h')}${stat('Rollovers', st.rollovers)}${stat('Crane recoveries', st.recoveries)}${stat('Bridges crossed', st.bridges)}${stat('Creeks forded', st.creeks)}${stat('Medals', Object.keys(c.medals).length)}</div>
+      ${vehicles ? `<h4>Vehicles</h4><table class="c-veh"><tr><th></th><th>Distance</th><th>Time</th><th>Top speed</th><th>Rollovers</th></tr>${vehicles}</table>` : ''}
+      <h4>Trail completion</h4><div class="c-trails">${trails}</div>
+      <h4>Achievements <small>${got} / ${ACHIEVEMENTS.length}</small></h4><div class="c-ach">${ach}</div>`;
+  }
   // locked terrains: greyed cards with what they need (open-world unlocks, world/progress.js)
   setLocks(locks, medals) {
     $$('.card').forEach((c) => {
@@ -289,7 +314,7 @@ export class UI {
     this.toastT = setTimeout(() => t.classList.remove('show'), 2400);
   }
 
-  openMenu(ch) { this.refreshChallenges(ch); $('#menu').classList.remove('hidden'); this.tab('m-main'); }
+  openMenu(ch, career) { this.refreshChallenges(ch); this.renderCareer(career, this.levelNames); $('#menu').classList.remove('hidden'); this.tab('m-main'); }
   closeMenu() { $('#menu').classList.add('hidden'); }
 
   initSettings(s) {
