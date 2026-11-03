@@ -8,7 +8,8 @@ import { Vegetation } from '../terrain/vegetation.js';
 import { loadForestKit } from '../terrain/forestKit.js';
 import { createTerrainMaterial, createRockMaterial, sharedTerrainUniforms } from '../terrain/terrainMaterial.js';
 import { createWaterMesh, createWaterfall } from '../terrain/water.js';
-import { buildActivities } from './activities.js';
+import { buildActivities, Props } from './activities.js';
+import { addTrailObstacles } from './trailObstacles.js';
 import { placeReturnGateway } from '../world/gateways.js';
 
 const yieldFrame = () => new Promise((r) => setTimeout(r, 0));
@@ -319,6 +320,10 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   await yieldFrame();
   // level-specific terrain + layout
   const layout = def.build(ctx);
+  // 20-30 crawling obstacles along every terrain's main trail (trailObstacles.js), before the activities so
+  // their pads keep clear of them
+  ctx.props = ctx.props || new Props();
+  const trailObstacles = def.id === 'hub' ? [] : addTrailObstacles(ctx, def, layout, TrailPath);
   // optional obstacle sections and stunt areas beside the trail (never on it); see activities.js
   const trailBefore = layout.path ? layout.path.pts.map((p) => ctx.hf.baseHeightAt(p.x, p.z)) : [];
   const activities = buildActivities(ctx, def, layout, TrailPath);
@@ -432,7 +437,7 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
     def, hf, group, ctx, trunks, posts: ctx.posts || [], dynamics: ctx.dynamics || [], activities,
     spawn: layout.spawn, intro: layout.intro || layout.spawn, path: layout.path || null,
     challenges: layout.challenges || [],
-    gateways: layout.gateways || [], arrivals: layout.arrivals || {}, basecamp: layout.basecamp || null,
+    gateways: layout.gateways || [], arrivals: layout.arrivals || {}, basecamp: layout.basecamp || null, trailObstacles,
     markers: ctx.markers,
     env: def.env || {},
   };

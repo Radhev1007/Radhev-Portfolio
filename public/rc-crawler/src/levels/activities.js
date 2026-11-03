@@ -63,7 +63,7 @@ function woodTexture(base, dark) {
   return t;
 }
 
-class Props {
+export class Props {
   constructor() {
     this.parts = new Map();   // material key -> geometries
     this.phys = [];           // { pos, index, surf }
@@ -82,6 +82,7 @@ class Props {
       tyre: new THREE.MeshStandardMaterial({ color: 0x1b1b1b, roughness: 0.95 }),
       steel: new THREE.MeshStandardMaterial({ color: 0x55585c, roughness: 0.55, metalness: 0.6 }),
       paint: new THREE.MeshStandardMaterial({ color: 0xd9d2c3, roughness: 0.7 }),
+      concrete: new THREE.MeshStandardMaterial({ color: 0x9a978f, roughness: 0.95 }),
     };
     for (const [k, list] of this.parts) {
       const geos = list.map((x) => (x.index ? x.toNonIndexed() : x));
