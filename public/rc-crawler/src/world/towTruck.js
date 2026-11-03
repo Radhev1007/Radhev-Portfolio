@@ -6,20 +6,42 @@
 // While it runs the player's physics are frozen and the truck is posed by the sequence; at the release the
 // truck is put down upright at the same spot (same x/z and heading) and the physics take over again.
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+// The recovery vehicle: a KS-4574 mobile crane (CC BY 4.0, credited in Help). Compressed for the web (meshopt,
+// 512 px WebP, merged by material: 3.5 MB from 58 MB) and only downloaded the first time a truck starts to
+// tip; until it arrives a simple box tow truck stands in. Model units: real metres, +z forward, the hook
+// hanging in front of the cab.
+export const CRANE_CREDIT = { title: 'KS-4574 mobile crane', author: 'Randonavt', changes: 'simplified and compressed for the web', url: 'https://sketchfab.com/3d-models/ks-4574-mobile-crane-7df018a87e0a49e0b85cd8a8e281323b', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' };
+const CRANE = { url: 'assets/vehicles/tow-crane.glb', scale: 0.36, groundY: 0.206, hook: [-0.03, 1.87, 5.86], beacon: [0, 3.1, 3.2] };
+let cranePromise = null;
+/** Start (once) downloading the crane; resolves to its scene, or null if it could not be loaded. */
+export function preloadCrane() {
+  if (!cranePromise) {
+    const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+    cranePromise = loader.loadAsync(CRANE.url).then((g) => {
+      g.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      return g.scene;
+    }).catch((e) => { console.warn('[tow] crane model failed to load; using the stand-in', e); return null; });
+  }
+  return cranePromise;
+}
 
 const APPROACH = 2.6, HOOK = 0.5, WINCH = 1.6, LEAVE = 2.2;
 const FROM = 14, STOP = 3.4;    // m: where the tow truck appears, and how far from the wreck it stops
+const CRANE_STOP = 4;           // the crane is longer: its bumper must clear the wreck, its hook hangs over it
 
 /**
  * Where the tow truck comes from: FROM m out, preferring straight behind the wreck, then the sides, then in
  * front; a direction is usable if its whole path is inside the map and no steeper than ~25 degrees.
  */
-export function towApproach(hf, pos, yaw) {
+export function towApproach(hf, pos, yaw, stop = STOP) {
   const lim = hf.half - 3;
   for (const off of [Math.PI, Math.PI * 0.75, -Math.PI * 0.75, Math.PI / 2, -Math.PI / 2, 0]) {
     const a = yaw + off, dx = Math.sin(a), dz = Math.cos(a);
-    let ok = true, prevH = hf.heightAt(pos.x + dx * STOP, pos.z + dz * STOP);
-    for (let d = STOP + 1; d <= FROM; d += 1) {
+    let ok = true, prevH = hf.heightAt(pos.x + dx * stop, pos.z + dz * stop);
+    for (let d = stop + 1; d <= FROM; d += 1) {
       const x = pos.x + dx * d, z = pos.z + dz * d;
       if (Math.abs(x) > lim || Math.abs(z) > lim) { ok = false; break; }
       const h = hf.heightAt(x, z);
@@ -27,7 +49,7 @@ export function towApproach(hf, pos, yaw) {
       prevH = h;
     }
     if (!ok) continue;
-    return { from: { x: pos.x + dx * FROM, z: pos.z + dz * FROM }, stop: { x: pos.x + dx * STOP, z: pos.z + dz * STOP }, faceYaw: a + Math.PI };
+    return { from: { x: pos.x + dx * FROM, z: pos.z + dz * FROM }, stop: { x: pos.x + dx * stop, z: pos.z + dz * stop }, faceYaw: a + Math.PI };
   }
   return null;
 }
@@ -62,7 +84,7 @@ function buildModel() {
   const tip = new THREE.Object3D(); tip.position.set(0, 0.45, -0.95); boom.add(tip);
   const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: 0x111111 }));
   line.frustumCulled = false; line.visible = false;
-  return { g, lights, wheels, tip, line };
+  return { g, lights, wheels, tip, line, stand: [...g.children] };
 }
 
 export class TowRecovery {
@@ -72,11 +94,27 @@ export class TowRecovery {
     this.m.g.visible = false;
     scene.add(this.m.g, this.m.line);
     this.active = false;
+    this.crane = false;
+    preloadCrane().then((c) => { if (c) this.useCrane(c); });
+  }
+
+  // swap the box stand-in for the crane: its own body and wheels, our flashing beacons on its cab roof and the
+  // winch line from its hook
+  useCrane(c) {
+    const m = this.m, s = CRANE.scale;
+    for (const o of m.stand) if (!m.lights.includes(o)) o.visible = false;
+    const body = c.clone(); body.scale.setScalar(s); body.position.y = CRANE.groundY * s;
+    m.g.add(body);
+    m.lights.forEach((l, i) => l.position.set((i ? 0.18 : -0.18), CRANE.beacon[1] * s + 0.04, CRANE.beacon[2] * s));
+    m.tip.removeFromParent(); m.g.add(m.tip);
+    m.tip.position.set(CRANE.hook[0] * s, CRANE.hook[1] * s, CRANE.hook[2] * s);
+    m.wheels = [];
+    this.crane = true;
   }
 
   /** Begin a recovery of `phys` (on its side or roof). False if there is no way in for the tow truck. */
   start(phys, hf) {
-    const path = towApproach(hf, phys.pos, phys.yaw);
+    const path = towApproach(hf, phys.pos, phys.yaw, this.crane ? CRANE_STOP : STOP);
     if (!path) return false;
     this.hf = hf; this.path = path; this.t = 0; this.active = true; this.phase = 'approach';
     this.from = phys.pos.clone(); this.fromQ = phys.q.clone();

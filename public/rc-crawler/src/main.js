@@ -604,6 +604,8 @@ function tick(dt, forced) {
   if (mp.active) inp = modes.inputOverride(inp);
   mp.preStep(dt);
   // while the tow truck has hold of our truck, it poses the truck and the physics wait
+  // a truck starting to tip: fetch the recovery crane now, so it is ready if it is needed
+  if (!tow && phys.up.y < 0.6 && !mp.spectating) tow = new TowRecovery(scene);
   const towing = !!tow?.active && tow.phase !== 'leave';
   if (towing) {
     if (tow.update(dt, model) === 'release') {
