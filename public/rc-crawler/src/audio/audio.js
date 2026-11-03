@@ -55,11 +55,14 @@ const BIOMES = {
   mixed:  { wind: 0.55, leaves: 0.3,  whistle: 0.3, birds: 0.35, stream: 0.5,  crickets: 0.15, echo: 0.15, drips: 0.8, species: ['chirp', 'warble', 'whistle', 'cascade', 'trill'] },
   menu:   { wind: 0.35, leaves: 0.2,  whistle: 0.1, birds: 0.3,  stream: 0.15, crickets: 0,    echo: 0.10, drips: 0.6, species: ['warble', 'whistle', 'chirp'] },
 };
-const WEATHER = {
+export const WEATHER = {
   morning:  { wind: 0.8,  birds: 1.6, crickets: 0.3, drips: 0 },
   golden:   { wind: 0.9,  birds: 0.8, crickets: 2.2, drips: 0 },
   overcast: { wind: 1.25, birds: 0.6, crickets: 0.5, drips: 0 },
   rain:     { wind: 0.9,  birds: 0.3, crickets: 0.2, drips: 1, streamAdd: 0.15 }, // after-rain
+  storm:    { wind: 1.4,  birds: 0.05, crickets: 0, drips: 1.5, streamAdd: 0.25, rain: 1 },   // falling rain
+  fog:      { wind: 0.35, birds: 0.4, crickets: 0.2, drips: 0.6 },
+  night:    { wind: 0.6,  birds: 0.05, crickets: 3.0, drips: 0 },
 };
 
 export class AudioEngine {
@@ -550,6 +553,13 @@ export class AudioEngine {
     this.lvG = this._gain(0, this.ambBus);
     aPink.connect(this.lvBP).connect(this.lvG);
 
+    // rain: a hiss of drops on leaves and ground over a low rumble (gain set by the weather)
+    this.rnG = this._gain(0, this.ambBus);
+    const rnHP = this._filter('highpass', 1300, 0.5), rnLP = this._filter('lowpass', 7500, 0.5);
+    aWhite.connect(rnHP).connect(rnLP).connect(this.rnG);
+    const rnLow = this._filter('lowpass', 260, 0.7), rnLowG = this._gain(0.45, this.rnG);
+    aBrown.connect(rnLow).connect(rnLowG);
+
     // stream babble: 3 layers
     this.stG = this._gain(0, this.ambBus);
     this.stLayers = [
@@ -580,6 +590,7 @@ export class AudioEngine {
       stream: clamp(b.stream + (w.streamAdd || 0) * (b.stream > 0 || b.leaves > 0.2 ? 1 : 0.3)),
       crickets: clamp(b.crickets * w.crickets),
       drips: w.drips * b.drips,
+      rain: w.rain || 0,
       echo: b.echo,
       species: b.species,
       biome, weather,
@@ -590,6 +601,7 @@ export class AudioEngine {
     if (!this.ctx) return;
     const e = this._env;
     this._set(this.stG.gain, e.stream * 0.11, tc);
+    if (this.rnG) this._set(this.rnG.gain, e.rain * 0.09, tc);
     this._set(this.echoIn.gain, e.echo, tc);
     this._set(this.echoDelay.delayTime, e.biome === 'canyon' ? 0.34 : 0.22, tc);
     this._set(this.echoFB.gain, e.biome === 'canyon' ? 0.38 : 0.22, tc);

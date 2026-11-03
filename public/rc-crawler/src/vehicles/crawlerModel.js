@@ -494,6 +494,17 @@ function addDirt(mat, top, dirtU, ao = 0) {
   mat.customProgramCacheKey = () => 'crawlerDirt' + ao;
 }
 
+// A body's own wheel material (bodies.js), cloned for one truck with that truck's mud and dust on it; whatever
+// shader change the material already carries (a body's sky shading) runs first
+function dirtyWheelMaterial(src, dirtU) {
+  const m = src.clone(), before = src.onBeforeCompile, beforeKey = src.customProgramCacheKey?.() || '';
+  addDirt(m, 10, dirtU);
+  const dirt = m.onBeforeCompile;
+  m.onBeforeCompile = (sh, r) => { before?.call(src, sh, r); dirt(sh, r); };
+  m.customProgramCacheKey = () => beforeKey + '|crawlerDirt';
+  return m;
+}
+
 // -----------------------------------------------------------------------------
 //  Materials
 // -----------------------------------------------------------------------------
@@ -2240,6 +2251,8 @@ export function createCrawler(opts = {}) {
       sp.children[0].visible = !src;
       if (!src) return;
       const w = (Array.isArray(src) ? src[i] : src).clone();
+      // its own tyres collect this truck's mud and dust too
+      w.traverse((o) => { if (o.isMesh && o.material) o.material = Array.isArray(o.material) ? o.material.map((mt) => dirtyWheelMaterial(mt, dirtU)) : dirtyWheelMaterial(o.material, dirtU); });
       if (!Array.isArray(src) && HUB_X[i] < 0) w.rotation.y = PI;   // outer face toward -X on the right side
       sp.add(w);
       prepareWheel(w, tyreU[i]);

@@ -55,9 +55,12 @@ and the keyboard controls. All indicators must read real game state.
   Recovery Run (out to a crawler broken down beside the trail and back). Ordinary challenges: rings, timer, par
   medals and career XP all apply.
 
-**Phase 4 — dashboard, minimap, weather, audio**
-- Weather: falling rain with particles and puddles, fog, night (headlights exist), cloudy; rain sets wetness.
-- Dashboard visual pass (glass/metal, gauge easing) keeping the same readouts.
+**Phase 4 — dashboard, minimap, weather, audio** (done)
+- Weather: Rain (falling rain streaks round the camera, slanted by the wind; a rain hiss and rumble; the ground
+  fully wet, so grip drops), Fog (thick, short sight lines), Night (moonlight; the headlights switch on).
+- Dashboard: the needles swing to the exact readings on a damped spring (a slight overshoot, like a real gauge).
+- Mud and dust now build up on bodies' own tyres (Willys, Bronco) too, per truck.
+- Not yet: puddles that form while it rains; a full glass/metal restyle of the cluster.
 
 **Phase 5 — garage**
 - Parts that change physics: tyres (compound/size), shocks (damping), motor (torque/rpm), battery (capacity),

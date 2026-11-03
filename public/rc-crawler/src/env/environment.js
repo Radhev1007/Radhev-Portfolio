@@ -1,4 +1,5 @@
-// Sky, sun, cloud dome, fog, image-based lighting and the four time/weather presets.
+// Sky, sun, cloud dome, fog, image-based lighting and the time/weather presets. `wet` soaks the ground (it cuts
+// tyre grip: physics wetMu), `rain` makes it rain (effects/rain.js), `night` turns the headlights on.
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { sharedTerrainUniforms } from '../terrain/terrainMaterial.js';
@@ -23,6 +24,21 @@ export const PRESETS = {
     label: 'After Rain', elev: 20, azim: 160, sunColor: 0xfde8d0, sunI: 1.7, hemiSky: 0xaebccc, hemiGround: 0x3e3a34, hemiI: 1.2,
     turbidity: 8, rayleigh: 1.3, mie: 0.01, mieG: 0.8, fog: 0xa4adb4, fogD: 0.011, exposure: 0.75, clouds: 0.72, cloudTint: 0xe2e6ea, haze: 0.95, cirrus: 0.3, dark: 0.55,
     wet: 1, grade: { warm: 0.0, contrast: 1.08, sat: 0.92, lift: 0.01 }, shadowSoft: 2.5, wind: 1.2,
+  },
+  storm: {
+    label: 'Rain', elev: 26, azim: 170, sunColor: 0xc8d0d8, sunI: 0.35, hemiSky: 0x8f9aa6, hemiGround: 0x2e2b27, hemiI: 1.15,
+    turbidity: 20, rayleigh: 0.3, mie: 0.03, mieG: 0.7, fog: 0x7d868e, fogD: 0.017, exposure: 0.72, clouds: 1.0, cloudTint: 0x9aa1a8, haze: 1.0, cirrus: 0.0, dark: 1.0,
+    wet: 1, rain: 1, grade: { warm: -0.02, contrast: 1.02, sat: 0.8, lift: 0.02 }, shadowSoft: 8, wind: 2.2,
+  },
+  fog: {
+    label: 'Fog', elev: 22, azim: 140, sunColor: 0xe8e6e0, sunI: 0.7, hemiSky: 0xc3c8cc, hemiGround: 0x4d4a44, hemiI: 1.5,
+    turbidity: 14, rayleigh: 0.5, mie: 0.02, mieG: 0.75, fog: 0xb3b9bd, fogD: 0.05, exposure: 0.8, clouds: 0.9, cloudTint: 0xd0d4d8, haze: 1.0, cirrus: 0.0, dark: 0.6,
+    wet: 0.35, grade: { warm: -0.01, contrast: 0.95, sat: 0.82, lift: 0.03 }, shadowSoft: 7, wind: 0.3,
+  },
+  night: {
+    label: 'Night', elev: 30, azim: 210, sunColor: 0x8ea6d8, sunI: 0.28, hemiSky: 0x34405a, hemiGround: 0x15130f, hemiI: 0.4,   // (the "sun" is the moon)
+    turbidity: 1.5, rayleigh: 0.08, mie: 0.002, mieG: 0.8, fog: 0x141a24, fogD: 0.012, exposure: 0.55, clouds: 0.25, cloudTint: 0x5a6478, haze: 0.6, cirrus: 0.3, dark: 0.9,
+    wet: 0.1, night: true, grade: { warm: -0.05, contrast: 1.08, sat: 0.7, lift: 0.0 }, shadowSoft: 2, wind: 0.5,
   },
 };
 

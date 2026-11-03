@@ -5,6 +5,20 @@ import { fmtTime } from '../challenges/challenges.js';
 import { ACHIEVEMENTS, TERRAINS } from '../world/career.js';
 
 const $ = (s) => document.querySelector(s);
+
+// A gauge needle has a little mass: it swings to the reading on a damped spring (damping ratio 0.75: a ~3 %
+// overshoot) and settles. The reading itself is exact; only the needle's travel is smoothed. Long frames are
+// cut to 0.1 s and stepped in small pieces so a background tab never flings it.
+export function needleStep(n, target, dt) {
+  const K = 220, C = 2 * Math.sqrt(K) * 0.75;
+  let left = Math.min(0.1, Math.max(0, dt));
+  while (left > 1e-6) {
+    const h = Math.min(1 / 120, left); left -= h;
+    n.w += (K * (target - n.v) - C * n.w) * h;
+    n.v += n.w * h;
+  }
+  return n.v;
+}
 const $$ = (s) => [...document.querySelectorAll(s)];
 
 function stars(n) {
@@ -229,12 +243,15 @@ export class UI {
   hud(d) {
     const turn = (el, deg) => { if (el) el.style.transform = `rotate(${deg.toFixed(1)}deg)`; };
     const k = (v) => Math.max(0, Math.min(1, v));
+    const now = performance.now(), dt = this._hudT ? (now - this._hudT) / 1000 : 0; this._hudT = now;
+    const ns = (this._ns ||= { speed: { v: 0, w: 0 }, rpm: { v: 0, w: 0 }, bat: { v: k(d.battery), w: 0 }, temp: { v: 0, w: 0 } });
+    // the readouts are exact; the needles swing to them (needleStep)
     $('#t-speed').textContent = d.speed.toFixed(1);
-    turn(this.needle.speed, DIAL0 + DIAL * k(d.speed / SPEED_MAX));
-    turn(this.needle.rpm, DIAL0 + DIAL * k(d.rpm));
+    turn(this.needle.speed, DIAL0 + DIAL * needleStep(ns.speed, k(d.speed / SPEED_MAX), dt));
+    turn(this.needle.rpm, DIAL0 + DIAL * needleStep(ns.rpm, k(d.rpm), dt));
     this.needle.throttle?.setAttribute('stroke-dasharray', `${(k(d.throttle) * 100).toFixed(1)} 100`);
-    turn(this.needle.bat, 210 + 120 * k(d.battery));
-    turn(this.needle.temp, 210 + 120 * k((d.temp - 15) / 70));
+    turn(this.needle.bat, 210 + 120 * needleStep(ns.bat, k(d.battery), dt));
+    turn(this.needle.temp, 210 + 120 * needleStep(ns.temp, k((d.temp - 15) / 70), dt));
     $('#t-gear').textContent = d.gear;
     if (d.dir !== this._dir) { this._dir = d.dir; for (const i of $('#t-dir').children) i.classList.toggle('on', i.dataset.d === d.dir); }
     this.drivetrain(d);

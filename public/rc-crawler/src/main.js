@@ -7,6 +7,7 @@ import { windUniforms } from './terrain/vegetation.js';
 import { waterUniforms } from './terrain/water.js';
 import { SURF_NAMES, SURF } from './terrain/heightfield.js';
 import { Career, trailFraction } from './world/career.js';
+import { Rain } from './effects/rain.js';
 import { CrawlerPhysics, GEARS, DIFF_MODES, DIFFICULTY, TYRE_PRESSURE } from './physics/vehicle.js';
 import { createCrawler } from './vehicles/crawlerModel.js';
 import { CameraRig, CAM_MODES } from './camera/cameraRig.js';
@@ -171,6 +172,7 @@ function getIn(force = false) {
   model.setDriverVisible(true);
 }
 let tow = null;   // world/towTruck.js: rights a rolled truck where it lies
+const rain = new Rain(scene); let rainWind = 0;   // effects/rain.js: falling rain in the Rain preset
 let rings = null, ringHere = null;   // world/challengeRings.js: the ring the truck is in
 let travelling = false, arriveFrom = null, gwPrev = null, blockedToastAt = -10;
 let medalSnapshot = { ...challenges.best };   // to spot terrains a new medal unlocks
@@ -276,6 +278,8 @@ function applyLevelEnv() {
   sharedTerrainUniforms.uSnowLine.value = e.snow ?? 1e4;
   sharedTerrainUniforms.uWaterY.value = level.hf.waterBodies?.find((w) => !w.murky)?.y ?? -1e4;
   const p = env.apply(settings.preset, e);
+  rain.setIntensity(p.rain || 0); rainWind = (p.wind || 1) * 0.8;
+  if (p.night && !lightsOn) { lightsOn = true; model.setLights(true); }   // night: headlights on
   post.setGrade(p.grade);
   windUniforms.uWind.value = p.wind;
   level.hf.wetGlobal = sharedTerrainUniforms.uWet.value;
@@ -724,6 +728,7 @@ function tick(dt, forced) {
   audio.setListener(camera.position, _aFwd, camera.up);
   audio.setVehiclePosition(model.group.position);
   env.update(dt, phys.pos, time);
+  rain.update(dt, camera.position, rainWind);
   sharedTerrainUniforms.uTime.value = time;
   windUniforms.uTime.value = time;
   waterUniforms.uTime.value = time;
