@@ -45,12 +45,15 @@ and the keyboard controls. All indicators must read real game state.
   off-camber slopes, all knockable; silty brown creeks and crossings that keep their flow, ripples and foam.
 - Not yet: mud build-up on the tyres (the body already gets dust, mud and wet).
 
-**Phase 3 — environments and challenges** (career done; new mission types next)
+**Phase 3 — environments and challenges** (done)
 - Done: career (world/career.js) — XP (distance, medals, trail progress, achievements), ranks, 15 achievements
   from real events (distance, time, rollovers, crane recoveries, bridges crossed, creeks forded, medals, trail
   ends, every vehicle driven), trail completion % per terrain, statistics overall and per vehicle; a CAREER menu
   tab and the rank under the HUD medal count.
-- Next: mission types beyond the timed rings — recovery mission, hill climb, checkpoint race.
+- Done: missions on every terrain's main trail (levels/missions.js) — Hill Climb (the steepest 24-40 m stretch,
+  driven uphill, where the trail climbs 1.5 m or more), Checkpoint Race (60-140 m, at least four checkpoints),
+  Recovery Run (out to a crawler broken down beside the trail and back). Ordinary challenges: rings, timer, par
+  medals and career XP all apply.
 
 **Phase 4 — dashboard, minimap, weather, audio**
 - Weather: falling rain with particles and puddles, fog, night (headlights exist), cloudy; rain sets wetness.

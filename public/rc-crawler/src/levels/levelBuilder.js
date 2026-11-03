@@ -10,6 +10,8 @@ import { createTerrainMaterial, createRockMaterial, sharedTerrainUniforms } from
 import { createWaterMesh, createWaterfall } from '../terrain/water.js';
 import { buildActivities, Props } from './activities.js';
 import { addTrailObstacles } from './trailObstacles.js';
+import { buildMissions } from './missions.js';
+import { createCrawler } from '../vehicles/crawlerModel.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { placeReturnGateway } from '../world/gateways.js';
 
@@ -332,6 +334,8 @@ export async function buildLevel(def, quality, onProgress = () => {}) {
   activities.trailDelta = layout.path ? Math.max(0, ...layout.path.pts.map((p, i) => Math.abs(ctx.hf.baseHeightAt(p.x, p.z) - trailBefore[i]))) : 0;
   if (activities.trailDelta > 0.005) console.warn(`[activities] ${def.id}: trail centreline moved by ${activities.trailDelta.toFixed(3)} m`);
   layout.challenges = [...(layout.challenges || []), ...activities.challenges];
+  // missions along the main trail: hill climb, checkpoint race, recovery run (missions.js)
+  layout.challenges.push(...buildMissions(ctx, def, layout, layout.challenges));
   // every terrain has a gateway just behind its spawn back to the hub (after the activities, whose trail guard
   // above has already run)
   if (def.id !== 'hub' && layout.spawn) {
@@ -667,6 +671,18 @@ function buildMarkers(ctx) {
       group.add(g);
       // a light plastic cone: the truck knocks it over easily (it never stops the truck)
       posts.push({ x: m.x, z: m.z, r: 0.08, y0: y, top: y + CONE_H, mat: 'plastic', kind: 'cone', breakable: true, snapV: 0.35, limit: 2.5, pushTime: 0.15, mesh: g });
+    } else if (m.type === 'stranded') {
+      // the broken-down crawler a recovery run drives out to: an RC truck tipped on its side beside the trail,
+      // solid (the truck stops against it), with a warning cone at its tail
+      const model = createCrawler({ quality: 'low' });
+      model.setBodyColor(0x2f6fb0);
+      model.group.position.set(m.x, y + 0.34, m.z);
+      model.group.rotation.set(0, m.yaw, 1.35, 'YXZ');
+      model.group.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      group.add(model.group);
+      posts.push({ x: m.x, z: m.z, r: 0.5, y0: y, top: y + 0.75, mat: 'metal', kind: 'stranded', mesh: model.group });
+      const cx = m.x - Math.sin(m.yaw) * 1.3, cz = m.z - Math.cos(m.yaw) * 1.3;
+      ctx.markers.push({ type: 'cone', x: cx, z: cz });   // (built later in this same loop)
     } else if (m.type === 'ropePost') {
       const base = m.y ?? y + 0.04;   // (bridge rails stand on the deck)
       const g = new THREE.Mesh(ropePostGeo, ropePostMat); g.castShadow = true;
