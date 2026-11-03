@@ -15,3 +15,6 @@ radhev-portfolio.html
 .env.*
 !.env.example
 multiplayer-server/.env
+
+# multiplayer server: saved course leaderboards
+multiplayer-server/data/

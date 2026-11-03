@@ -71,9 +71,15 @@ and the keyboard controls. All indicators must read real game state.
 - A GARAGE menu tab with stat bars against stock and an inspection view circling the parked truck.
 - Not yet: parts are not sent to other players in multiplayer (they see stock trucks).
 
-**Phase 6 — multiplayer**
-- Up to 20 players per room, invite links, leaderboards; server-authoritative checks for race results. Rooms,
-  sync, markers, voice and spectating exist.
+**Phase 6 — multiplayer** (done)
+- Already there: rooms of up to 20 (tested), invite links, player names and markers, voice, spectating,
+  server-checked race / timed / checkpoint / coop sessions (gates in order, near the truck, no faster than the
+  course allows; timed runs measured on the server clock).
+- Added: course leaderboards (multiplayer-server/src/leaderboard.js) — the best server-timed result per player per
+  course, top 10, kept across rooms and saved to disk (BOARDS_FILE), shown in the lobby and results with the
+  vehicle and whether its parts were stock. Garage parts sync to other players as a short code the server checks
+  against the parts that exist; their trucks show the same accessories and wheel offset.
+- Note: on a host without a persistent disk (Render's free tier) the boards start fresh after a redeploy.
 
 ## Visual target (reference images from the brief)
 

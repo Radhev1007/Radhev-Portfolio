@@ -14,7 +14,7 @@ const gid = () => 'test-' + Math.random().toString(36).slice(2, 12);
 const pose = (x, z, extra = {}) => ({ x, y: 1, z, qx: 0, qy: 0, qz: 0, qw: 1, vx: 0, vy: 0, vz: 0, steer: 0, throttle: 0, hub: [-0.1, -0.1, -0.1, -0.1], flags: 0, ...extra });
 
 before(async () => {
-  proc = spawn(process.execPath, ['src/index.js'], { env: { ...process.env, PORT: String(PORT), RECONNECT_SECONDS: '3', LIVEKIT_URL: '', LIVEKIT_API_KEY: '', LIVEKIT_API_SECRET: '' }, stdio: 'pipe' });
+  proc = spawn(process.execPath, ['src/index.js'], { env: { ...process.env, PORT: String(PORT), RECONNECT_SECONDS: '3', BOARDS_FILE: '', LIVEKIT_URL: '', LIVEKIT_API_KEY: '', LIVEKIT_API_SECRET: '' }, stdio: 'pipe' });
   for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${PORT}/health`)).ok) return; } catch { /* starting */ } await sleep(100); }
   throw new Error('server did not start');
 });
@@ -241,4 +241,40 @@ test('spectators: no truck, moves ignored, counted apart in /health', async () =
   await sleep(300);
   const h2 = await (await fetch(`http://127.0.0.1:${PORT}/health`)).json();
   assert.equal(h2.watching, 0);
+});
+
+test('garage parts reach the other players; unknown parts are refused', async () => {
+  const a = await new Client(URL).create('rc', { name: 'A', guestId: gid(), parts: 'mt.firm.t27.s3.sport.wide.lightbar+rack' });
+  const b = await new Client(URL).joinById(a.roomId, { name: 'B', guestId: gid(), parts: 'warp.drive' });
+  await sleep(250);
+  const of = (c, sid) => c.state.players.get(sid);
+  assert.equal(of(b, a.sessionId).parts, 'mt.firm.t27.s3.sport.wide.lightbar+rack');
+  assert.equal(of(a, b.sessionId).parts, '', 'refused');
+  a.send('profile', { parts: 'sticky.soft.t45.mah5000.crawl.narrow.sliders' }); await sleep(250);
+  assert.equal(of(b, a.sessionId).parts, 'sticky.soft.t45.mah5000.crawl.narrow.sliders');
+  await b.leave(); await a.leave();
+});
+
+test('timed runs measured by the server go on the course leaderboard, kept for the next room', async () => {
+  const host = await new Client(URL).create('rc', { name: 'Timer', guestId: gid() });
+  host.onMessage('*', () => {});
+  host.send('config', { mode: 'timed', map: 'forest', challenge: 'mis-race' });
+  await sleep(150);
+  const gates = [{ x: 0, z: -60, yaw: 0, width: 4 }, { x: 0, z: -50, yaw: 0, width: 4 }];
+  host.send('start', { gates, spawn: { x: 0, z: -63 } });
+  let seq = 0; const go = (x, z, flags = 0) => host.sendBytes('m', encodeMove(seq++, pose(x, z, { flags })));
+  go(0, -62, FLAG.RECOVER); await sleep(4500);
+  assert.equal(host.state.phase, 'running');
+  go(0, -60.2); await sleep(80); host.send('cp', { i: 0 }); await sleep(700);
+  go(0, -50.2); await sleep(80); host.send('cp', { i: 1 }); await sleep(250);
+  const board = JSON.parse(host.state.board || '[]');
+  assert.equal(board.length, 1, host.state.board);
+  assert.equal(board[0].name, 'Timer');
+  assert.ok(board[0].t >= 600 && board[0].t < 3000, `server-timed ${board[0].t} ms`);
+  await host.leave();
+  // a new room on the same course sees it
+  const next = await new Client(URL).create('rc', { name: 'Next', guestId: gid() });
+  next.send('config', { mode: 'timed', map: 'forest', challenge: 'mis-race' }); await sleep(250);
+  assert.equal(JSON.parse(next.state.board || '[]')[0]?.name, 'Timer');
+  await next.leave();
 });

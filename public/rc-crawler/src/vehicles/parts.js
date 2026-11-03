@@ -45,6 +45,18 @@ export const PARTS = {
 
 export const STOCK = { tyres: 'at', shocks: 'stock', motor: 't35', battery: 's2', esc: 'stock', offset: 'stock', acc: [] };
 
+// Parts travel to other players as one short code (multiplayer-server/src/leaderboard.js checks it):
+// "tyres.shocks.motor.battery.esc.offset.acc+acc".
+const CODE_ORDER = ['tyres', 'shocks', 'motor', 'battery', 'esc', 'offset'];
+export const partsCode = (parts = STOCK) => { const p = { ...STOCK, ...parts }; return [...CODE_ORDER.map((c) => p[c]), (p.acc || []).join('+')].join('.'); };
+export function partsFromCode(code) {
+  const bits = typeof code === 'string' ? code.split('.') : [];
+  if (bits.length !== 7) return { ...STOCK, acc: [] };
+  const p = { acc: bits[6] ? bits[6].split('+').filter((a) => PARTS.acc.options.some((o) => o.id === a)) : [] };
+  CODE_ORDER.forEach((c, i) => { p[c] = PARTS[c].options.some((o) => o.id === bits[i]) ? bits[i] : STOCK[c]; });
+  return p;
+}
+
 const opt = (cat, id) => PARTS[cat].options.find((o) => o.id === id) || PARTS[cat].options[0];
 
 /** The physics multipliers for a set of parts (missing categories are stock). */

@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Heightfield, SURF } from '../../public/rc-crawler/src/terrain/heightfield.js';
 import { CrawlerPhysics, GEARS } from '../../public/rc-crawler/src/physics/vehicle.js';
-import { PARTS, STOCK, partsSetup, partStats } from '../../public/rc-crawler/src/vehicles/parts.js';
+import { PARTS, STOCK, partsSetup, partStats, partsCode, partsFromCode } from '../../public/rc-crawler/src/vehicles/parts.js';
+import { parseParts } from '../../multiplayer-server/src/leaderboard.js';
 
 const flat = (surf = SURF.DIRT, size = 60) => { const hf = new Heightfield(size, 0.5); if (surf !== SURF.DIRT) hf.surf.fill(surf); hf.finalizePhysics(); return hf; };
 const truck = (parts, surf, size) => { const p = new CrawlerPhysics(flat(surf, size)); p.setSetup(partsSetup(parts)); p.placeAt(0, 0, 0); for (let i = 0; i < 90; i++) p.update(1 / 60, { throttle: 0, steer: 0, handbrake: true }); return p; };
@@ -61,4 +62,19 @@ test('the garage stats read the parts: stock is the middle of every bar', () => 
   for (const v of Object.values(st)) assert.ok(Math.abs(v - 0.5) < 1e-9, JSON.stringify(st));
   const mod = partStats(fit({ motor: 't27', battery: 'mah5000', shocks: 'firm' }));
   assert.ok(mod.speed > 0.5 && mod.torque < 0.5 && mod.runtime > 0.5 && mod.stability > 0.5);
+});
+
+test('parts travel to other players as a code the server accepts, and come back the same', () => {
+  const mine = fit({ tyres: 'mt', motor: 't27', offset: 'wide', acc: ['lightbar', 'rack'] });
+  const code = partsCode(mine);
+  assert.equal(parseParts(code).code, code, 'the server accepts it');
+  assert.equal(parseParts(code).stock, false);
+  assert.deepEqual(partsFromCode(code), mine);
+  assert.equal(parseParts(partsCode(STOCK)).stock, true);
+  assert.deepEqual(partsFromCode(''), { ...STOCK, acc: [] }, 'no code: stock');
+  // the two catalogues match: every option the game offers is one the server knows
+  for (const [cat, c] of Object.entries(PARTS)) for (const o of c.options) {
+    const p = cat === 'acc' ? fit({ acc: [o.id] }) : fit({ [cat]: o.id });
+    assert.notEqual(parseParts(partsCode(p)).code, '', `${cat}.${o.id} unknown to the server`);
+  }
 });

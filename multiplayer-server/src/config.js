@@ -9,6 +9,8 @@ export const config = {
   allowedOrigins: (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
   maxPlayers: Math.min(20, Math.max(2, num(env.MAX_PLAYERS, 20))),
   reconnectSeconds: num(env.RECONNECT_SECONDS, 30),
+  // course leaderboards are saved here (empty = kept in memory only)
+  boardsFile: env.BOARDS_FILE ?? 'data/boards.json',
   // trimmed: values pasted into a hosting dashboard often carry a stray space or line break, which LiveKit
   // then rejects as an invalid API key
   livekit: {

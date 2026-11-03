@@ -26,12 +26,13 @@ export class Player extends Schema {
     this.vmode = '';         // voice transport: 'lk' (LiveKit) | 'p2p' (direct) | '' (not in voice)
     this.vehicle = 'scx30';  // body shell on the shared RC chassis (looks only: physics are the same for all)
     this.watch = false;      // a spectator: no truck, only watches (never drives, never scores)
+    this.parts = '';         // garage parts code (leaderboard.js parseParts), so others see the same truck; '' = stock
   }
 }
 defineTypes(Player, {
   name: 'string', color: 'uint8', slot: 'uint8', ready: 'boolean', host: 'boolean', connected: 'boolean',
   joinedAt: 'number', ping: 'uint16', status: 'string', cp: 'int8', mask: 'uint32', score: 'number',
-  finish: 'number', best: 'number', runs: 'uint16', voice: 'boolean', mic: 'boolean', vmode: 'string', vehicle: 'string', watch: 'boolean',
+  finish: 'number', best: 'number', runs: 'uint16', voice: 'boolean', mic: 'boolean', vmode: 'string', vehicle: 'string', watch: 'boolean', parts: 'string',
 });
 
 export class RoomState extends Schema {
@@ -49,11 +50,12 @@ export class RoomState extends Schema {
     this.teamTime = 0;           // coop: finish time, ms
     this.session = 0;            // increments on every start, so clients can tell sessions apart
     this.open = false;           // the public open world: always free roam in the hub, no host controls
+    this.board = '';             // JSON: this course's leaderboard (top 10, server-timed), '' when the mode has none
     this.players = new MapSchema();
     this.broken = new ArraySchema();   // indices into level.posts that have been snapped this session
   }
 }
 defineTypes(RoomState, {
   code: 'string', map: 'string', mode: 'string', challenge: 'string', phase: 'string', startAt: 'number', endAt: 'number',
-  course: 'string', team: 'int16', teamTime: 'number', session: 'uint16', open: 'boolean', players: { map: Player }, broken: ['uint16'],
+  course: 'string', team: 'int16', teamTime: 'number', session: 'uint16', open: 'boolean', board: 'string', players: { map: Player }, broken: ['uint16'],
 });

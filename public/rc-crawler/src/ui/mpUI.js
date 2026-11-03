@@ -318,9 +318,16 @@ export class MpUI {
 
   sessionHtml(st, me, waiting, host) {
     const info = MODE_INFO[st.mode];
-    if (st.phase === 'results') return `<div class="mp-box"><div class="mp-dim mp-cap">RESULTS · ${esc(info.name)}</div>${this.resultsTable(st)}</div>`;
+    if (st.phase === 'results') return `<div class="mp-box"><div class="mp-dim mp-cap">RESULTS · ${esc(info.name)}</div>${this.resultsTable(st)}${this.boardHtml(st)}</div>`;
     if (st.phase === 'running' || st.phase === 'countdown') return `<div class="mp-box"><div class="mp-dim mp-cap">IN PROGRESS · ${esc(info.name)}</div><p class="mp-dim">Close this panel to drive. ${me.status === 'spectating' ? 'You joined mid-session: you will be scored from the next start.' : ''}${host ? ' Changing a game setting ends this session and brings everyone back to the lobby.' : ''}</p></div>`;
-    return `<div class="mp-box mp-wait">${host ? (waiting ? `Waiting for ${waiting} player${waiting > 1 ? 's' : ''} to be ready…` : 'Everyone is ready. Start when you like.') : me.ready ? 'Ready. Waiting for the host to start…' : 'Press READY when you are set.'}</div>`;
+    return `${st.board ? `<div class="mp-box">${this.boardHtml(st)}</div>` : ''}<div class="mp-box mp-wait">${host ? (waiting ? `Waiting for ${waiting} player${waiting > 1 ? 's' : ''} to be ready…` : 'Everyone is ready. Start when you like.') : me.ready ? 'Ready. Waiting for the host to start…' : 'Press READY when you are set.'}</div>`;
+  }
+
+  // this course's leaderboard (top 10 server-timed results, kept across rooms), when the mode has one
+  boardHtml(st) {
+    let list = []; try { list = JSON.parse(st.board || '[]'); } catch { /* none */ }
+    if (!list.length) return st.board !== '' && st.board != null ? '<p class="mp-dim">No times on this course yet. Set the first.</p>' : '';
+    return `<div class="mp-dim mp-cap">COURSE LEADERBOARD</div><ol class="mp-res mp-lb">${list.map((e, i) => `<li><span class="mp-rk">${i + 1}</span>${esc(e.name)} <small class="mp-dim">${esc(String(e.vehicle).toUpperCase())}${e.stock ? '' : ' · modified'}</small><b>${esc(ms(e.t))}</b></li>`).join('')}</ol>`;
   }
 
   resultsTable(st) {

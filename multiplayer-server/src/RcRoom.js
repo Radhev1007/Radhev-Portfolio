@@ -14,9 +14,12 @@ import { Player, RoomState } from './state.js';
 import { config, MAPS, MODES, MODE_LIMIT, PALETTE_SIZE, VEHICLES, iceServers } from './config.js';
 import { decodeMove, encodeSnapshot, poseSane, FLAG } from '../shared/codec.js';
 import { voiceConfigured, voiceToken } from './voice.js';
+import { Leaderboards, parseParts } from './leaderboard.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no 0/O/1/I
 const activeCodes = new Set();
+// course leaderboards, shared by every room in this process (leaderboard.js)
+export const boards = new Leaderboards(config.boardsFile || null);
 export const roomStats = { rooms: 0, players: 0, watching: 0 };   // players counts everyone connected, watchers too
 
 function newCode() {
@@ -121,6 +124,7 @@ export class RcRoom extends Room {
     const want = Number.isInteger(options.color) && options.color >= 0 && options.color < PALETTE_SIZE ? options.color : slot;
     p.color = !takenColors.has(want) ? want : [...Array(PALETTE_SIZE).keys()].find((c) => !takenColors.has(c)) ?? 0;
     if (VEHICLES.includes(options.vehicle)) p.vehicle = options.vehicle;
+    p.parts = parseParts(options.parts).code;
     // joining mid-session: drive along in free roam, or watch (driving, unscored) until the next start
     const live = this.state.phase === 'countdown' || this.state.phase === 'running';
     p.status = !live ? 'lobby' : this.state.mode === 'free' ? 'driving' : 'spectating';
@@ -276,6 +280,7 @@ export class RcRoom extends Room {
     const name = cleanName(m.name);
     if (name) p.name = this.uniqueName(name, client.sessionId);
     if (VEHICLES.includes(m.vehicle)) p.vehicle = m.vehicle;
+    if (m.parts !== undefined) p.parts = parseParts(m.parts).code;
     if (Number.isInteger(m.color) && m.color >= 0 && m.color < PALETTE_SIZE) {
       const taken = [...this.state.players.entries()].some(([sid, q]) => sid !== client.sessionId && q.color === m.color);
       if (!taken) p.color = m.color;
@@ -288,6 +293,7 @@ export class RcRoom extends Room {
     if (MAPS.includes(m.map) && m.map !== this.state.map) { this.state.map = m.map; this.state.broken.clear(); this.state.challenge = ''; }
     if (MODES.includes(m.mode)) this.state.mode = m.mode;
     if (typeof m.challenge === 'string' && m.challenge.length <= 40) this.state.challenge = m.challenge;
+    this.refreshBoard();
   }
 
   onStart(client, m) {
@@ -358,6 +364,14 @@ export class RcRoom extends Room {
   }
 
   // ------------------------------------------------------------ gates, checkpoints, scores
+  // the course leaderboard for what this room is running: race finishes and timed runs on a level challenge
+  boardKey() { const s = this.state; return s.challenge && (s.mode === 'race' || s.mode === 'timed') ? `${s.map}:${s.challenge}:${s.mode}` : ''; }
+  refreshBoard() { const k = this.boardKey(); this.state.board = k ? JSON.stringify(boards.top(k)) : ''; }
+  toBoard(client, p, t) {   // t: measured by this room on the server clock
+    const k = this.boardKey(); if (!k) return;
+    if (boards.record(k, { guest: this.guests.get(client.sessionId) || client.sessionId, name: p.name, t, vehicle: p.vehicle, stock: parseParts(p.parts).stock })) this.refreshBoard();
+  }
+
   onGate(client, m) {
     const s = this.state, p = this.player(client), mv = this.moves.get(client.sessionId), c = this.courseData;
     if (!p || !mv || !c || s.phase !== 'running' || p.status !== 'driving' || !m || !Number.isInteger(m.i)) return;
@@ -377,7 +391,7 @@ export class RcRoom extends Room {
     if (s.mode === 'race') {
       if (m.i !== p.cp + 1 || el < c.minT[m.i]) return;
       p.cp = m.i;
-      if (m.i === c.gates.length - 1) { p.finish = el; p.status = 'finished'; this.finishCount++; }
+      if (m.i === c.gates.length - 1) { p.finish = el; p.status = 'finished'; this.finishCount++; this.toBoard(client, p, el); }
     } else if (s.mode === 'timed') {
       if (m.i === 0) { mv.runStart = now; p.cp = 0; return; }
       if (!mv.runStart || m.i !== p.cp + 1 || now - mv.runStart < c.minT[m.i] - c.minT[0]) return;
@@ -385,6 +399,7 @@ export class RcRoom extends Room {
       if (m.i === c.gates.length - 1) {
         const t = now - mv.runStart;           // timed on the server clock, not the client's
         p.runs++; if (!p.best || t < p.best) p.best = t;
+        this.toBoard(client, p, t);
         p.cp = -1; mv.runStart = 0;
       }
     } else if (s.mode === 'coop') {

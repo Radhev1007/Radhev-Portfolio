@@ -8,7 +8,7 @@ import { waterUniforms } from './terrain/water.js';
 import { SURF_NAMES, SURF } from './terrain/heightfield.js';
 import { Career, trailFraction } from './world/career.js';
 import { Rain } from './effects/rain.js';
-import { STOCK as STOCK_PARTS, partsSetup } from './vehicles/parts.js';
+import { STOCK as STOCK_PARTS, partsSetup, partsCode } from './vehicles/parts.js';
 import { buildAccessories } from './vehicles/accessories.js';
 import { CrawlerPhysics, GEARS, DIFF_MODES, DIFFICULTY, TYRE_PRESSURE } from './physics/vehicle.js';
 import { createCrawler } from './vehicles/crawlerModel.js';
@@ -451,6 +451,7 @@ ui.on('part', (cat, id) => {
   if (cat === 'acc') p.acc = p.acc.includes(id) ? p.acc.filter((x) => x !== id) : [...p.acc, id];
   else p[cat] = id;
   saveSettings(); applyDrivetrain(); fitParts(); audio.uiClick();
+  mp.saveProfile({ parts: partsCode(settings.parts) });   // other players see the same truck
   ui.renderGarage(settings.parts);
 });
 // inspect: the menu steps aside and the camera circles the parked truck (drag to look round it, Esc to return)
@@ -849,6 +850,7 @@ const game = {
   },
 };
 const mp = new Multiplayer(game);
+mp.profile.parts = partsCode(settings.parts);   // the garage's parts go out with the join (others see the same truck)
 const modes = new Modes(mp, game);
 const voice = new Voice(mp);
 const mpUI = new MpUI({ mp, voice, modes, game });
