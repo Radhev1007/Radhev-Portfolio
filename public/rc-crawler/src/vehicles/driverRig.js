@@ -3,8 +3,9 @@
 // model: x across, his left +x; y up; z forward; feet at y -0.95, 1.9 units tall), each vertex is weighted to the
 // bones nearest it (blended across each joint), and poses are bone rotations: seated at the wheel, walking.
 //
-// His hands rest in his trouser pockets. The few triangles joining a hand to its pocket are cut, so the hand can
-// come out to the wheel without dragging the pocket with it.
+// His hands rest in his trouser pockets and his arms hang against his sides. The triangles joining parts that only
+// touch (hand and pocket, arm and side, knee and knee) are cut, so a limb can move away without dragging the
+// surface it touched with it.
 import * as THREE from 'three';
 
 // figure units -> game units, and the on-foot numbers (game units)
@@ -20,21 +21,23 @@ export const BONES = [
   { name: 'upperArmL', parent: 'chest', at: [0.2, 0.52, -0.06], r: 0.055, group: 1 },
   { name: 'foreArmL', parent: 'upperArmL', at: [0.23, 0.2, -0.06], r: 0.045, group: 1 },
   { name: 'handL', parent: 'foreArmL', at: [0.22, 0.0, 0.01], tip: [0.2, -0.08, 0.04], r: 0.045, group: 1 },
-  { name: 'upperArmR', parent: 'chest', at: [-0.24, 0.52, -0.06], r: 0.055, group: 1 },
-  { name: 'foreArmR', parent: 'upperArmR', at: [-0.24, 0.18, -0.06], r: 0.045, group: 1 },
-  { name: 'handR', parent: 'foreArmR', at: [-0.17, 0.0, 0.04], tip: [-0.13, -0.12, 0.07], r: 0.045, group: 1 },
-  { name: 'thighL', parent: 'hips', at: [0.08, -0.02, 0], r: 0.085, group: 2 },
-  { name: 'shinL', parent: 'thighL', at: [0.19, -0.44, -0.02], r: 0.06, group: 2 },
-  { name: 'ankleL', parent: 'shinL', at: [0.16, -0.82, -0.09], tip: [0.17, -0.93, 0.1], r: 0.06, group: 2 },
-  { name: 'thighR', parent: 'hips', at: [-0.08, -0.02, 0], r: 0.085, group: 2 },
-  { name: 'shinR', parent: 'thighR', at: [-0.07, -0.44, -0.02], r: 0.06, group: 2 },
-  { name: 'ankleR', parent: 'shinR', at: [-0.04, -0.82, -0.09], tip: [-0.03, -0.93, 0.1], r: 0.06, group: 2 },
+  { name: 'upperArmR', parent: 'chest', at: [-0.25, 0.52, 0.0], r: 0.06, group: 2 },
+  { name: 'foreArmR', parent: 'upperArmR', at: [-0.245, 0.2, 0.03], r: 0.05, group: 2 },
+  { name: 'handR', parent: 'foreArmR', at: [-0.2, 0.0, 0.06], tip: [-0.17, -0.12, 0.08], r: 0.05, group: 2 },
+  { name: 'thighL', parent: 'hips', at: [0.08, -0.02, 0], r: 0.085, group: 3 },
+  { name: 'shinL', parent: 'thighL', at: [0.19, -0.44, -0.02], r: 0.06, group: 3 },
+  { name: 'ankleL', parent: 'shinL', at: [0.16, -0.82, -0.09], tip: [0.17, -0.93, 0.1], r: 0.06, group: 3 },
+  { name: 'thighR', parent: 'hips', at: [-0.08, -0.02, 0], r: 0.085, group: 4 },
+  { name: 'shinR', parent: 'thighR', at: [-0.07, -0.44, -0.02], r: 0.06, group: 4 },
+  { name: 'ankleR', parent: 'shinR', at: [-0.04, -0.82, -0.09], tip: [-0.03, -0.93, 0.1], r: 0.06, group: 4 },
 ];
 const IDX = Object.fromEntries(BONES.map((b, i) => [b.name, i]));
 // each bone's segment end: its tip, else its first child's joint
 for (const b of BONES) b.end = b.tip || BONES.find((c) => c.parent === b.name).at;
 // neighbours a vertex may blend between (a bone, its parent, its children)
 const NEAR = BONES.map((b) => [IDX[b.name], ...(b.parent ? [IDX[b.parent]] : []), ...BONES.filter((c) => c.parent === b.name).map((c) => IDX[c.name])]);
+
+const TORSO_HALF = 0.21;   // the body's half width from hand height to the shoulders (measured from the figure)
 
 function segDist(p, a, b) {
   const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [p[0] - a[0], p[1] - a[1], p[2] - a[2]];
@@ -44,7 +47,8 @@ function segDist(p, a, b) {
 
 /**
  * Skin weights for the figure's vertices (positions in figure units): four bones per vertex, blended across the
- * joints of its nearest bone. `group` is the vertex's part (0 body, 1 arm, 2 leg), for cutting the pocket seams.
+ * joints of its nearest bone. `group` is the vertex's part (0 body, 1 left arm, 2 right arm, 3 left leg, 4 right
+ * leg), for cutting where parts only touch.
  */
 export function skinWeights(pos) {
   const n = pos.length / 3, index = new Uint16Array(n * 4), weight = new Float32Array(n * 4), group = new Uint8Array(n);
@@ -54,8 +58,10 @@ export function skinWeights(pos) {
     let best = 0;
     for (let b = 0; b < BONES.length; b++) {
       const B = BONES[b];
-      // a hand takes only what is above its fingertips: below them is the pocket, which stays on the thigh
-      score[b] = B.name.startsWith('hand') && p[1] < B.end[1] ? 1e9 : segDist(p, B.at, B.end) / B.r;
+      // a hand takes only what is above its fingertips: below them is the pocket, which stays on the thigh; between
+      // the hands and the shoulders the body is no wider than TORSO_HALF and the arms hang outside it
+      score[b] = (B.name.startsWith('hand') && p[1] < B.end[1]) || (B.group === 0 && B.name !== 'head' && B.name !== 'neck' && p[1] > -0.12 && p[1] < 0.45 && Math.abs(p[0]) > TORSO_HALF)
+        ? 1e9 : segDist(p, B.at, B.end) / B.r;
       if (score[b] < score[best]) best = b;
     }
     group[i] = BONES[best].group;
@@ -66,12 +72,23 @@ export function skinWeights(pos) {
   return { index, weight, group };
 }
 
-/** Drop the triangles joining an arm to a leg (a hand resting in its pocket). */
-export function cullSeams(idx, group) {
+// an arm is joined to the body at the shoulder only: below this (rest pose) an arm touching his side is just touching
+const SHOULDER_CUT = 0.42;
+/**
+ * Drop the triangles joining parts that only touch in the standing scan, so posing does not stretch them into a
+ * sheet: a hand in its pocket (arm and leg), an arm against his side below the shoulder (arm and body), one knee
+ * against the other (left and right leg). The shoulders and hips, where limbs really join the body, stay.
+ * `pos` (rest positions) is needed for the shoulder test; without it only arm-leg and leg-leg joins are cut.
+ */
+export function cullSeams(idx, group, pos = null) {
   const out = [];
   for (let k = 0; k + 2 < idx.length; k += 3) {
     const g = [group[idx[k]], group[idx[k + 1]], group[idx[k + 2]]];
+    const arm = g.some((x) => x === 1 || x === 2), leg = g.some((x) => x === 3 || x === 4), body = g.includes(0);
+    if (arm && leg) continue;                                          // hand in pocket
+    if (g.includes(3) && g.includes(4)) continue;                      // knees together
     if (g.includes(1) && g.includes(2)) continue;
+    if (arm && body && pos && Math.min(pos[idx[k] * 3 + 1], pos[idx[k + 1] * 3 + 1], pos[idx[k + 2] * 3 + 1]) < SHOULDER_CUT) continue;   // arm against his side
     out.push(idx[k], idx[k + 1], idx[k + 2]);
   }
   return idx instanceof Uint16Array ? new Uint16Array(out) : new Uint32Array(out);

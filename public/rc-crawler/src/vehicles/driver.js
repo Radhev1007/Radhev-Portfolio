@@ -30,7 +30,7 @@ export function loadDriver() {
       const w = skinWeights(geo.getAttribute('position').array);
       geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(w.index, 4));
       geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(w.weight, 4));
-      geo.setIndex(new THREE.BufferAttribute(cullSeams(src.geometry.index.array, w.group), 1));
+      geo.setIndex(new THREE.BufferAttribute(cullSeams(src.geometry.index.array, w.group, geo.getAttribute('position').array), 1));
       if (!geo.getAttribute('normal')) geo.computeVertexNormals();
       const material = src.material;
       material.side = THREE.DoubleSide;   // (the cut pocket seams show the inside of the cloth)
@@ -42,6 +42,25 @@ export function loadDriver() {
 
 const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _v = new THREE.Vector3(), _a = new THREE.Vector3();
 
+let filler = null;
+function fillerMesh() {
+  if (!filler) {
+    const geo = new THREE.SphereGeometry(1, 20, 14);
+    const col = new Float32Array(geo.attributes.position.count * 3);
+    for (let i = 0; i < geo.attributes.position.count; i++) {
+      const up = geo.attributes.position.getY(i) > -0.1;   // the shirt hem sits a little below the middle
+      col.set(up ? [0.78, 0.78, 0.76] : [0.1, 0.11, 0.14], i * 3);
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    filler = { geo, mat: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }) };
+  }
+  const m = new THREE.Mesh(filler.geo, filler.mat);
+  m.name = 'driverFiller';
+  m.position.set(0, 0.08, -0.01);
+  m.scale.set(0.185, 0.16, 0.115);   // just inside his waist and hips
+  return m;
+}
+
 export class DriverFigure {
   constructor({ geometry, material }) {
     this.rig = buildSkeleton();
@@ -52,6 +71,9 @@ export class DriverFigure {
     this.mesh.frustumCulled = false;   // (its bounds are the standing figure's; seated or walking it moves outside them)
     this.group = new THREE.Group(); this.group.name = 'Driver';
     this.group.add(this.mesh);
+    // the scan has no surface where his arms rested against his sides: with the arms raised, a filler inside his
+    // waist (white shirt above, dark denim below) shows there instead of the seat behind him
+    this.rig.bones.hips.add(fillerMesh());
     // riding: the truck's motion felt in its own frame, smoothed (a little lag reads as weight)
     this.prev = null; this.vel = new THREE.Vector3(); this.lean = 0; this.bounce = 0; this.bounceV = 0; this.look = 0;
     poseSeated(this.rig, {});

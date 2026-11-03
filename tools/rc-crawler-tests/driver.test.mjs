@@ -41,6 +41,35 @@ test('triangles joining a hand to the trouser pocket are cut, the rest kept', ()
   assert.deepEqual([...kept], [3, 4, 5]);
 });
 
+test('triangles joining an arm to his side or one knee to the other are cut; the shoulder and hips stay joined', () => {
+  const pos = new Float32Array([
+    0.25, 0.2, -0.06, 0.15, 0.2, -0.04, 0.2, 0.25, -0.05,      // elbow against his waist: arm + torso below the shoulder
+    0.21, 0.5, -0.06, 0.12, 0.5, -0.04, 0.17, 0.55, -0.05,     // the shoulder: arm + chest
+    0.1, -0.5, -0.02, -0.05, -0.5, -0.02, 0.02, -0.46, -0.02,  // knees touching: left shin + right shin
+    0.06, -0.06, 0, 0.0, 0.05, -0.02, -0.03, 0.0, 0.0,         // the hip joint: thigh + hips
+  ]);
+  const w = skinWeights(pos);
+  const kept = cullSeams(new Uint32Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]), w.group, pos);
+  assert.deepEqual([...kept], [3, 4, 5, 9, 10, 11]);
+});
+
+test('posed seated, no triangle of the figure stretches into a sheet', () => {
+  const rig = buildSkeleton(); rig.root.updateMatrixWorld(true);
+  const inv = rig.list.map((b) => b.matrixWorld.clone().invert());
+  poseSeated(rig, {}); rig.root.updateMatrixWorld(true);
+  const skin = rig.list.map((b, i) => b.matrixWorld.clone().multiply(inv[i]));
+  // a dense sample of the figure's surface: a grid over the arms hanging against his sides and the legs side by side
+  const pts = []; for (let y = -0.9; y <= 0.6; y += 0.03) for (let x = -0.3; x <= 0.3; x += 0.03) pts.push(x, y, 0.06);
+  const pos = new Float32Array(pts), w = skinWeights(pos), n = pos.length / 3, cols = Math.round(0.6 / 0.03) + 1;
+  const idx = []; for (let i = 0; i + cols + 1 < n; i++) if ((i + 1) % cols) idx.push(i, i + 1, i + cols);
+  const kept = cullSeams(new Uint32Array(idx), w.group, pos);
+  const out = new Float32Array(n * 3), v = new THREE.Vector3(), a = new THREE.Vector3(), t = new THREE.Vector3();
+  for (let i = 0; i < n; i++) { v.fromArray(pos, i * 3); a.set(0, 0, 0); for (let k = 0; k < 4; k++) if (w.weight[i * 4 + k]) a.addScaledVector(t.copy(v).applyMatrix4(skin[w.index[i * 4 + k]]), w.weight[i * 4 + k]); a.toArray(out, i * 3); }
+  let worst = 0;
+  for (let k = 0; k < kept.length; k += 3) for (const [p, q] of [[0, 1], [1, 2], [2, 0]]) { const A = kept[k + p] * 3, B = kept[k + q] * 3; worst = Math.max(worst, Math.hypot(out[A] - out[B], out[A + 1] - out[B + 1], out[A + 2] - out[B + 2])); }
+  assert.ok(worst < 0.2, `a triangle edge stretched to ${worst.toFixed(2)} (grid spacing 0.03-0.04)`);
+});
+
 test('the skeleton binds at the standing pose and seats the figure', () => {
   const rig = buildSkeleton();
   rig.root.updateMatrixWorld(true);
