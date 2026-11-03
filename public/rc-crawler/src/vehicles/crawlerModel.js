@@ -2141,6 +2141,9 @@ export function createCrawler(opts = {}) {
   // ----------------------------------------------------------- update -------
   const tmpM = new THREE.Matrix4();
   const tieA = V(), tieB = V(), dragA = V(), dragB = V();
+  // where the hubs are across the truck: the RC track, or a mounted body's own (bodies.js, vehicles/geometry.js)
+  const hubX = [...HUB_X];
+  function setTrack(half = HALF_TRACK) { hubX[0] = hubX[2] = half; hubX[1] = hubX[3] = -half; update(); }
   function update(state = {}) {
     const hubY = state.hubY || REST_HUB_Y;
     const spin = state.spin || ZERO4;
@@ -2152,7 +2155,7 @@ export function createCrawler(opts = {}) {
       const yL = hubY[a * 2], yR = hubY[a * 2 + 1];
       const ax = axles[a];
       ax.position.set(0, (yL + yR) * 0.5, AXLE_Z[a]);
-      ax.rotation.set(0, 0, Math.atan2(yL - yR, CRAWLER_DIMS.track));
+      ax.rotation.set(0, 0, Math.atan2(yL - yR, hubX[0] - hubX[1]));
       ax.updateMatrix();
     }
 
@@ -2160,7 +2163,7 @@ export function createCrawler(opts = {}) {
     for (let i = 0; i < 4; i++) {
       const a = i >> 1;
       const k = knuckles[i];
-      k.position.set(HUB_X[i], hubY[i], AXLE_Z[a]);
+      k.position.set(hubX[i], hubY[i], AXLE_Z[a]);
       k.rotation.set(0, i === 0 ? sl : i === 1 ? sr : 0, axles[a].rotation.z);
       k.updateMatrix();
       spinners[i].rotation.x = spin[i];
@@ -2222,7 +2225,7 @@ export function createCrawler(opts = {}) {
   // hide the SCX30 shell while another body is mounted; the chassis, axles and wheels stay
   function setShellVisible(v) { for (const m of shellMeshes) m.visible = v; }
   // a mounted body's own wheel (bodies.js) in place of the RC wheel on each hub: it spins, steers and travels
-  // with the hub; the tyre contact and physics stay the RC ones
+  // with the hub. One wheel is turned to face out on the right side; four (FL, FR, RL, RR) go on as modelled.
   const ownWheels = [];
   function setWheelVisual(src) {
     for (const w of ownWheels) w.removeFromParent();
@@ -2230,8 +2233,8 @@ export function createCrawler(opts = {}) {
     spinners.forEach((sp, i) => {
       sp.children[0].visible = !src;
       if (!src) return;
-      const w = src.clone();
-      if (HUB_X[i] < 0) w.rotation.y = PI;   // outer face toward -X on the right side
+      const w = (Array.isArray(src) ? src[i] : src).clone();
+      if (!Array.isArray(src) && HUB_X[i] < 0) w.rotation.y = PI;   // outer face toward -X on the right side
       sp.add(w);
       prepareWheel(w, tyreU[i]);
       ownWheels.push(w);
@@ -2301,6 +2304,7 @@ export function createCrawler(opts = {}) {
     setLampZ,
     setWheelVisual,
     setRunningGear,
+    setTrack,
     get paintHex() { return paintHex; },
     extraPaint,
     extraLamps,

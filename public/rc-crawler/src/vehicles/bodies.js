@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { CRAWLER_DIMS } from './crawlerModel.js';
+import { vehicleGeometry, WILLYS_MODEL } from './geometry.js';
 
 export const VEHICLES = [
   { id: 'scx30', name: 'SCX30 Jeep Wrangler JLU', short: 'WRANGLER', color: 0xf1f1ee },   // gloss white
@@ -18,11 +19,12 @@ export const VEHICLES = [
     credit: { title: '2022 Ford Bronco', author: 'tonielpro520', changes: 'its wheels moved onto the RC hubs, tyres and alloys in black', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
   {
-    // an open buggy on solid axles: its own wheels turn on the RC hubs and its axle housings, tie rods and knuckles
-    // ride on the RC axles; narrowed to the RC track so its wheels sit where the RC tyres are
-    id: 'willys', name: 'Willys Mountain Buggy', short: 'WILLYS', file: 'assets/vehicles/willys.glb', paint: null, fitTrack: true,
-    wheels: { front: 1.356, rear: -1.355, y: -0.475, x: 1.022, r: 0.564 },
-    credit: { title: 'Willys mountain buggy 1', author: 'Rustam T', changes: 'its wheels moved onto the RC hubs, its axles onto the RC axles, narrowed to the RC track, simplified', url: 'https://sketchfab.com/3d-models/willys-mountain-buggy-1-f536a233a3d84735ab4b967f90e212db', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+    // an open buggy on solid axles, exactly as modelled (every triangle, its own four wheels): the truck takes its
+    // track, tyre size and ride height (geometry.js); its wheels turn and steer on the hubs and its axle housings,
+    // tie rods and knuckles ride on the axles
+    id: 'willys', name: 'Willys Mountain Buggy', short: 'WILLYS', file: 'assets/vehicles/willys.glb', paint: null, own: true,
+    wheels: WILLYS_MODEL.wheels,
+    credit: { title: 'Willys mountain buggy 1', author: 'Rustam T', changes: 'textures resized for the web; its wheels and axles move with the suspension', url: 'https://sketchfab.com/3d-models/willys-mountain-buggy-1-f536a233a3d84735ab4b967f90e212db', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
 ];
 export const VEHICLE_IDS = VEHICLES.map((v) => v.id);
@@ -53,6 +55,7 @@ function template(v) {
 // narrower than the RC track (so the tyres sit under the flares rather than outside them); an `exact` body keeps
 // its own proportions
 function fit(scene, v) {
+  if (v.own) return fitOwn(scene, v);
   const w = v.wheels, s = WB / (w.front - w.rear);
   const sx = v.fitTrack ? HALF_TRACK / (w.x * s) : v.exact ? 1 : Math.min(1.12, Math.max(0.96, HALF_TRACK / (w.x * s)));
   const holder = new THREE.Group();
@@ -97,6 +100,37 @@ function fit(scene, v) {
   return holder;
 }
 
+// a body driven as modelled: one uniform scale (its axles on the RC wheelbase), its hubs on the truck's hub line,
+// its own four wheels each at its own size; the physics take the same geometry (geometry.js)
+function fitOwn(scene, v) {
+  const g = vehicleGeometry(v.id), s = g.scale;
+  const holder = new THREE.Group();
+  holder.name = `Body:${v.id}`;
+  scene.scale.setScalar(s);
+  scene.position.set(0, g.originY, g.originZ);
+  const sized = (node, name) => {
+    node.removeFromParent();
+    const grp = new THREE.Group();
+    grp.name = name; grp.add(node); grp.scale.setScalar(s);
+    node.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    return grp;
+  };
+  const wheels = ['FL', 'FR', 'RL', 'RR'].map((k) => scene.getObjectByName(`RCWheel_${k}`));
+  if (wheels.every(Boolean)) holder.userData.wheel = wheels.map((n, i) => sized(n, `Wheel:${v.id}:${i}`));
+  const gear = ['AxleFront', 'AxleRear'].map((name) => { const n = scene.getObjectByName(name); return n ? sized(n, `Gear:${v.id}:${name}`) : null; });
+  if (gear[0] || gear[1]) holder.userData.gear = { front: gear[0], rear: gear[1] };
+  holder.add(scene);
+  holder.updateMatrixWorld(true);
+  holder.userData.noseZ = new THREE.Box3().setFromObject(scene).max.z;
+  scene.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    const ms = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of ms) { m.envMapIntensity = 1; if (m.transparent) o.castShadow = false; }   // as modelled: no dark-inside tweak
+  });
+  return holder;
+}
+
 // The inside of the shell renders dark: from below (on its side, cresting a rock, through the arches) a body shows
 // a dark underbody instead of the white inside of its panels. Every shell surface is drawn from both sides for that.
 function darkInside(m) {
@@ -116,7 +150,7 @@ export async function mountBody(model, id, color) {
     if (model._body) { model.group.remove(model._body); model._body = null; }
     for (const list of [model.extraPaint, model.extraLamps]) { for (const m of list) m.dispose(); list.length = 0; }
   };
-  if (!v.file) { unmount(); model.setShellVisible(true); model.setLampZ(); model.setWheelVisual(null); model.setRunningGear(null); model._bodyId = v.id; return; }
+  if (!v.file) { unmount(); model.setShellVisible(true); model.setLampZ(); model.setWheelVisual(null); model.setRunningGear(null); model.setTrack(); model._bodyId = v.id; return; }
   let tpl;
   try { tpl = await template(v); } catch (e) { console.warn('[bodies] could not load', v.id, e); return; }
   if (token !== model._bodyToken || model.disposed) return;   // another body was asked for meanwhile, or the truck is gone
@@ -143,4 +177,5 @@ export async function mountBody(model, id, color) {
   model.setLampZ(tpl.userData.noseZ + 0.01);
   model.setWheelVisual(tpl.userData.wheel || null);
   model.setRunningGear(tpl.userData.gear || null);
+  model.setTrack(vehicleGeometry(v.id)?.halfTrack);
 }

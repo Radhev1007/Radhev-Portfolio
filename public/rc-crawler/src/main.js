@@ -30,6 +30,7 @@ import { MpUI } from './ui/mpUI.js';
 import { Landscape } from './ui/landscape.js';
 import { Minimap } from './ui/minimap.js';
 import { VEHICLES, VEHICLE_IDS, mountBody, vehicleColor } from './vehicles/bodies.js';
+import { vehicleGeometry } from './vehicles/geometry.js';
 import { LIVERIES, liveryCss } from './net/config.js';
 
 // ------------------------------------------------------------ settings
@@ -156,6 +157,7 @@ async function loadLevel(id, { keepState = false, arriveAt = null } = {}) {
   level.group.add(gateways.group);
   level.posts.push(...gateways.posts);
   phys = new CrawlerPhysics(level.hf);
+  phys.setGeometry(vehicleGeometry(settings.vehicle));   // a vehicle driven as modelled has its own track and tyres
   level.posts.forEach((t, i) => { t.netId = i; });       // stable ids: every client builds the same level
   phys.trunks = level.trunks.concat(remoteColliders);
   phys.posts = level.posts;
@@ -443,6 +445,7 @@ ui.on('vehicle', (id) => {
   ui.setVehicle(id);
   applyLivery();
   mountBody(model, id);
+  if (phys) { phys.setGeometry(vehicleGeometry(id)); phys.placeAt(phys.pos.x, phys.pos.z, phys.yaw); }
   mp.saveProfile({ vehicle: id });
 });
 ui.on('touch', (v) => { settings.touch = v; saveSettings(); updateTouchVisibility(); });

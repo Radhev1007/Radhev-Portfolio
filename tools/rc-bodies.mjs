@@ -34,7 +34,7 @@ const tris = () => { let n = 0; for (const mesh of root.listMeshes()) for (const
 console.log(id, 'in: tris', tris(), 'meshes', root.listMeshes().length, 'materials', root.listMaterials().length);
 
 // EXACT: keep the model as it is (no simplifying, no extra cuts, full-size textures), only its road wheels go
-const EXACT = id === 'bronco';
+const EXACT = id === 'bronco' || id === 'willys';
 // drop every triangle whose world-space centroid (and material name) matches
 function cutTriangles(drop) {
   let cut = 0, kept = 0;
@@ -78,7 +78,7 @@ function grabTriangles(take) {
   }
   return out;
 }
-let wheelSource = null, spareSource = null, axleSources = null;
+let wheelSource = null, wheelSources = null, spareSource = null, axleSources = null;
 
 // ---------------------------------------------------------------- wheels out, wheel positions recorded
 let wheels = null;   // world space: { front: z, rear: z, y, x (half track), r }
@@ -152,8 +152,9 @@ if (id === 'gladiator') {
   }
   console.log('  running gear moved to the axle pieces:', moved, 'triangles');
 } else if (id === 'willys') {
-  // every part is its own named node. The front-left tyre and rim (material `wheels`) are saved as RCWheel, centred
-  // on the hub, in their own materials. What rides on each axle, so it moves with the wheels as the suspension
+  // kept exactly as modelled (EXACT), and the game's truck takes this buggy's own size (track, tyre size, ride
+  // height: bodies.js). Every part is its own named node. Each of the four tyres and rims (material `wheels`) is
+  // saved on its own (RCWheel_FL/FR/RL/RR), centred on its hub, in its own materials. What rides on each axle, so it moves with the wheels as the suspension
   // works: the axle housing, the tie rods (the buggy steers at both ends) and the knuckles inside the wheels (not
   // round: they must not turn with the wheel). The 4-link arms, coilovers, springs and anti-roll bars stay on the
   // body, which keeps everything else exactly as modelled.
@@ -162,7 +163,8 @@ if (id === 'gladiator') {
   const fl = tyre(/^front_left_wheel$/), rl = tyre(/^rear_left_wheel$/);
   const mid = (b, k) => (b.min[k] + b.max[k]) / 2;
   wheels = { front: mid(fl, 2), rear: mid(rl, 2), y: mid(fl, 1), x: mid(fl, 0), r: (fl.max[1] - fl.min[1]) / 2 };
-  wheelSource = grabTriangles((c, mat, n) => mat === 'wheels' && underName(n, /^front_left_wheel$/));
+  wheelSources = Object.fromEntries([['FL', 'front_left'], ['FR', 'front_right'], ['RL', 'rear_left'], ['RR', 'rear_right']]
+    .map(([k, nm]) => [k, grabTriangles((c, mat, n) => mat === 'wheels' && underName(n, new RegExp(`^${nm}_wheel$`)))]));
   const onAxle = (end) => (c, mat, n) => (underName(n, new RegExp(`^${end}_axle$|^${end}_steering_part_`)) || (underName(n, new RegExp(`^${end}_(left|right)_wheel$`)) && mat !== 'wheels'));
   axleSources = { AxleFront: [wheels.front, grabTriangles(onAxle('front'))], AxleRear: [wheels.rear, grabTriangles(onAxle('rear'))] };
   cutTriangles((c, mat, n) => underName(n, W) || underName(n, /^(front|rear)_axle$|^(front|rear)_steering_part_/));
@@ -253,7 +255,7 @@ if (axleSources) {
     console.log('  axle piece', name, [...source.values()].reduce((t, o) => t + o.pos.length / 9, 0), 'triangles');
   }
 }
-await doc.transform(prune(), flatten(), join({ keepNamed: !!axleSources }), ...(EXACT ? [] : [weld()]), dedup(), prune());
+await doc.transform(prune(), flatten(), join({ keepNamed: !!axleSources || !!wheelSources }), ...(EXACT ? [] : [weld()]), dedup(), prune());
 const before = tris();
 const ratio = Math.min(1, target / Math.max(1, before));
 if (ratio < 0.98 && !EXACT) await doc.transform(simplify({ simplifier: MeshoptSimplifier, ratio, error: 0.004 }), weld(), prune());
@@ -289,6 +291,34 @@ if (wheelSource) {
   await doc.transform(weld(), dedup());   // index the copied triangles (identical vertices only: the look is unchanged)
   wheels.wheelX = hub[0];
   console.log('  saved wheel RCWheel:', wt, 'triangles, hub', hub.map((v) => +v.toFixed(3)), '| spare:', st, 'triangles');
+}
+
+// each of the four wheels as modelled (the willys), each centred on its own hub
+if (wheelSources) {
+  const buf = root.listBuffers()[0];
+  for (const [k, source] of Object.entries(wheelSources)) {
+    const pts = []; for (const o of source.values()) for (let i = 0; i < o.pos.length; i += 3) pts.push([o.pos[i], o.pos[i + 1], o.pos[i + 2]]);
+    const b = box(pts), hub = [0, 1, 2].map((q) => (b.min[q] + b.max[q]) / 2);
+    const mesh = doc.createMesh(`RCWheel_${k}`);
+    for (const [mat, o] of source) mesh.addPrimitive(doc.createPrimitive().setMaterial(mat)
+      .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(new Float32Array(o.pos.map((v, i) => v - hub[i % 3]))).setBuffer(buf))
+      .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(o.nor)).setBuffer(buf))
+      .setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(new Float32Array(o.uv)).setBuffer(buf)));
+    root.listScenes()[0].addChild(doc.createNode(`RCWheel_${k}`).setMesh(mesh));
+    wheels[k] = hub.map((v) => +v.toFixed(4)); wheels.width = +(b.max[0] - b.min[0]).toFixed(4);
+    console.log('  saved wheel', k, [...source.values()].reduce((t, o) => t + o.pos.length / 9, 0), 'triangles, hub', wheels[k], 'width', wheels.width);
+  }
+  await doc.transform(weld(), dedup());
+}
+
+// the body's shape for the game's collision probes (the willys): its box and the lowest point between the axles
+if (wheelSources) {
+  const pts = root.listNodes().filter((n) => n.getMesh() && !/^(RCWheel|Axle)/.test(n.getName())).flatMap((n) => nodePoints(n, 3));
+  const b = box(pts), { front, rear, r } = wheels, mid = pts.filter((p) => p[2] > rear + r && p[2] < front - r);
+  const gear = ['AxleFront', 'AxleRear'].map((nm) => box(nodePoints(root.listNodes().find((n) => n.getName() === nm), 3)));
+  wheels.body = { min: b.min.map((v) => +v.toFixed(4)), max: b.max.map((v) => +v.toFixed(4)), bellyY: +Math.min(...mid.map((p) => p[1])).toFixed(4) };
+  wheels.axleLowY = gear.map((g) => +g.min[1].toFixed(4));
+  console.log('  body', JSON.stringify(wheels.body), 'axle pieces lowest (rel. hub)', wheels.axleLowY);
 }
 
 // ---------------------------------------------------------------- textures, compression

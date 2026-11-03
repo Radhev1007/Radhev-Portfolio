@@ -74,6 +74,14 @@ const PROBES = [
   [0.33, 0.26, 0.72], [-0.33, 0.26, 0.72], [0, 0.53, -0.3],        // fender noses, roof rack top
 ];
 
+// the RC chassis as built (SCX30 shell): what setGeometry(null) restores. A vehicle driven as modelled
+// (vehicles/geometry.js) brings its own track, tyre size, body boxes and probes.
+const RC_GEOMETRY = {
+  R: PHYS.wheelRadius, HW: PHYS.wheelHalfWidth, halfTrack: MOUNTS[0][0], boxes: BOXES, probes: PROBES,
+  bodyX: BODY_X, bodyZF: BODY_ZF, bodyZR: BODY_ZR,
+  corners: [[0.43, 0.86], [-0.43, 0.86], [0.43, -0.84], [-0.43, -0.84], [0.45, 0.56], [-0.45, 0.56], [0.45, -0.56], [-0.45, -0.56], [0.43, 0], [-0.43, 0]],
+};
+
 // differential modes: [frontLocked, rearLocked]
 export const DIFF_MODES = [
   { name: 'LOCKED', label: 'Locked', front: true, rear: true },
@@ -163,6 +171,22 @@ export class CrawlerPhysics {
     this.tyre = TYRE_PRESSURE.standard;
     this.com = V();
     this.prevPos = V(); this.prevQ = new THREE.Quaternion();  // previous substep, for render interpolation
+    this.setGeometry(null);
+  }
+
+  /** Drive with a vehicle's own geometry (vehicles/geometry.js), or the RC chassis as built (null). */
+  setGeometry(g) {
+    if (!g) { this.geo = RC_GEOMETRY; }
+    else {
+      const t = g.halfTrack, zf = g.bodyZF, zr = g.bodyZR, x = g.bodyX;
+      this.geo = {
+        R: g.wheelRadius, HW: g.wheelHalfWidth, halfTrack: t, boxes: g.boxes, probes: g.probes,
+        bodyX: x, bodyZF: zf, bodyZR: zr,
+        corners: [[x, zf], [-x, zf], [x, zr], [-x, zr], [t + g.wheelHalfWidth, 0.56], [-t - g.wheelHalfWidth, 0.56], [t + g.wheelHalfWidth, -0.56], [-t - g.wheelHalfWidth, -0.56], [x, 0], [-x, 0]],
+      };
+    }
+    for (const w of this.wheels) w.mx = Math.sign(w.mx) * this.geo.halfTrack;
+    this._tibBest = null;
   }
 
   reset(pos, yaw) {
@@ -307,7 +331,7 @@ export class CrawlerPhysics {
     const up = _v1.set(0, 1, 0).applyQuaternion(q).clone();
     const fwdC = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
     const leftC = new THREE.Vector3(1, 0, 0).applyQuaternion(q);
-    const R = PHYS.wheelRadius, HW = PHYS.wheelHalfWidth;
+    const { R, HW } = this.geo;
 
     this.contacts.length = 0;
     for (const w of this.wheels) w.was = w.contact;
@@ -532,6 +556,7 @@ export class CrawlerPhysics {
     for (const w of this.wheels) if (!w.contact) w.om *= 1 - 0.4 * dt;
 
     // ---- chassis probes (bumpers, skid, body, roof) against the ground
+    const PROBES = this.geo.probes;
     for (let pi = 0; pi < PROBES.length; pi++) {
       const pr = PROBES[pi];
       const P = _p.set(pr[0], pr[1], pr[2]).applyQuaternion(q).add(this.pos);
@@ -593,7 +618,8 @@ export class CrawlerPhysics {
       const sub = Math.min(1, depth / 0.7);
       this.vel.multiplyScalar(1 - sub * 1.6 * dt);
       this.ang.multiplyScalar(1 - sub * 1.2 * dt);
-      for (const [x, z] of [[BODY_X, BODY_ZF - 0.15], [-BODY_X, BODY_ZF - 0.15], [BODY_X, BODY_ZR + 0.15], [-BODY_X, BODY_ZR + 0.15]]) {
+      const { bodyX: BX, bodyZF: ZF, bodyZR: ZR } = this.geo;
+      for (const [x, z] of [[BX, ZF - 0.15], [-BX, ZF - 0.15], [BX, ZR + 0.15], [-BX, ZR + 0.15]]) {
         const P = _p.set(x, 0, z).applyQuaternion(q).add(this.pos);
         const dc = hf.waterDepthAt(P.x, P.z) - (P.y - hf.heightAt(P.x, P.z));
         if (dc > 0) this._applyForce(_v4.set(0, PHYS.gravity * 0.045 * Math.min(1, dc / 0.35), 0), P, dt);
@@ -647,6 +673,7 @@ export class CrawlerPhysics {
     const floorY = this.pos.y - 0.62;   // nothing of the body reaches lower than this in any orientation
     _q.copy(q).invert();
     const inv = (this._tibInv || (this._tibInv = new THREE.Quaternion())).copy(this.prevQ).invert();
+    const BOXES = this.geo.boxes;
     const best = this._tibBest || (this._tibBest = BOXES.map(() => ({ pen: 0 })));
     for (const b of best) b.pen = 0;
     const L = _v4, Lp = _v5;
@@ -684,7 +711,7 @@ export class CrawlerPhysics {
     if (y1 <= y0) return;
     const P = _v3, L = _v4, Lp = _v5;
     let hit = false;
-    for (const b of BOXES) {
+    for (const b of this.geo.boxes) {
       const [hx, by0, by1, bz0, bz1, part] = b;
       let best = null;
       for (let y = y0; y <= y1 + 1e-6; y += 0.04) {
@@ -814,7 +841,7 @@ export class CrawlerPhysics {
   // body corner points (world xz) for marker-touch tests
   cornerPoints() {
     const out = [];
-    for (const [x, z] of [[0.43, 0.86], [-0.43, 0.86], [0.43, -0.84], [-0.43, -0.84], [0.45, 0.56], [-0.45, 0.56], [0.45, -0.56], [-0.45, -0.56], [0.43, 0], [-0.43, 0]]) {
+    for (const [x, z] of this.geo.corners) {
       out.push(new THREE.Vector3(x, 0, z).applyQuaternion(this.q).add(this.pos));
     }
     return out;
