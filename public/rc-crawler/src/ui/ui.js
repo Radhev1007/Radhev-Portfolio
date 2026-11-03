@@ -134,7 +134,7 @@ export class UI {
       let tag = c.querySelector('.lock');
       if (lk?.locked) {
         if (!tag) { tag = document.createElement('div'); tag.className = 'lock'; c.querySelector('.body').prepend(tag); }
-        tag.textContent = `Earn ${lk.need} medals · you have ${medals}`;
+        tag.textContent = `Locked · ${lk.need} medals`;
       } else tag?.remove();
     });
   }

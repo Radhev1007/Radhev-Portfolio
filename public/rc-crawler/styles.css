@@ -523,3 +523,34 @@ body:has(#hud.touch-on) .mm:not(.big) .mm-ctl button { width: 22px; height: 22px
 .ring-prompt .rp-text b { color: var(--accent); font-weight: 600; }
 .medals { font: 600 12px var(--cond); letter-spacing: 2px; color: #f2c94c; margin: 2px 0 4px; }
 .btn-mp.btn-open { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- title layout (responsive)
+   Actions: START and the online buttons wrap as one row with even gaps (a 2 x 2 grid on phones).
+   Cards: one row that scrolls sideways, however many terrains there are, so it never grows a second row
+   up into the buttons. */
+.title-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; max-width: min(1140px, calc(100vw - 40px)); }
+@media (max-width: 1240px) { .title-actions .btn-mp:not(.btn-open) span { display: none; } }   /* keep one row; the live count stays */
+.title-actions .btn-mp { margin-left: 0; }
+.cards:not(.grid) { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: thin; padding-bottom: 2px; }
+.cards:not(.grid) .card { scroll-snap-align: start; }
+.cards:not(.grid) .card:nth-child(n) .img { height: clamp(56px, 12vh, 140px); }
+@media (max-width: 720px) {
+  .title-left { top: 70px; right: 16px; }                    /* below the weather row */
+  .title-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 420px; }
+  .title-actions > button { justify-content: center; padding: 13px 8px; font-size: 13px; letter-spacing: .1em; }
+  .cards:not(.grid) { grid-auto-columns: 148px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .title-left { top: 12px; }
+  .logo .rc, .logo .crawler { font-size: 32px; }
+  .logo .mtn { width: 34px; margin-bottom: 4px; }
+  .model { margin-top: 8px; }
+  .tagline, .title-sub { display: none; }
+  .title-actions { margin-top: 10px; display: flex; max-width: calc(100vw - 230px); gap: 8px; }
+  .title-actions > button { padding: 9px 12px; font-size: 12px; }
+  .cards:not(.grid) { grid-auto-columns: 140px; }
+  .cards:not(.grid) .card:nth-child(n) .img { height: 44px; }
+  .cards:not(.grid) .card .meta { display: none; }
+}
+.card.locked .lock { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 720px), (orientation: landscape) and (max-height: 500px) { .card.locked .lock { font-size: 10px; letter-spacing: .05em; } }
