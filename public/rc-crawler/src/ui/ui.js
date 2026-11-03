@@ -3,6 +3,7 @@ import { CRANE_CREDIT } from '../world/towTruck.js';
 import { DRIVER_CREDIT } from '../vehicles/driver.js';
 import { fmtTime } from '../challenges/challenges.js';
 import { ACHIEVEMENTS, TERRAINS } from '../world/career.js';
+import { PARTS, partStats } from '../vehicles/parts.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -146,6 +147,24 @@ export class UI {
   setMedals(n) { $('#h-medals').textContent = `MEDALS ${n}`; }
   // career rank under the medal count (world/career.js)
   setRank(r) { const el = $('#h-rank'); if (el && r) el.innerHTML = `RANK ${r.level} · ${r.title}<i style="--p:${(r.into / r.need * 100).toFixed(1)}%"></i>`; }
+
+  // the Garage tab: every part category with its options (accessories toggle), what the chosen one does, and
+  // the truck's stats against stock; Inspect circles the truck with the menu out of the way
+  renderGarage(parts) {
+    const el = $('#garage'); if (!el || !parts) return;
+    const st = partStats(parts), bar = (k, v) => `<div class="gs"><span>${k}</span><i style="--p:${(v * 100).toFixed(0)}%"></i></div>`;
+    const rows = Object.entries(PARTS).map(([cat, c]) => {
+      const on = (o) => (c.multi ? (parts.acc || []).includes(o.id) : parts[cat] === o.id);
+      const chosen = c.options.filter(on);
+      const chips = c.options.map((o) => `<button class="gp${on(o) ? ' on' : ''}" data-cat="${cat}" data-id="${o.id}" title="${o.desc}">${o.name}</button>`).join('');
+      const what = chosen.length ? chosen.map((o) => o.desc).join(' ') : 'None fitted.';
+      return `<div class="g-row"><h5>${c.name}</h5><div class="g-chips">${chips}</div><p>${what}</p></div>`;
+    }).join('');
+    el.innerHTML = `<div class="g-top"><div class="g-stats">${bar('Grip', st.grip)}${bar('Top speed', st.speed)}${bar('Torque', st.torque)}${bar('Stability', st.stability)}${bar('Runtime', st.runtime)}<small>The middle of each bar is stock.</small></div><button class="btn" id="g-inspect">INSPECT TRUCK</button></div>${rows}`;
+    el.querySelectorAll('.gp').forEach((b) => (b.onclick = () => this.emit('part', b.dataset.cat, b.dataset.id)));
+    $('#g-inspect').onclick = () => this.emit('inspect');
+  }
+  setInspect(on) { $('#inspect-hint')?.classList.toggle('hidden', !on); $('#hud')?.classList.toggle('hidden', on); }
 
   // the Career tab: rank and XP, driving statistics overall and per vehicle, trail completion, achievements
   renderCareer(c, names = {}) {

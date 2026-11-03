@@ -8,6 +8,8 @@ import { waterUniforms } from './terrain/water.js';
 import { SURF_NAMES, SURF } from './terrain/heightfield.js';
 import { Career, trailFraction } from './world/career.js';
 import { Rain } from './effects/rain.js';
+import { STOCK as STOCK_PARTS, partsSetup } from './vehicles/parts.js';
+import { buildAccessories } from './vehicles/accessories.js';
 import { CrawlerPhysics, GEARS, DIFF_MODES, DIFFICULTY, TYRE_PRESSURE } from './physics/vehicle.js';
 import { createCrawler } from './vehicles/crawlerModel.js';
 import { CameraRig, CAM_MODES } from './camera/cameraRig.js';
@@ -42,6 +44,7 @@ const isTouch = matchMedia('(pointer: coarse)').matches;
 const defaults = { quality: isTouch ? 'low' : 'high', preset: 'golden', touch: 'auto', dof: 'on', fps: 'off', volume: 80, ambience: 'on', dragBrake: 'on', dragPct: 100, difficulty: 'normal', tyres: 'standard', vehicle: 'scx30', level: 'creek' };
 let settings = { ...defaults };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || '{}')); } catch { /* ignore */ }
+settings.parts = { ...STOCK_PARTS, ...(settings.parts || {}), acc: [...(settings.parts?.acc || [])] };   // the garage (vehicles/parts.js)
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch { /* ignore */ } };
 const params = new URLSearchParams(location.search);
 const NORENDER = params.has('norender');   // dev/test: simulate and network without drawing (headless test clients)
@@ -119,7 +122,7 @@ addEventListener('resize', () => {
 if (!VEHICLE_IDS.includes(settings.vehicle)) settings.vehicle = 'scx30';
 let model = createCrawler({ quality: settings.quality });
 model.setBodyColor(vehicleColor(settings.vehicle));
-mountBody(model, settings.vehicle);
+mountBody(model, settings.vehicle); fitParts();
 scene.add(model.group);
 let lightsOn = true;
 model.setLights(lightsOn);
@@ -438,12 +441,29 @@ ui.on('camera', () => { const n = rig.cycle(); ui.setCamLabel(n); ui.toast(n + '
 ui.on('lights', () => { lightsOn = !lightsOn; model.setLights(lightsOn); });
 // transfer case range, diff lockers, dig
 const dtState = { gear: 'LOW', diffMode: 0, dig: false };
+// the garage's parts on the truck you can see: accessories bolted on, wheels set out to the chosen offset
+function fitParts() {
+  model.setAccessories(buildAccessories(settings.parts.acc, settings.vehicle));
+  model.setTrackOffset(partsSetup(settings.parts).track);
+}
+ui.on('part', (cat, id) => {
+  const p = settings.parts;
+  if (cat === 'acc') p.acc = p.acc.includes(id) ? p.acc.filter((x) => x !== id) : [...p.acc, id];
+  else p[cat] = id;
+  saveSettings(); applyDrivetrain(); fitParts(); audio.uiClick();
+  ui.renderGarage(settings.parts);
+});
+// inspect: the menu steps aside and the camera circles the parked truck (drag to look round it, Esc to return)
+ui.on('inspect', () => { if (state !== 'paused') return; ui.closeMenu(); rig.inspect = true; ui.setInspect(true); });
+function endInspect() { rig.inspect = false; ui.setInspect(false); ui.openMenu(challenges, career); ui.tab('m-garage'); ui.renderGarage(settings.parts); }
+
 function applyDrivetrain() {
   if (!phys) return;
   phys.gear = dtState.gear === 'LOW' ? GEARS.LOW : GEARS.HIGH; phys.diffMode = dtState.diffMode; phys.dig = dtState.dig;
   phys.dragBrake = settings.dragBrake === 'off' ? 0 : Math.max(0, Math.min(100, settings.dragPct ?? 100)) / 100;
   Object.assign(phys, DIFFICULTY[settings.difficulty] || DIFFICULTY.normal);
   phys.tyre = TYRE_PRESSURE[settings.tyres] || TYRE_PRESSURE.standard;
+  phys.setSetup(partsSetup(settings.parts));   // the garage's parts (vehicles/parts.js)
   ui.drivetrain({ gear: phys.gear.name, diff: DIFF_MODES[phys.diffMode].name, dig: phys.dig });
 }
 ui.on('range', () => {
@@ -488,7 +508,7 @@ ui.on('vehicle', (id) => {
   settings.vehicle = id; saveSettings();
   ui.setVehicle(id);
   applyLivery();
-  mountBody(model, id);
+  mountBody(model, id); fitParts();
   if (phys) { phys.setGeometry(vehicleGeometry(id)); phys.placeAt(phys.pos.x, phys.pos.z, phys.yaw); }
   mp.saveProfile({ vehicle: id });
 });
@@ -498,13 +518,13 @@ ui.on('fps', (v) => { settings.fps = v; saveSettings(); ui.showFps(v === 'on'); 
 ui.initSettings(settings);
 input.bindTouchUI(document.getElementById('touch'));
 
-function openMenu() { if (state !== 'play') return; setState('paused'); career.save(); ui.openMenu(challenges, career); }
+function openMenu() { if (state !== 'play') return; setState('paused'); career.save(); ui.openMenu(challenges, career); ui.renderGarage(settings.parts); }
 
 async function rebuildForQuality() {
   applyQuality();
   scene.remove(model.group); model.dispose();
   model = createCrawler({ quality: settings.quality });
-  scene.add(model.group); model.setLights(lightsOn); applyLivery(); mountBody(model, settings.vehicle);
+  scene.add(model.group); model.setLights(lightsOn); applyLivery(); mountBody(model, settings.vehicle); fitParts();
   const wasPlaying = state === 'play' || state === 'paused';
   const pose = phys ? { p: phys.pos.clone(), yaw: phys.yaw } : null;
   await loadLevel(settings.level, { keepState: true });
@@ -550,6 +570,7 @@ addEventListener('keydown', unlockAudio, { once: true });
 
 input.on('press', (k) => {
   if (k === 'escape' && mpUI.open) { mpUI.hide(); return; }
+  if (k === 'escape' && rig.inspect) { endInspect(); return; }
   if (k === 'escape') { if (state === 'play') openMenu(); else if (state === 'paused') { ui.closeMenu(); setState('play'); } return; }
   if (state === 'title' && (k === 'enter')) { ui.emit('start'); return; }
   if (state !== 'play') return;

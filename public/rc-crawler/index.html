@@ -60,6 +60,8 @@
     <button data-p="night"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>NIGHT</span></button>
   </div>
 
+  <div id="inspect-hint" class="inspect-hint hidden">INSPECTING · drag to look round · scroll to zoom · <kbd>Esc</kbd> back to the garage</div>
+
   <!-- in-game HUD -->
   <div id="hud" class="hidden">
     <div class="hud-tl">
@@ -157,6 +159,7 @@
         <button data-tab="m-terrain">TERRAINS</button>
         <button data-tab="m-ch">CHALLENGES</button>
         <button data-tab="m-career">CAREER</button>
+        <button data-tab="m-garage">GARAGE</button>
         <button data-tab="m-set">SETTINGS</button>
         <button data-tab="m-help">CONTROLS</button>
       </div>
@@ -169,6 +172,7 @@
       <div id="m-terrain" class="tab"><div class="cards grid" id="menu-cards"></div></div>
       <div id="m-ch" class="tab"><div id="ch-list" class="ch-list"></div></div>
       <div id="m-career" class="tab"><div id="career" class="career"></div></div>
+      <div id="m-garage" class="tab"><div id="garage" class="garage"></div></div>
       <div id="m-set" class="tab">
         <div class="set-row"><label>Graphics</label><div class="seg" id="s-quality"><button data-q="low">LOW</button><button data-q="medium">MEDIUM</button><button data-q="high">HIGH</button><button data-q="ultra">ULTRA</button></div></div>
         <div class="set-row"><label>Volume</label><input type="range" id="s-vol" min="0" max="100" value="80" /></div>

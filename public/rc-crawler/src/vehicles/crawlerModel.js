@@ -2126,6 +2126,7 @@ export function createCrawler(opts = {}) {
   // only the glowing lamp materials, since every extra light makes every surface in the scene costlier to shade
   const spots = [], LAMP_Z = 0.74;
   const extraLamps = [];   // headlamp materials of a mounted body shell (bodies.js): they glow with the headlights
+  const accLamps = [];     // the garage light bar's lens (accessories.js)
   if (opts.realLights !== false) for (const s of [1, -1]) {
     const spot = new THREE.SpotLight(0xffece0, 0, 14, 0.6, 0.6, 1.5);
     spot.castShadow = false;
@@ -2146,8 +2147,21 @@ export function createCrawler(opts = {}) {
     mats.tailLens.emissiveIntensity = Math.max(lightsOn ? 0.7 : 0.0, brake * 4.0);
     mats.brakeLens.emissiveIntensity = brake * 4.0;
     for (const m of extraLamps) m.emissiveIntensity = lightsOn ? 2.4 : 0.0;
+    for (const m of accLamps) m.emissiveIntensity = lightsOn ? 3.2 : 0.0;
     for (const sp of spots) sp.intensity = lightsOn ? 30 : 0;
   };
+
+  // garage accessories (accessories.js): one group on the chassis; its lamps light with the headlights
+  let accGroup = null;
+  function setAccessories(g) {
+    if (accGroup) group.remove(accGroup);
+    accGroup = g || null; accLamps.length = 0;
+    if (accGroup) { group.add(accGroup); accLamps.push(...(accGroup.userData.lamps || [])); }
+    applyLightState();
+  }
+  // the garage's wheel offset (parts.js): added to whatever track the body sets
+  let trackAdd = 0, trackBase = HALF_TRACK;
+  function setTrackOffset(add = 0) { trackAdd = add; setTrack(trackBase); }
 
   // the driver riding in a mounted body (bodies.js, driver.js): he steers with the truck and feels its motion
   let driver = null;
@@ -2159,7 +2173,7 @@ export function createCrawler(opts = {}) {
   const tieA = V(), tieB = V(), dragA = V(), dragB = V();
   // where the hubs are across the truck: the RC track, or a mounted body's own (bodies.js, vehicles/geometry.js)
   const hubX = [...HUB_X];
-  function setTrack(half = HALF_TRACK) { hubX[0] = hubX[2] = half; hubX[1] = hubX[3] = -half; update(); }
+  function setTrack(half = HALF_TRACK) { trackBase = half; const h = half + trackAdd; hubX[0] = hubX[2] = h; hubX[1] = hubX[3] = -h; update(); }
   function update(state = {}) {
     const hubY = state.hubY || REST_HUB_Y;
     const spin = state.spin || ZERO4;
@@ -2324,6 +2338,8 @@ export function createCrawler(opts = {}) {
     setWheelVisual,
     setRunningGear,
     setTrack,
+    setTrackOffset,
+    setAccessories,
     setDriver,
     setDriverVisible,
     get driver() { return driver; },

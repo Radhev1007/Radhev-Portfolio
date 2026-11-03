@@ -52,7 +52,7 @@ export class CameraRig {
   get mounted() { return !this.intro && !!MOUNTED[this.mode]; }
   orbit(dx, dy) {
     this.lastMouse = performance.now();
-    if (this.mode === 4 || this.intro) { this.freeYaw -= dx * 0.005; this.freePitch = THREE.MathUtils.clamp(this.freePitch + dy * 0.004, -0.1, 1.35); }
+    if (this.mode === 4 || this.intro || this.inspect) { this.freeYaw -= dx * 0.005; this.freePitch = THREE.MathUtils.clamp(this.freePitch + dy * 0.004, -0.1, 1.35); }
     else { this.yawOff -= dx * 0.005; this.pitchOff = THREE.MathUtils.clamp(this.pitchOff + dy * 0.004, -0.4, 0.9); }
   }
   wheel(d) { this.zoom = THREE.MathUtils.clamp(this.zoom * (1 + d * 0.001), 0.45, 2.6); this.freeDist = THREE.MathUtils.clamp(this.freeDist * (1 + d * 0.001), 1.6, 20); }
@@ -77,7 +77,13 @@ export class CameraRig {
     // mouse offset decays back after idle (not in free)
     if (performance.now() - this.lastMouse > 2500 && this.mode !== 4) { this.yawOff *= Math.exp(-dt * 1.2); this.pitchOff *= Math.exp(-dt * 1.2); }
 
-    if (this.intro) {
+    if (this.inspect) {
+      // the garage's inspection view: a slow turntable round the parked truck, dragged round by the mouse
+      this.freeYaw += dt * 0.25;
+      const d = 2.5 * this.zoom, pitch = THREE.MathUtils.clamp(this.freePitch, 0.05, 1.2);
+      desired.set(cp.x + Math.sin(this.freeYaw) * Math.cos(pitch) * d, cp.y + 0.25 + Math.sin(pitch) * d, cp.z + Math.cos(this.freeYaw) * Math.cos(pitch) * d);
+      look.set(cp.x, cp.y + 0.12, cp.z); lerpK = 4; fov = 38;
+    } else if (this.intro) {
       this.introT += dt;
       const a = this.freeYaw + this.introT * 0.12;
       const d = 3.4 + Math.sin(this.introT * 0.15) * 0.5;

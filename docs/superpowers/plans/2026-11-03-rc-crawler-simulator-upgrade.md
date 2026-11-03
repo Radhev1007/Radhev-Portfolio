@@ -62,10 +62,14 @@ and the keyboard controls. All indicators must read real game state.
 - Mud and dust now build up on bodies' own tyres (Willys, Bronco) too, per truck.
 - Not yet: puddles that form while it rains; a full glass/metal restyle of the cluster.
 
-**Phase 5 — garage**
-- Parts that change physics: tyres (compound/size), shocks (damping), motor (torque/rpm), battery (capacity),
-  ESC (drag brake/punch), offsets, accessories (light bar, roof rack, sliders) with a 3D inspection view.
-  Bodies and colours already exist.
+**Phase 5 — garage** (done)
+- Parts that change the physics (vehicles/parts.js, CrawlerPhysics.setSetup): tyres (all-terrain, mud terrain,
+  sticky rock compound: grip by surface), shocks (soft/stock/firm), motor (45T torque, 27T speed), battery
+  (5000 mAh runtime, 3S speed and punch), ESC (crawl/stock/sport throttle), wheel offset (narrow/wide track),
+  accessories (LED light bar on the headlights, roof rack raising the centre of mass, rock sliders letting the
+  chassis slide off rock, tube bumper). Stock parts leave the tuned handling exactly as it was (tested).
+- A GARAGE menu tab with stat bars against stock and an inspection view circling the parked truck.
+- Not yet: parts are not sent to other players in multiplayer (they see stock trucks).
 
 **Phase 6 — multiplayer**
 - Up to 20 players per room, invite links, leaderboards; server-authoritative checks for race results. Rooms,

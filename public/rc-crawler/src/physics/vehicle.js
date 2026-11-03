@@ -82,6 +82,9 @@ const RC_GEOMETRY = {
   corners: [[0.43, 0.86], [-0.43, 0.86], [0.43, -0.84], [-0.43, -0.84], [0.45, 0.56], [-0.45, 0.56], [0.45, -0.56], [-0.45, -0.56], [0.43, 0], [-0.43, 0]],
 };
 
+// stock parts: every multiplier 1, nothing added (the truck as tuned)
+const NEUTRAL_SETUP = Object.freeze({ spring: 1, damp: 1, torque: 1, speed: 1, drain: 1, throttle: 1, track: 0, comLift: 0, chassisMu: 1, compound: Object.freeze({}) });
+
 // differential modes: [frontLocked, rearLocked]
 export const DIFF_MODES = [
   { name: 'LOCKED', label: 'Locked', front: true, rear: true },
@@ -171,11 +174,19 @@ export class CrawlerPhysics {
     this.tyre = TYRE_PRESSURE.standard;
     this.com = V();
     this.prevPos = V(); this.prevQ = new THREE.Quaternion();  // previous substep, for render interpolation
+    this.setup = NEUTRAL_SETUP;
     this.setGeometry(null);
+  }
+
+  /** The garage's parts (vehicles/parts.js partsSetup): multipliers on springs, motor, battery, grip... */
+  setSetup(s) {
+    this.setup = { ...NEUTRAL_SETUP, ...(s || {}) };
+    this.setGeometry(this._geoSrc ?? null);   // (the wheel offset moves the wheels)
   }
 
   /** Drive with a vehicle's own geometry (vehicles/geometry.js), or the RC chassis as built (null). */
   setGeometry(g) {
+    this._geoSrc = g;
     if (!g) { this.geo = RC_GEOMETRY; }
     else {
       const t = g.halfTrack, zf = g.bodyZF, zr = g.bodyZR, x = g.bodyX;
@@ -185,7 +196,7 @@ export class CrawlerPhysics {
         corners: [[x, zf], [-x, zf], [x, zr], [-x, zr], [t + g.wheelHalfWidth, 0.56], [-t - g.wheelHalfWidth, 0.56], [t + g.wheelHalfWidth, -0.56], [-t - g.wheelHalfWidth, -0.56], [x, 0], [-x, 0]],
       };
     }
-    for (const w of this.wheels) w.mx = Math.sign(w.mx) * this.geo.halfTrack;
+    for (const w of this.wheels) w.mx = Math.sign(w.mx) * (this.geo.halfTrack + (this.setup?.track || 0));
     this._tibBest = null;
   }
 
@@ -228,7 +239,7 @@ export class CrawlerPhysics {
     return out.applyQuaternion(this.q);
   }
 
-  _syncCom() { return this.com.set(0, this.comLift, 0).applyQuaternion(this.q).add(this.pos); }
+  _syncCom() { return this.com.set(0, this.comLift + this.setup.comLift, 0).applyQuaternion(this.q).add(this.pos); }
   _pointVel(p, out) { return out.copy(p).sub(this.com).cross(this.ang).negate().add(this.vel); } // v + w x r
   // contact point velocity relative to what it touches: an obstacle that moves itself (another player's
   // truck, c.ov = its velocity) closes or opens the gap too; static ground and posts have no c.ov
@@ -253,7 +264,7 @@ export class CrawlerPhysics {
   update(dt, input) {
     // input smoothing
     const tgt = input.throttle;
-    const rate = Math.abs(tgt) > Math.abs(this.throttle) ? 2.2 : 4.5;
+    const rate = (Math.abs(tgt) > Math.abs(this.throttle) ? 2.2 : 4.5) * this.setup.throttle;   // (ESC profile)
     this.throttle += Math.sign(tgt - this.throttle) * Math.min(Math.abs(tgt - this.throttle), rate * dt);
     const steerTgt = input.steer * this.maxSteer;
     const prevSteer = this.steer;
@@ -320,7 +331,7 @@ export class CrawlerPhysics {
     if (up.y < 0.3) this.upsideTimer += dt; else this.upsideTimer = Math.max(0, this.upsideTimer - dt * 2);
     // battery + motor temperature
     const draw = Math.abs(this.throttle) * (0.25 + s.load * 0.75);
-    this.battery = Math.max(0, this.battery - draw * dt * 0.0009);
+    this.battery = Math.max(0, this.battery - draw * dt * 0.0009 * this.setup.drain);
     this.motorTemp += (0.25 + draw * 0.8 - this.motorTemp) * dt * 0.03;
   }
 
@@ -352,10 +363,11 @@ export class CrawlerPhysics {
     if (u > 0.04 && this.omega < -0.8) { braking = true; u = 0; }
     if (u < 0) u *= 0.75;
     let T = 0;
-    if (!coasting && (!braking || Math.abs(u) > 0.04)) T = gear.tstall * batt * (u - this.omega / gear.wmax);
+    const tstall = gear.tstall * this.setup.torque, wmax = gear.wmax * this.setup.speed;   // (motor and battery)
+    if (!coasting && (!braking || Math.abs(u) > 0.04)) T = tstall * batt * (u - this.omega / wmax);
     // a motor spun past its free speed (shifting into low range at speed) brakes, but no harder than its
     // stall torque: otherwise a downshift from top speed would stop the wheels dead and flip the truck
-    T = Math.max(T, -gear.tstall);
+    T = Math.max(T, -tstall);
     T -= gear.fric * this.omega; // gear friction
     this.motorTorque = T;
     const It = PHYS.transInertia, Iw = PHYS.wheelInertia;
@@ -421,7 +433,7 @@ export class CrawlerPhysics {
         // the overlap is shared between the tyre squashing and the suspension compressing, two springs in
         // series carrying the same load; past maxDefl the rim bottoms out and the rest is suspension
         const tk = this.tyre.k;
-        const defl = Math.min(cg * 0.9, this.tyre.maxDefl, PHYS.spring * (cg + PHYS.preload) / (PHYS.spring + tk));
+        const defl = Math.min(cg * 0.9, this.tyre.maxDefl, PHYS.spring * this.setup.spring * (cg + PHYS.preload) / (PHYS.spring * this.setup.spring + tk));
         w.defl = defl;
         const c = cg - defl;
         const cc = Math.min(c, PHYS.travel);
@@ -442,7 +454,7 @@ export class CrawlerPhysics {
         // real shock, so the body settles instead of pogoing.
         const cv = THREE.MathUtils.clamp((cc - w.cPrev) / dt, -4, 4);
         w.cPrev = cc; w.c = cc;
-        let Fs = PHYS.spring * (cc + PHYS.preload) + PHYS.damp * cv * (cv < 0 ? 1.6 : 1);
+        let Fs = PHYS.spring * this.setup.spring * (cc + PHYS.preload) + PHYS.damp * this.setup.damp * cv * (cv < 0 ? 1.6 : 1);
         if (Fs < 0) Fs = 0;
         // bump stop: the suspension has run out of travel, so the chassis meets the axle rigidly. Solved
         // as a hard contact rather than a stiff spring (which stored the landing and threw it back).
@@ -527,7 +539,7 @@ export class CrawlerPhysics {
         if (!w.contact) { w.slip = w.om * R; continue; }
         const props = SURF_PROPS[w.surf];
         const wetMu = 1 - (hf.wetGlobal || 0) * (w.surf === SURF.ROCK ? 0.3 : 0.18) - w.water * 0.12;
-        const mu = props.mu * wetMu * (0.92 + 0.08 * this.battery) * this.tyre.grip;
+        const mu = props.mu * wetMu * (0.92 + 0.08 * this.battery) * this.tyre.grip * (this.setup.compound[w.surf] ?? 1);
         const n = w.n;
         const tl = _v1.copy(w.fwd).addScaledVector(n, -w.fwd.dot(n)).normalize();
         const tt = _v2.crossVectors(n, tl).normalize();
@@ -563,7 +575,7 @@ export class CrawlerPhysics {
       const h = hf.heightAt(P.x, P.z);
       if (P.y < h) {
         const n = hf.normalAt(P.x, P.z, _n).clone();
-        this.contacts.push({ p: P.clone(), n, e: (h - P.y) * Math.max(0.25, n.y), mu: PHYS.chassisMu, part: PROBE_PART[pi], mat: SURF_NAMES[hf.surfaceAt(P.x, P.z)] || 'dirt', scrape: true });
+        this.contacts.push({ p: P.clone(), n, e: (h - P.y) * Math.max(0.25, n.y), mu: PHYS.chassisMu * this.setup.chassisMu, part: PROBE_PART[pi], mat: SURF_NAMES[hf.surfaceAt(P.x, P.z)] || 'dirt', scrape: true });
       }
     }
     if (tipped) {
@@ -640,7 +652,7 @@ export class CrawlerPhysics {
       this.com.addScaledVector(v, dt);
       _q.set(w.x * dt * 0.5, w.y * dt * 0.5, w.z * dt * 0.5, 0).multiply(q);
       q.x += _q.x; q.y += _q.y; q.z += _q.z; q.w += _q.w; q.normalize();
-      this.pos.copy(_v4.set(0, -this.comLift, 0).applyQuaternion(q).add(this.com));
+      this.pos.copy(_v4.set(0, -(this.comLift + this.setup.comLift), 0).applyQuaternion(q).add(this.com));
     };
     integrate(this.vel, this.ang);
     if (this.vPs.lengthSq() + this.wPs.lengthSq() > 0) {
@@ -699,7 +711,7 @@ export class CrawlerPhysics {
       const B = best[bi];
       if (B.pen <= 0) continue;
       const n = new THREE.Vector3(B.nx, B.ny, B.nz).applyQuaternion(q);
-      this.contacts.push({ p: new THREE.Vector3(B.x, B.y, B.z), n, e: Math.min(B.pen, 0.15), mu: PHYS.chassisMu, part: BOXES[bi][5], mat: SURF_NAMES[hf.surfaceAt(B.x, B.z)] || 'rock', scrape: true });
+      this.contacts.push({ p: new THREE.Vector3(B.x, B.y, B.z), n, e: Math.min(B.pen, 0.15), mu: PHYS.chassisMu * this.setup.chassisMu, part: BOXES[bi][5], mat: SURF_NAMES[hf.surfaceAt(B.x, B.z)] || 'rock', scrape: true });
     }
   }
 

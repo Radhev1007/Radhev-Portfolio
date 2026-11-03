@@ -584,3 +584,21 @@ body:has(#hud.touch-on) .mm:not(.big) .mm-ctl button { width: 22px; height: 22px
 .ca b { display: block; font: 500 14px var(--cond); letter-spacing: .5px; }
 .ca.on b { color: #f2c94c; }
 .ca span { font-size: 12px; color: var(--dim); }
+
+/* ---------- garage (menu tab) and the inspection hint */
+.garage { display: grid; gap: 12px; text-align: left; }
+.g-top { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; padding: 14px 16px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+.g-stats { display: grid; gap: 6px; }
+.g-stats small { font-size: 11px; color: var(--dim); }
+.gs { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: center; font-size: 12px; color: var(--dim); }
+.gs i { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) var(--p), rgba(255,255,255,.1) var(--p)); position: relative; }
+.gs i::after { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: rgba(255,255,255,.45); }
+.g-row { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line); }
+.g-row h5 { margin: 0; font: 500 13px var(--cond); letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+.g-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.gp { padding: 7px 12px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.03); color: inherit; font: 500 13px var(--cond); letter-spacing: .5px; cursor: pointer; }
+.gp:hover { border-color: rgba(255,255,255,.35); }
+.gp.on { border-color: var(--accent); color: var(--accent); background: rgba(245,166,35,.08); }
+.g-row p { margin: 0; font-size: 12px; color: var(--dim); }
+.inspect-hint { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 30; padding: 9px 16px; border-radius: 20px; background: rgba(10,10,10,.65); border: 1px solid var(--line); font: 500 12px var(--cond); letter-spacing: 1.5px; color: var(--dim); }
+.inspect-hint.hidden { display: none; }
