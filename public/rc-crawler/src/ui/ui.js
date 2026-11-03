@@ -1,6 +1,5 @@
 // DOM UI: loading, title + terrain cards, weather presets, HUD telemetry, toasts, menu, settings.
 import { CRANE_CREDIT } from '../world/towTruck.js';
-import { CROWD_CREDIT } from '../world/crowd.js';
 import { DRIVER_CREDIT } from '../vehicles/driver.js';
 import { fmtTime } from '../challenges/challenges.js';
 
@@ -177,7 +176,6 @@ export class UI {
     const credited = list.filter((v) => v.credit).map(({ credit: c }) => `${this.creditHtml(c)} by ${c.author} (${c.changes})`);
     $('#credits').innerHTML = (credited.length ? `Vehicle bodies: ${credited.join(' and ')}, from Sketchfab under <a href="${list.find((v) => v.credit).credit.licenseUrl}" target="_blank" rel="noopener">CC BY 4.0</a>, adapted for the game. ` : '')
       + `Recovery crane: ${this.creditHtml(CRANE_CREDIT)} by ${CRANE_CREDIT.author} (${CRANE_CREDIT.changes}), from Sketchfab under <a href="${CRANE_CREDIT.licenseUrl}" target="_blank" rel="noopener">${CRANE_CREDIT.license}</a>. `
-      + `Spectators: ${this.creditHtml(CROWD_CREDIT)} by ${CROWD_CREDIT.author} (${CROWD_CREDIT.changes}), from Sketchfab under <a href="${CROWD_CREDIT.licenseUrl}" target="_blank" rel="noopener">${CROWD_CREDIT.license}</a>. `
       + `Driver: ${this.creditHtml(DRIVER_CREDIT)} by ${DRIVER_CREDIT.author} (${DRIVER_CREDIT.changes}), from Sketchfab under <a href="${DRIVER_CREDIT.licenseUrl}" target="_blank" rel="noopener">${DRIVER_CREDIT.license}</a>.`;
     this.setVehicle(current);
   }
