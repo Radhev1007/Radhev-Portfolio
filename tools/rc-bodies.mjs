@@ -255,6 +255,25 @@ if (axleSources) {
     console.log('  axle piece', name, [...source.values()].reduce((t, o) => t + o.pos.length / 9, 0), 'triangles');
   }
 }
+// each of the four wheels as modelled (the willys), each centred on its own hub. Built before the pruning, like the
+// axle pieces: once the wheels are off the body nothing else uses their material, and pruning would drop it
+// (they would draw plain white)
+if (wheelSources) {
+  const buf = root.listBuffers()[0];
+  for (const [k, source] of Object.entries(wheelSources)) {
+    const pts = []; for (const o of source.values()) for (let i = 0; i < o.pos.length; i += 3) pts.push([o.pos[i], o.pos[i + 1], o.pos[i + 2]]);
+    const b = box(pts), hub = [0, 1, 2].map((q) => (b.min[q] + b.max[q]) / 2);
+    const mesh = doc.createMesh(`RCWheel_${k}`);
+    for (const [mat, o] of source) mesh.addPrimitive(doc.createPrimitive().setMaterial(mat)
+      .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(new Float32Array(o.pos.map((v, i) => v - hub[i % 3]))).setBuffer(buf))
+      .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(o.nor)).setBuffer(buf))
+      .setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(new Float32Array(o.uv)).setBuffer(buf)));
+    root.listScenes()[0].addChild(doc.createNode(`RCWheel_${k}`).setMesh(mesh));
+    wheels[k] = hub.map((v) => +v.toFixed(4)); wheels.width = +(b.max[0] - b.min[0]).toFixed(4);
+    console.log('  saved wheel', k, [...source.values()].reduce((t, o) => t + o.pos.length / 9, 0), 'triangles, hub', wheels[k], 'width', wheels.width);
+  }
+}
+
 await doc.transform(prune(), flatten(), join({ keepNamed: !!axleSources || !!wheelSources }), ...(EXACT ? [] : [weld()]), dedup(), prune());
 const before = tris();
 const ratio = Math.min(1, target / Math.max(1, before));
@@ -291,24 +310,6 @@ if (wheelSource) {
   await doc.transform(weld(), dedup());   // index the copied triangles (identical vertices only: the look is unchanged)
   wheels.wheelX = hub[0];
   console.log('  saved wheel RCWheel:', wt, 'triangles, hub', hub.map((v) => +v.toFixed(3)), '| spare:', st, 'triangles');
-}
-
-// each of the four wheels as modelled (the willys), each centred on its own hub
-if (wheelSources) {
-  const buf = root.listBuffers()[0];
-  for (const [k, source] of Object.entries(wheelSources)) {
-    const pts = []; for (const o of source.values()) for (let i = 0; i < o.pos.length; i += 3) pts.push([o.pos[i], o.pos[i + 1], o.pos[i + 2]]);
-    const b = box(pts), hub = [0, 1, 2].map((q) => (b.min[q] + b.max[q]) / 2);
-    const mesh = doc.createMesh(`RCWheel_${k}`);
-    for (const [mat, o] of source) mesh.addPrimitive(doc.createPrimitive().setMaterial(mat)
-      .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(new Float32Array(o.pos.map((v, i) => v - hub[i % 3]))).setBuffer(buf))
-      .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(o.nor)).setBuffer(buf))
-      .setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(new Float32Array(o.uv)).setBuffer(buf)));
-    root.listScenes()[0].addChild(doc.createNode(`RCWheel_${k}`).setMesh(mesh));
-    wheels[k] = hub.map((v) => +v.toFixed(4)); wheels.width = +(b.max[0] - b.min[0]).toFixed(4);
-    console.log('  saved wheel', k, [...source.values()].reduce((t, o) => t + o.pos.length / 9, 0), 'triangles, hub', wheels[k], 'width', wheels.width);
-  }
-  await doc.transform(weld(), dedup());
 }
 
 // the body's shape for the game's collision probes (the willys): its box and the lowest point between the axles
