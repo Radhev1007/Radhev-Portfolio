@@ -11,6 +11,11 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { CRAWLER_DIMS } from './crawlerModel.js';
 import { vehicleGeometry, WILLYS_MODEL } from './geometry.js';
 
+// The driver in the open Willys: restore50's "Casual Confidence" (CC BY 4.0, credited in Help), seated by bending the
+// figure at the hips and knees (tools/rc-driver.mjs), simplified for the web.
+export const DRIVER_CREDIT = { title: 'Casual Confidence', author: 'restore50', changes: 'seated, simplified', url: 'https://sketchfab.com/3d-models/casual-confidence-cddbbc7660454ec9997cacb9ab6cf58d', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' };
+const DRIVER_FILE = 'assets/driver.glb';
+
 export const VEHICLES = [
   { id: 'scx30', name: 'SCX30 Jeep Wrangler JLU', short: 'WRANGLER', color: 0xf1f1ee },   // gloss white
   {
@@ -23,6 +28,8 @@ export const VEHICLES = [
     // track, tyre size and ride height (geometry.js); its wheels turn and steer on the hubs and its axle housings,
     // tie rods and knuckles ride on the axles
     id: 'willys', name: 'Willys Mountain Buggy', short: 'WILLYS', file: 'assets/vehicles/willys.glb', paint: null, own: true,
+    // the driver in the left (driver's) seat, in the model's units: his hip line over the seat cushion
+    driver: { at: [0.38, 0.15, -0.4], scale: 0.92 },
     wheels: WILLYS_MODEL.wheels,
     credit: { title: 'Willys mountain buggy 1', author: 'Rustam T', changes: 'textures resized for the web; its wheels and axles move with the suspension', url: 'https://sketchfab.com/3d-models/willys-mountain-buggy-1-f536a233a3d84735ab4b967f90e212db', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
@@ -46,7 +53,8 @@ const templates = new Map();   // id -> Promise<Object3D> (loaded once, shared b
 function template(v) {
   if (!templates.has(v.id)) {
     const url = new URL(`../../${v.file}`, import.meta.url).href;
-    templates.set(v.id, loader.loadAsync(url).then((gltf) => fit(gltf.scene, v)).catch((e) => { templates.delete(v.id); throw e; }));
+    const driver = v.driver ? loader.loadAsync(new URL(`../../${DRIVER_FILE}`, import.meta.url).href).then((g) => g.scene).catch((e) => { console.warn('[bodies] driver failed to load', e); return null; }) : null;
+    templates.set(v.id, Promise.all([loader.loadAsync(url), driver]).then(([gltf, d]) => { if (d) seatDriver(gltf.scene, d, v.driver); return fit(gltf.scene, v); }).catch((e) => { templates.delete(v.id); throw e; }));
   }
   return templates.get(v.id);
 }
@@ -98,6 +106,15 @@ function fit(scene, v) {
     for (const m of ms) { m.envMapIntensity = 1; darkInside(m); if (m.transparent) o.castShadow = false; }
   });
   return holder;
+}
+
+// the driver goes in as part of the body (it moves, rolls and is recovered with it)
+function seatDriver(scene, d, at) {
+  d.name = 'Driver';
+  d.position.fromArray(at.at);
+  d.scale.setScalar(at.scale);
+  d.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+  scene.add(d);
 }
 
 // a body driven as modelled: one uniform scale (its axles on the RC wheelbase), its hubs on the truck's hub line,
