@@ -652,7 +652,7 @@ function tick(dt, forced) {
     const rolled = phys.upsideTimer > 1.2;
     if (rolled && !wasRolled) crowd.flinch(phys.pos);
     wasRolled = rolled;
-    crowd.update(dt, mp.spectating ? spectateTarget()?.pos : phys.pos, mp.spectating ? spectateTarget()?.vel : phys.vel);
+    crowd.update(dt, mp.spectating ? spectateTarget()?.pos : phys.pos, mp.spectating ? spectateTarget()?.vel : phys.vel, camera.position);
   }
   phys.events.length = 0;
   if (phys.stats.water > 0.2 && Math.abs(phys.stats.speed) > 0.5 && Math.random() < 0.03) audio.impact(0.4, 'splash');

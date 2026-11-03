@@ -7,6 +7,31 @@
 //   - step out of the way when it comes at them, drifting back once it has passed
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+// The spectators are a photogrammetry scan: AR+MR's "People of Los Angeles #3" (CC BY 4.0, credited in Help),
+// cut from its pavement, simplified to 6,000 triangles and compressed (140 KB from 16.7 MB), feet at the
+// origin and height 1. Until it has loaded (or if it cannot), simple figures stand in.
+export const CROWD_CREDIT = { title: 'People of Los Angeles #3', author: 'AR+MR', changes: 'cut from its pavement, simplified', url: 'https://sketchfab.com/3d-models/people-of-los-angeles-3-0fb338ee68f048b8a6945d2937120a9d', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' };
+const SPECTATOR_URL = 'assets/spectator.glb';
+const DRAW_R = 45;   // m from the camera: further away nobody is drawn
+let scanPromise = null;
+function loadSpectator() {
+  if (typeof window === 'undefined') return Promise.resolve(null);   // headless (tests): the stand-ins only
+  if (!scanPromise) {
+    const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+    scanPromise = loader.loadAsync(SPECTATOR_URL).then((g) => {
+      let mesh = null; g.scene.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
+      if (!mesh) return null;
+      if (!mesh.geometry.attributes.normal) mesh.geometry.computeVertexNormals();   // the cut-out carries none
+      // the scan has its light baked in; a matte standard material still takes the scene's light and shadow
+      const material = new THREE.MeshStandardMaterial({ map: mesh.material.map, roughness: 1, metalness: 0, side: THREE.DoubleSide });
+      return { geometry: mesh.geometry, material };
+    }).catch((err) => { console.warn('[crowd] spectator scan failed to load; using the stand-ins', err); return null; });
+  }
+  return scanPromise;
+}
 
 const SHIRTS = [0xd94f3d, 0x2f6fd0, 0xf2b632, 0x3ea65f, 0xeeeeee, 0x222831, 0x8e44ad, 0xe67e22, 0x16a085, 0xc0392b];
 const TROUSERS = [0x2b3442, 0x3b3b3b, 0x4a3b2c, 0x1f2a44, 0x5a5f66];
@@ -79,7 +104,15 @@ export function buildCrowd(level, rings) {
   });
   for (const m of [body, head, legs, armL, armR]) if (m.instanceColor) m.instanceColor.needsUpdate = true;
   const hf = level.hf;
-  let t = 0;
+  let t = 0, scan = null;
+  const stand = [body, head, legs, armL, armR];
+  loadSpectator().then((sc) => {
+    if (!sc) return;
+    scan = new THREE.InstancedMesh(sc.geometry, sc.material, n);
+    scan.castShadow = true; scan.receiveShadow = true; scan.frustumCulled = false;
+    group.add(scan);
+    for (const m of stand) m.visible = false;
+  });
 
   const near = (p, r) => people.filter((q) => Math.hypot(q.x + q.ox - p.x, q.z + q.oz - p.z) < r);
   const api = {
@@ -89,8 +122,9 @@ export function buildCrowd(level, rings) {
     flinch(p, r = FLINCH_R) { for (const q of near(p, r)) q.flinch = 1.2 + Math.random() * 0.4; },
     /** React to the truck's physics events (landings) this frame. */
     events(evts) { for (const e of evts) if (e.type === 'land' && e.air > 0.4 && e.p) api.cheer(e.p, CHEER_R, 1.5 + Math.min(2, e.air)); },
-    update(dt, truck, vel) {
+    update(dt, truck, vel, eye) {
       t += dt;
+      let j = 0;   // drawn slots: only people near the camera are drawn
       for (let i = 0; i < n; i++) {
         const q = people[i];
         // step aside from a truck coming at us, drift back when it has gone
@@ -106,26 +140,38 @@ export function buildCrowd(level, rings) {
         }
         q.cheer = Math.max(0, q.cheer - dt); q.flinch = Math.max(0, q.flinch - dt);
         const x = q.x + q.ox, z = q.z + q.oz;
+        if (eye && Math.hypot(x - eye.x, z - eye.z) > DRAW_R) continue;
+        const slot = j++;
         const ch = Math.min(1, q.cheer * 2), fl = Math.min(1, q.flinch * 2);
         const hop = ch * Math.abs(Math.sin(t * 9 + q.phase)) * 0.12;
         const duck = fl * 0.22;
         const y = hf.heightAt(x, z) - 0.02 + hop;
         const s = q.scale;
+        if (scan) {
+          // the scan: idle sway, bouncing and rocking when cheering, crouched and leaning back when flinching;
+          // every other one mirrored so the crowd is not one pose repeated
+          const lean = Math.sin(t * 1.3 + q.phase) * 0.03 + ch * Math.sin(t * 9 + q.phase) * 0.1 - fl * 0.22;
+          _q.setFromEuler(_e.set(lean, q.yaw, 0));
+          const k = s * H;
+          _s.set(i % 2 ? -k : k, k * (1 - duck * 0.7), k); _p.set(x, y, z);
+          _m.compose(_p, _q, _s); scan.setMatrixAt(slot, _m);
+          continue;
+        }
         // body + head: a little idle sway; ducking squashes the body
         _q.setFromEuler(_e.set(Math.sin(t * 1.3 + q.phase) * 0.03, q.yaw, 0));
         _s.set(s, s * (1 - duck), s); _p.set(x, y, z);
-        _m.compose(_p, _q, _s); body.setMatrixAt(i, _m); head.setMatrixAt(i, _m);
-        _s.set(s, s * (1 - duck * 1.4), s); _m.compose(_p, _q, _s); legs.setMatrixAt(i, _m);
+        _m.compose(_p, _q, _s); body.setMatrixAt(slot, _m); head.setMatrixAt(slot, _m);
+        _s.set(s, s * (1 - duck * 1.4), s); _m.compose(_p, _q, _s); legs.setMatrixAt(slot, _m);
         // arms: hanging when idle, up when cheering (waving), forward over the head when flinching
         for (const [mesh, side] of [[armL, 1], [armR, -1]]) {
           const raise = ch * (2.6 + Math.sin(t * 10 + q.phase + side) * 0.35) + fl * 1.9;
           _q.setFromEuler(_e.set(-fl * 0.9, q.yaw, side * (0.12 + raise), 'YXZ'));
           _p.set(x + Math.cos(q.yaw) * 0.125 * side * s, y + 0.66 * s * (1 - duck), z - Math.sin(q.yaw) * 0.125 * side * s);
           _s.set(s, s, s);
-          _m.compose(_p, _q, _s); mesh.setMatrixAt(i, _m);
+          _m.compose(_p, _q, _s); mesh.setMatrixAt(slot, _m);
         }
       }
-      for (const m of [body, head, legs, armL, armR]) m.instanceMatrix.needsUpdate = true;
+      for (const m of [...stand, scan]) { if (!m) continue; m.count = j; m.instanceMatrix.needsUpdate = true; }
     },
   };
   api.update(0, null, null);
