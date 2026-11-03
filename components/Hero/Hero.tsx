@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/Animations/Button";
+import { HeroIllustration } from "@/components/Illustrations/HeroIllustration";
 import { site } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { intro, transition } from "@/lib/motion";
-import { HangingBadge } from "./HangingBadge";
 import { HeroIdentity } from "./HeroIdentity";
 import { PixelField } from "./PixelField";
 import { ScrollCue } from "./ScrollCue";
@@ -15,8 +15,8 @@ import { useScrollTo } from "@/components/Providers/SmoothScroll";
 /**
  * Two columns rather than two stacked rows: the left carries the whole
  * written argument — disciplines, display line, statement, actions — and
- * the right is given over to a hanging ID badge — the portrait, name and
- * contact details as a physical object.
+ * the right is given over to an animated design-session illustration —
+ * the work itself, shown rather than described.
  */
 export function Hero() {
   const reduced = usePrefersReducedMotion();
@@ -31,15 +31,12 @@ export function Hero() {
   return (
     <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col overflow-hidden">
       <PixelField />
-      {/* <HeroVideo /> goes back here once public/video/ has the files (see its README): without them it only
-          requested a missing poster and videos. */}
       <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-6 gutter pb-8 pt-24 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-24">
-        {/* The ID badge follows the words on narrow screens (so the headline, statement and résumé come
-            first on a phone) and takes the right-hand column on wide ones, hung from the top edge. It sits behind
-            the written column's stacking context, so the links and buttons there still take their own clicks.
-            On tablets it takes six columns rather than five so the card keeps a readable width. */}
-        <div data-pixel-avoid className="order-2 mx-auto w-full md:order-2 md:col-span-6 md:col-start-7 md:pr-6 lg:col-span-5 lg:col-start-8 lg:pr-14">
-          <HangingBadge />
+        {/* The illustration follows the words on narrow screens (so the headline, statement and résumé come
+            first on a phone) and takes the right-hand column on wide ones. It sits behind the written column's
+            stacking context, so the links and buttons there still take their own clicks. */}
+        <div data-pixel-avoid className="order-2 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px] md:pr-14">
+          <HeroIllustration delay={intro.objects} />
         </div>
 
         <div data-pixel-avoid className="relative z-10 order-1 md:order-1 md:col-span-6">

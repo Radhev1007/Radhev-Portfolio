@@ -308,21 +308,6 @@ html.has-custom-cursor * {
   }
 }
 
-/* The hero badge's idle sway on its lanyard: about a degree either side of rest, eased into each turn. */
-@keyframes badge-sway {
-  0%,
-  50%,
-  100% {
-    rotate: 0deg;
-  }
-  25% {
-    rotate: 1.1deg;
-  }
-  75% {
-    rotate: -1.1deg;
-  }
-}
-
 /* Suspension bob for the nav's garage icon. */
 @keyframes rock {
   0%,

@@ -130,11 +130,9 @@ export function Navigation() {
         animate={{ y: !ready ? -40 : hidden ? -110 : 0, opacity: ready ? 1 : 0 }}
         transition={{ duration: 0.8, ease: ease.outExpo }}
       >
-        {/* On the home page the bar is frosted from the start: the hero's ID badge hangs from the top edge,
-            and its strap should pass under the bar rather than behind the link text. */}
         <div
           className={`transition-[background-color,backdrop-filter] duration-700 ${
-            scrolled || menuOpen || isHome ? "bg-ink/70 backdrop-blur-xl" : "bg-transparent"
+            scrolled || menuOpen ? "bg-ink/70 backdrop-blur-xl" : "bg-transparent"
           }`}
         >
         <nav

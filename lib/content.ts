@@ -45,9 +45,6 @@ export const site = {
   heroCtas: {
     secondary: { label: "View Selected Work", target: "work" },
   },
-  /** The hero's hanging ID badge: a short introduction under the name and role. */
-  badgeIntro:
-    "I design thoughtful digital products and scalable systems that turn complex workflows into clear, intuitive interactions.",
   /** Shown as icons in the hero's social rail, in this order. */
   socials: [
     { label: "Behance", href: "https://www.behance.net/radhev1999707d", icon: "behance" },
@@ -56,9 +53,6 @@ export const site = {
     { label: "LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a", icon: "linkedin" },
   ],
 } as const;
-
-/** The LinkedIn profile, linked from the hero badge. */
-export const linkedIn = site.socials.find((s) => s.icon === "linkedin")!;
 
 export const navItems = [
   { id: "work", label: "Work" },
