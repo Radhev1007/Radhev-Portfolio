@@ -81,6 +81,26 @@ const KINDS = {
     for (const s of [-1, 1]) o.plank(s * 0.34, 0, w, h, 3.2, true);
   } },
   platform: { len: 4.6, min: 1, build(o) { o.plank(0, 0, 1.7, 0.16 + o.k * 0.09, 2.4, true); } },
+  // a plank bridge over a ditch the full width of the trail: narrower and over a deeper ditch at harder tiers,
+  // with rope handrails on posts along both edges
+  bridge: { len: 5.4, min: 0, build(o) {
+    const w = 1.6 - o.k * 0.17, D = 0.3 + o.k * 0.1, deckL = 3.4, rl = 0.85;
+    // the deck runs straight from one end to the other (sloping with the trail); ground bulging above that line is
+    // cleared by lifting the deck a little. Too steep a stretch, or too big a bulge, and the spot is a mud pit
+    const e = [-1, 1].map((sg) => { const q = o.at(0, sg * (deckL / 2 + rl)); return o.ctx.hf.baseHeightAt(q.x, q.z); });
+    const mid = [-1, -0.5, 0, 0.5, 1].map((f) => { const q = o.at(0, f * (deckL / 2 + rl)); return o.ctx.hf.baseHeightAt(q.x, q.z) - (e[0] + (e[1] - e[0]) * (f + 1) / 2); });
+    const lift = Math.max(0, ...mid);
+    if (Math.abs(e[1] - e[0]) > 1.3 || lift > 0.2) { KINDS.mud.build(o); return; }
+    o.ground((lat, al) => -D * (1 - smoothstep(deckL / 2 - 0.9, deckL / 2 - 0.1, Math.abs(al))) * (1 - smoothstep(HALF + 1.2, HALF + 2.8, Math.abs(lat))));
+    o.paint(LAYER.mud, 0, 0, 1.3, 0.75);
+    o.bridge(w, deckL, rl, lift);
+  } },
+  // deep ruts at the truck's track width: the tyres drop into them and the belly drags on the crown between
+  ruts: { len: 4.2, min: 0, build(o) {
+    const d = 0.06 + o.k * 0.05, g = (lat, c) => Math.exp(-(((lat - c) / 0.12) ** 2));
+    o.ground((lat, al) => o.env(al) * (-d * (g(lat, 0.38) + g(lat, -0.38)) + 0.02 * g(lat, 0)));
+    o.paint(LAYER.mud, 0, 0, o.L / 2 + 0.6, 0.85);
+  } },
   // ---- off-road terrain
   mud: { len: 3.6, min: 0, build(o) { const p = o.at(0, 0); o.ctx.mudPit(p.x, p.z, 1.05 + o.k * 0.3, 0.045 + o.k * 0.05); } },
   dunes: { len: 5, min: 0, build(o) {
@@ -132,7 +152,7 @@ const KINDS = {
     if (floods) { KINDS.mud.build(o); return; }
     const prev = o.ctx.creekPath;
     const cross = new o.TrailPath([[a.x - n.x * 0.01, a.z - n.z * 0.01], [b.x, b.z]], 0.4);
-    o.ctx.creek(cross, { waterY: y, width: w, depth: 0.16 + o.k * 0.08, bank: 1.6, flow: [n.x * 0.3, n.z * 0.3] });
+    o.ctx.creek(cross, { waterY: y, width: w, depth: 0.16 + o.k * 0.08, bank: 1.6, flow: [n.x * 0.3, n.z * 0.3], silt: 0.8 });
     o.ctx.creekPath = prev;   // the level's own creek stays its creek
     for (let i = 0; i < 2 + o.k; i++) o.rock('boulder', o.lat(), o.r(-0.6, 0.6), o.r(0.16, 0.24 + o.k * 0.05), { sink: 0.35 });
   } },
@@ -155,10 +175,10 @@ const KINDS = {
 // ------------------------------------------------------------------ each terrain's mix (kind: weight)
 export const RECIPES = {
   canyon: { boulders: 3, rockClimb: 2, narrowPassage: 3, steps: 2, sharpEdge: 2, vGap: 2, multiLevel: 2, cliffPath: 2, rockGarden: 2, scatter: 2, descent: 1, offCamberRock: 1, trench: 1, boulderStep: 2, slabs: 1 },
-  forest: { log: 2, logs: 3, fallenTrunk: 2, roots: 3, mud: 2, uneven: 2, scatter: 1, rockClimb: 1, hillUp: 1, potholes: 1, articulation: 2, steps: 1, platform: 1, beam: 1, slabs: 1, boulders: 1 },
-  mud: { mud: 4, water: 2, potholes: 2, logs: 2, tires: 2, offCamberSlope: 2, uneven: 2, trench: 1, hillUp: 1, slabs: 1, articulation: 2, concrete: 1, gravel: 1, log: 1 },
-  desert: { dunes: 4, gravel: 3, sharpEdge: 2, boulders: 2, rockClimb: 1, descent: 2, concrete: 2, slabs: 2, scatter: 2, steps: 1, vGap: 1, tires: 1, offCamberSlope: 1, boulderStep: 1 },
-  creek: { water: 4, boulders: 2, slabs: 2, logs: 2, rockGarden: 2, scatter: 2, steps: 1, fallenTrunk: 1, mud: 1, offCamberRock: 1, articulation: 1, beam: 1, multiLevel: 1, potholes: 1 },
+  forest: { bridge: 2, ruts: 2, log: 2, logs: 3, fallenTrunk: 2, roots: 3, mud: 2, uneven: 2, scatter: 1, rockClimb: 1, hillUp: 1, potholes: 1, articulation: 2, steps: 1, platform: 1, beam: 1, slabs: 1, boulders: 1 },
+  mud: { ruts: 3, bridge: 1, mud: 4, water: 2, potholes: 2, logs: 2, tires: 2, offCamberSlope: 2, uneven: 2, trench: 1, hillUp: 1, slabs: 1, articulation: 2, concrete: 1, gravel: 1, log: 1 },
+  desert: { ruts: 1, bridge: 1, dunes: 4, gravel: 3, sharpEdge: 2, boulders: 2, rockClimb: 1, descent: 2, concrete: 2, slabs: 2, scatter: 2, steps: 1, vGap: 1, tires: 1, offCamberSlope: 1, boulderStep: 1 },
+  creek: { bridge: 2, ruts: 1, water: 4, boulders: 2, slabs: 2, logs: 2, rockGarden: 2, scatter: 2, steps: 1, fallenTrunk: 1, mud: 1, offCamberRock: 1, articulation: 1, beam: 1, multiLevel: 1, potholes: 1 },
   ultimate: { rockGarden: 3, vGap: 2, articulation: 3, multiLevel: 2, offCamberRock: 2, boulderStep: 2, cliffPath: 1, trench: 1, steps: 1, concrete: 1, tires: 1, beam: 1, platform: 1, water: 1, mud: 1, sharpEdge: 1, narrowPassage: 1 },
 };
 
@@ -255,7 +275,39 @@ export function addTrailObstacles(ctx, def, layout, TrailPath) {
 
   const props = ctx.props;   // created by the caller (activities' Props), shared with the activity sections
   for (const p of plan) KINDS[p.kind].build(makeOps(ctx, path, p, TrailPath, props));
+  dressTrail(ctx, def, path, plan);
   return plan;
+}
+
+// ------------------------------------------------------------------ course dressing: cones and rope barriers
+// Traffic cones mark the entry to every other obstacle; rope barriers on posts run along both edges of the
+// dangerous ones (cliff paths, descents, off-camber slopes). All stand beside the trail, never on the line, and
+// are breakable markers: the truck knocks them over (levelBuilder's buildMarkers, main's updateStakes).
+const ROPED = new Set(['cliffPath', 'descent', 'offCamberSlope']);
+const EDGE = HALF + 0.3;   // m from the trail's centre line
+function dressTrail(ctx, def, path, plan) {
+  const markers = ctx.markers;
+  // only where it stands clear of every part of the trail (a switchback could bring the line back past it)
+  const clear = (x, z) => path.pts.every((q) => Math.hypot(q.x - x, q.z - z) > EDGE - 0.1);
+  const spot = (t, lat, al) => { const P = path.at(t), T = path.tangent(t), N = path.normal(t); return { x: P.x + N.x * lat + T.x * al, z: P.z + N.z * lat + T.z * al }; };
+  let rid = 0;
+  plan.forEach((p, i) => {
+    if (i % 2 === 0) for (const side of [-1, 1]) {
+      const q = spot(p.t, side * EDGE, -p.len / 2 - 0.2);
+      if (clear(q.x, q.z)) markers.push({ type: 'cone', x: q.x, z: q.z });
+    }
+    if (!ROPED.has(p.kind)) return;
+    for (const side of [-1, 1]) {
+      let prev = null;
+      for (let al = -p.len / 2; al <= p.len / 2 + 1e-6; al += 1.1) {
+        const q = spot(p.t, side * (EDGE + 0.15), al);
+        if (!clear(q.x, q.z)) { prev = null; continue; }
+        const m = { type: 'ropePost', x: q.x, z: q.z, id: `${def.id}:rope:${rid++}`, ropeTo: null };
+        if (prev) prev.ropeTo = m.id;
+        markers.push(m); prev = m;
+      }
+    }
+  });
 }
 
 // ------------------------------------------------------------------ the toolkit each kind builds with
@@ -301,6 +353,52 @@ function makeOps(ctx, path, p, TrailPath, props) {
         const g = new THREE.TorusGeometry(R, tube, 8, 18); g.rotateX(Math.PI / 2);
         g.translate(q.x, y + tube * (0.7 + lvl * 1.9), q.z);
         props.add('tyre', g, SURF.ROCK);
+      }
+    },
+    // a plank bridge along the trail: boards across it, stringers under them, posts down into the ditch, ramps at
+    // both ends; rope handrails on posts along its edges. The tyres roll on one smooth surface under the boards
+    // (the gaps between them are narrower than the physics grid, and would read as holes in it)
+    bridge(w, deckL, rl, lift = 0) {
+      const ends = [-1, 1].map((e) => { const q = at(0, e * (deckL / 2 + rl)); return hf.baseHeightAt(q.x, q.z); });
+      const deckY = ends.map((h) => h + 0.11 + lift), half = deckL / 2;
+      const top = (al) => {   // the walking surface along the bridge
+        if (al < -half) return ends[0] + 0.01 + (deckY[0] - ends[0] - 0.01) * (al + half + rl) / rl;
+        if (al > half) return ends[1] + 0.01 + (deckY[1] - ends[1] - 0.01) * (half + rl - al) / rl;
+        return deckY[0] + (deckY[1] - deckY[0]) * (al + half) / deckL;
+      };
+      const place = (g, lat, al, y, pitch) => { g.applyMatrix4(new THREE.Matrix4().makeRotationX(-pitch)); g.applyMatrix4(new THREE.Matrix4().makeRotationY(yaw)); const q = at(lat, al); g.translate(q.x, y, q.z); return g; };
+      for (let al = -half - rl + 0.07; al <= half + rl - 0.05; al += 0.135) {   // boards, each a little uneven
+        const pitch = Math.atan2(top(al + 0.05) - top(al - 0.05), 0.1), bw = w * r(0.96, 1.02);
+        const g = new THREE.BoxGeometry(bw, 0.035, 0.11); g.translate(r(-0.02, 0.02), -0.0175, 0);
+        props.add(rng.next() < 0.3 ? 'weathered' : 'plank', place(g, 0, al, top(al), pitch));
+      }
+      for (const sx of [-1, 1]) {   // stringers under the deck, and posts down into the ditch
+        const len = deckL + 0.1, pitch = Math.atan2(deckY[1] - deckY[0], deckL);
+        props.add('beam', place(new THREE.BoxGeometry(0.07, 0.08, len).translate(0, -0.075, 0), sx * (w / 2 - 0.1), 0, (deckY[0] + deckY[1]) / 2, pitch));
+        for (const a of [-1, 0, 1]) {
+          const al = a * (half - 0.15), q = at(sx * (w / 2 - 0.1), al), g0 = hf.baseHeightAt(q.x, q.z), y = top(al) - 0.1;
+          if (y - g0 < 0.05) continue;
+          props.add('beam', place(new THREE.BoxGeometry(0.06, y - g0 + 0.06, 0.06).translate(0, -(y - g0) / 2, 0), sx * (w / 2 - 0.1), al, y, 0));
+        }
+      }
+      // the surface the tyres meet: one strip along the deck and ramps, its width the boards'
+      const segs = 40, pos = [], idx = [];
+      for (let i = 0; i <= segs; i++) {
+        const al = -half - rl + (deckL + 2 * rl) * i / segs, y = top(al);
+        for (const sx of [-1, 1]) { const q = at(sx * w / 2, al); pos.push(q.x, y, q.z); }
+        if (i) { const b0 = (i - 1) * 2; idx.push(b0, b0 + 1, b0 + 2, b0 + 1, b0 + 3, b0 + 2); }
+      }
+      const strip = new THREE.BufferGeometry(); strip.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); strip.setIndex(idx);
+      props.phys.push({ geo: strip, surf: SURF.WOOD });
+      // rope handrails: posts along both edges of the deck, joined by sagging rope (breakable markers)
+      for (const sx of [-1, 1]) {
+        let prev = null;
+        for (let al = -half + 0.1; al <= half - 0.1 + 1e-6; al += (deckL - 0.2) / 3) {
+          const q = at(sx * (w / 2 + 0.06), al);
+          const m = { type: 'ropePost', bridge: true, x: q.x, z: q.z, y: top(al), id: `bridge:${ctx.markers.length}`, ropeTo: null };
+          if (prev) prev.ropeTo = m.id;
+          ctx.markers.push(m); prev = m;
+        }
       }
     },
     // a raised plank (balance beam or deck) along the trail, with ramps at both ends

@@ -40,7 +40,8 @@ const MAT = {
   sand:   { knock: [800, 1500], kq: 0.8, body: [60, 100], debris: 'sand', dull: true },
   snow:   { knock: [700, 1300], kq: 0.8, body: [60, 95], debris: 'sand', dull: true },
   mud:    { knock: [280, 560], kq: 2, body: [55, 90], debris: 'mud', dull: true },
-  pole:   { knock: [900, 1500], kq: 6, body: [260, 420], debris: null, hollow: true },     // marker stake: hollow fibreglass tock
+  pole:   { knock: [900, 1500], kq: 6, body: [260, 420], debris: null, hollow: true },
+  plastic:{ knock: [700, 1250], kq: 4, body: [180, 300], debris: null, hollow: true },   // traffic cones     // marker stake: hollow fibreglass tock
   metal:  { knock: [2600, 3800], kq: 9, body: [520, 760], debris: null, hollow: true },    // steel gate/sign post: short ring
 };
 

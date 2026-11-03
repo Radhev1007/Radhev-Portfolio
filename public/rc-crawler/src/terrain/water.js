@@ -32,7 +32,9 @@ function getWaterNormal() {
   return normalTex;
 }
 
-// body: { x0, z0, x1, z1, y, flow:[fx,fz], murky, path? (creek centre-line for a flow field), width? }
+// body: { x0, z0, x1, z1, y, flow:[fx,fz], murky, silt?, path? (creek centre-line for a flow field), width? }
+// murky: a still, opaque mud puddle. silt 0..1: flowing water carrying silt, from clear teal to the colour of milky
+// tea (it keeps its ripples, flow and foam; light only gets a few centimetres into it)
 // Shading model: the surface is mostly see-through looking down (light absorbed with path length through
 // the water, so shallow beds show clearly and deep pools tint green), and mostly mirror at grazing angles
 // (Fresnel). Body colour is premultiplied by the absorption alpha; reflections are added on top unscaled.
@@ -84,13 +86,14 @@ export function createWaterMesh(hf, body, cell = 0.25) {
     sh.uniforms.uTime = waterUniforms.uTime;
     sh.uniforms.uNrm = { value: getWaterNormal() };
     sh.uniforms.uMurky = { value: murky ? 1 : 0 };
+    sh.uniforms.uSilt = { value: murky ? 0 : Math.min(1, Math.max(0, body.silt ?? 0)) };
     sh.uniforms.uSurround = { value: new THREE.Color(body.surround ?? 0x2e3524) };
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute float aDepth;\nattribute vec2 aFlow;\nvarying float vDepth;\nvarying vec2 vFlow;\nvarying vec3 vWP;')
       .replace('#include <fog_vertex>', '#include <fog_vertex>\nvDepth = aDepth; vFlow = aFlow; vWP = (modelMatrix * vec4(transformed,1.)).xyz;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', /* glsl */`#include <common>
-        uniform float uTime; uniform sampler2D uNrm; uniform float uMurky; uniform vec3 uSurround;
+        uniform float uTime; uniform sampler2D uNrm; uniform float uMurky; uniform float uSilt; uniform vec3 uSurround;
         varying float vDepth; varying vec2 vFlow; varying vec3 vWP;
         vec3 wN; float wAlpha; float wFoam;
         float wh(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -117,7 +120,7 @@ export function createWaterMesh(hf, body, cell = 0.25) {
         // light path through the water to the bed and back toward the eye
         vec3 V = normalize(cameraPosition - vWP);
         float path = dep / max(0.12, V.y);
-        float k = uMurky > 0.5 ? 22.0 : 1.15;
+        float k = uMurky > 0.5 ? 22.0 : mix(1.15, 9.0, uSilt);
         float absorb = 1.0 - exp(-path * k);
         // foam: patchy streaks advected downstream over shallows and around rocks, thin line at the shore
         float fn = wn(vWP.xz * 3.2 - fl * uTime * 3.0) * 0.6 + wn(vWP.xz * 7.0 - fl * uTime * 4.5) * 0.4;
@@ -128,8 +131,10 @@ export function createWaterMesh(hf, body, cell = 0.25) {
         float edge = smoothstep(-0.01, 0.05, vDepth);
         wAlpha = clamp(max(absorb, wFoam), 0.0, 1.0) * edge;
         // body colour (in-scattered light): teal-green clear water, brown murky water
-        vec3 body = uMurky > 0.5 ? vec3(0.17, 0.12, 0.07) : mix(vec3(0.09, 0.12, 0.08), vec3(0.03, 0.06, 0.05), smoothstep(0.1, 0.6, dep));
-        diffuseColor.rgb = mix(body, vec3(0.82, 0.85, 0.83), wFoam);
+        vec3 clearW = mix(vec3(0.09, 0.12, 0.08), vec3(0.03, 0.06, 0.05), smoothstep(0.1, 0.6, dep));
+        vec3 siltW = mix(vec3(0.24, 0.17, 0.095), vec3(0.15, 0.105, 0.06), smoothstep(0.05, 0.4, dep));
+        vec3 body = uMurky > 0.5 ? vec3(0.17, 0.12, 0.07) : mix(clearW, siltW, uSilt);
+        diffuseColor.rgb = mix(body, mix(vec3(0.82, 0.85, 0.83), vec3(0.74, 0.64, 0.5), uSilt), wFoam);
         diffuseColor.a = 1.0;
       `)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(roughness, 0.6, wFoam);')
@@ -157,7 +162,7 @@ export function createWaterMesh(hf, body, cell = 0.25) {
           gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor * gl_FragColor.a, fogFactor);
         #endif`);
   };
-  mat.customProgramCacheKey = () => 'water-v3';
+  mat.customProgramCacheKey = () => 'water-v4';
   const mesh = new THREE.Mesh(g, mat);
   mesh.receiveShadow = true;
   mesh.renderOrder = 2;

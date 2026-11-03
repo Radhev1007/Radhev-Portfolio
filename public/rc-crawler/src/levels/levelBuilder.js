@@ -10,6 +10,7 @@ import { createTerrainMaterial, createRockMaterial, sharedTerrainUniforms } from
 import { createWaterMesh, createWaterfall } from '../terrain/water.js';
 import { buildActivities, Props } from './activities.js';
 import { addTrailObstacles } from './trailObstacles.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { placeReturnGateway } from '../world/gateways.js';
 
 const yieldFrame = () => new Promise((r) => setTimeout(r, 0));
@@ -194,7 +195,7 @@ export class LevelContext {
     }
     for (let k = 0; k < b.length; k++) if (bw[k] > 0) b[k] = lerp(b[k], Math.min(b[k], bed[k]), bw[k]);
     const pad = w + bank + 1;
-    this.water.push({ x0: minX - pad, x1: maxX + pad, z0: minZ - pad, z1: maxZ + pad, y: waterY, flow: o.flow || [0.3, 0], murky: false, path, width: w });
+    this.water.push({ x0: minX - pad, x1: maxX + pad, z0: minZ - pad, z1: maxZ + pad, y: waterY, flow: o.flow || [0.3, 0], murky: false, silt: o.silt ?? this.def.env?.silt ?? 0.55, path, width: w });
     for (let i = 0; i <= path.N; i += 3) this.noVeg.push({ x: path.pts[i].x, z: path.pts[i].z, r: w + 0.6 });
     this.creekPath = path;
   }
@@ -604,6 +605,20 @@ function buildMarkers(ctx) {
   const stakeMat = new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.6 });
   const tapeMat = new THREE.MeshStandardMaterial({ color: 0xc8352a, roughness: 0.6 });
   const tapeGeo = new THREE.CylinderGeometry(0.024, 0.024, 0.1, 5); tapeGeo.translate(0, 0.48, 0);
+  // traffic cones (orange with two white bands, on a black base) and rope-barrier posts (trailObstacles' dressing)
+  const CONE_H = 0.42;
+  const coneBody = new THREE.CylinderGeometry(0.018, 0.1, CONE_H, 14, 1, true); coneBody.translate(0, CONE_H / 2 + 0.02, 0);
+  const coneBand = (y0, y1) => { const r0 = 0.1 - (0.082 * (y0 - 0.02)) / CONE_H, r1 = 0.1 - (0.082 * (y1 - 0.02)) / CONE_H, g = new THREE.CylinderGeometry(r1 + 0.002, r0 + 0.002, y1 - y0, 14, 1, true); g.translate(0, (y0 + y1) / 2, 0); return g; };
+  const coneBands = mergeGeometries([coneBand(0.2, 0.25), coneBand(0.31, 0.35)]);
+  const coneBase = new THREE.BoxGeometry(0.27, 0.025, 0.27); coneBase.translate(0, 0.0125, 0);
+  const coneMat = new THREE.MeshStandardMaterial({ color: 0xf0561c, roughness: 0.55 });
+  const bandMat = new THREE.MeshStandardMaterial({ color: 0xeeeeea, roughness: 0.35, metalness: 0.1 });
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.9 });
+  const ROPE_POST = 0.42;
+  const ropePostGeo = new THREE.CylinderGeometry(0.03, 0.035, ROPE_POST, 7); ropePostGeo.translate(0, ROPE_POST / 2, 0);
+  const ropePostMat = new THREE.MeshStandardMaterial({ color: 0xb8a383, roughness: 0.9 });
+  const ropeMat = new THREE.MeshStandardMaterial({ color: 0x6d5434, roughness: 0.95 });
+  const ropePosts = new Map();
   for (const m of ctx.markers) {
     const y = hf.heightAt(m.x, m.z) - 0.05;
     if (m.type === 'lane') {
@@ -644,7 +659,33 @@ function buildMarkers(ctx) {
       group.add(g);
       // fibreglass stakes snap under enough force (see CrawlerPhysics stake stress); steel posts don't
       posts.push({ x: m.x, z: m.z, r: 0.024, y0: y, top: y + 0.6, mat: 'pole', kind: 'stake', id: m.id, breakable: true, mesh: g });
+    } else if (m.type === 'cone') {
+      const g = new THREE.Group();
+      g.add(new THREE.Mesh(coneBody, coneMat), new THREE.Mesh(coneBands, bandMat), new THREE.Mesh(coneBase, baseMat));
+      g.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
+      g.position.set(m.x, y + 0.04, m.z); g.rotation.y = (m.x * 7.13 + m.z * 3.7) % 6.28;
+      group.add(g);
+      // a light plastic cone: the truck knocks it over easily (it never stops the truck)
+      posts.push({ x: m.x, z: m.z, r: 0.08, y0: y, top: y + CONE_H, mat: 'plastic', kind: 'cone', breakable: true, snapV: 0.35, limit: 2.5, pushTime: 0.15, mesh: g });
+    } else if (m.type === 'ropePost') {
+      const base = m.y ?? y + 0.04;   // (bridge rails stand on the deck)
+      const g = new THREE.Mesh(ropePostGeo, ropePostMat); g.castShadow = true;
+      g.position.set(m.x, base, m.z);
+      group.add(g);
+      const post = { x: m.x, z: m.z, r: 0.035, y0: base, top: base + ROPE_POST, mat: 'wood', kind: 'ropePost', breakable: true, snapV: 1.1, limit: 9, pushTime: 0.4, mesh: g, ropes: [] };
+      posts.push(post); ropePosts.set(m.id, { m, post });
     }
+  }
+  // ropes: a sagging tube from each post's top to the next post's; gone with either post once it is knocked down
+  for (const { m, post } of ropePosts.values()) {
+    const next = m.ropeTo && ropePosts.get(m.ropeTo);
+    if (!next) continue;
+    const a = new THREE.Vector3(m.x, post.top - 0.04, m.z), b = new THREE.Vector3(next.m.x, next.post.top - 0.04, next.m.z);
+    const sag = 0.05 + a.distanceTo(b) * 0.06, mid = a.clone().lerp(b, 0.5); mid.y -= sag;
+    const rope = new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(a, mid, b), 10, 0.012, 5), ropeMat);
+    rope.castShadow = true;
+    group.add(rope);
+    post.ropes.push(rope); next.post.ropes.push(rope);
   }
   return group;
 }

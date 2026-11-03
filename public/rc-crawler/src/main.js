@@ -247,6 +247,7 @@ function updateStakes(dt) {
   if (!level || !level.posts) return;
   for (const t of level.posts) {
     if (!t.broken || !t.mesh || t.landed) continue;
+    if (t.ropes) for (const rope of t.ropes) rope.visible = false;   // a rope barrier falls with its post
     if (!t.fallA) { t.fallA = 0.06; t.fallW = 1.5 + 2.5 * Math.min(1, (t.hitV || 0) / 4); }
     const L = Math.max(0.3, t.top - t.y0), g = 30;     // the post's own height: 0.6 stake, 0.9 sign, 1.26 gate
     t.fallW += (3 * g / (2 * L)) * Math.sin(t.fallA) * dt;

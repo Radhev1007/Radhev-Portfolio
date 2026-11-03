@@ -740,7 +740,7 @@ const BUILD = {
     for (let i = 0; i < 10; i++) rock(site, site.rng.float(-w / 2, w / 2), site.rng.float(-site.wid / 2, site.wid / 2), site.rng.float(0.1, 0.22), 'boulder', { sink: 0.5 });
     const a = site.at(-w / 2 - 0.2, -site.wid / 2), b = site.at(w / 2 + 0.2, site.wid / 2);
     ctx.forEachNear(site.cx, site.cz, site.wid, (k, x, z) => { const [u] = site.local(x, z); if (Math.abs(u) < w / 2 + 0.3) ctx.wetW[k] = Math.max(ctx.wetW[k], 0.8); });
-    ctx.water.push({ x0: Math.min(a.x, b.x) - 1, x1: Math.max(a.x, b.x) + 1, z0: Math.min(a.z, b.z) - 1, z1: Math.max(a.z, b.z) + 1, y: site.y - depth * 0.35, flow: [0.25, 0.05], murky: false,
+    ctx.water.push({ x0: Math.min(a.x, b.x) - 1, x1: Math.max(a.x, b.x) + 1, z0: Math.min(a.z, b.z) - 1, z1: Math.max(a.z, b.z) + 1, y: site.y - depth * 0.35, flow: [0.25, 0.05], murky: false, silt: 0.6,
       mask: (x, z) => { const [u, v] = site.local(x, z); return Math.abs(u) < w / 2 + 0.3 && Math.abs(v) < site.wid / 2; } });
     return { name: 'Water Channel', desc: 'Cross the rocky water channel without stalling.', par: pick3(tier, [9, 12, 15]) };
   },

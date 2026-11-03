@@ -111,3 +111,51 @@ test("no obstacle is hidden under water: the level's own or a new crossing", () 
     }
   }
 });
+
+// ---------------------------------------------------------------- phase 2: bridges, ruts, cones, rope barriers
+import { SURF } from '../../public/rc-crawler/src/terrain/heightfield.js';
+const placed = (kind) => TERRAINS.flatMap((d) => built[d.id].obs.filter((o) => o.kind === kind).map((o) => ({ ...o, def: d.id })));
+
+test('plank bridges and deep ruts appear on the trails', () => {
+  const decks = placed('bridge').filter((o) => { const { ctx, layout } = built[o.def], P = layout.path.at(o.t); return ctx.hf.surfaceAt(P.x, P.z) === SURF.WOOD; });
+  assert.ok(decks.length >= 3, `bridges built: ${decks.length} of ${placed('bridge').length}`);
+  assert.ok(placed('ruts').length >= 2, `ruts: ${placed('ruts').length}`);
+});
+
+test('a bridge spans a ditch on a wooden deck you can drive onto and off', () => {
+  for (const o of placed('bridge')) {
+    const { ctx, layout } = built[o.def], hf = ctx.hf, path = layout.path, P = path.at(o.t), T = path.tangent(o.t);
+    const at = (al) => ({ x: P.x + T.x * al, z: P.z + T.z * al });
+    const mid = at(0);
+    // the deck is wood and stands well above the ditch it crosses (on a steep stretch the spot is a mud pit)
+    if (hf.surfaceAt(mid.x, mid.z) !== SURF.WOOD) { assert.ok(ctx.mudW.some((v) => v > 0), `${o.def}: neither bridge nor mud`); continue; }
+    assert.ok(hf.heightAt(mid.x, mid.z) - hf.baseHeightAt(mid.x, mid.z) > 0.2, `${o.def}: no ditch under the deck`);
+    // driving along it there is no step a tyre cannot roll up (ramps at both ends)
+    if (hf.surfaceAt(mid.x, mid.z) !== SURF.WOOD) continue;
+    const span = 3.4 / 2 + 0.85;   // deck and ramps
+    let worst = 0, prev = hf.heightAt(at(-span).x, at(-span).z);
+    for (let al = -span; al <= span; al += 0.05) { const q = at(al), h = hf.heightAt(q.x, q.z); worst = Math.max(worst, Math.abs(h - prev)); prev = h; }
+    assert.ok(worst < 0.09, `${o.def}: a ${worst.toFixed(2)} m step along the bridge`);
+  }
+});
+
+test('ruts are two grooves at the truck\'s track width', () => {
+  for (const o of placed('ruts')) {
+    const { ctx, layout } = built[o.def], hf = ctx.hf, path = layout.path, P = path.at(o.t), N = path.normal(o.t);
+    const h = (lat) => hf.heightAt(P.x + N.x * lat, P.z + N.z * lat);
+    assert.ok(h(0) - h(0.38) > 0.04 && h(0) - h(-0.38) > 0.04, `${o.def}: ruts ${(h(0) - h(0.38)).toFixed(3)} ${(h(0) - h(-0.38)).toFixed(3)}`);
+  }
+});
+
+test('cones and rope barriers stand beside the trail, off the driving line; each rope joins two posts', () => {
+  for (const def of TERRAINS) {
+    const { ctx, layout } = built[def.id], path = layout.path, ms = ctx.markers;
+    const cones = ms.filter((m) => m.type === 'cone'), posts = ms.filter((m) => m.type === 'ropePost');
+    assert.ok(cones.length >= 10, `${def.id}: ${cones.length} cones`);
+    const off = (m) => Math.min(...path.pts.map((q) => Math.hypot(q.x - m.x, q.z - m.z)));
+    for (const m of [...cones, ...posts.filter((p) => !p.bridge)]) assert.ok(off(m) > 1.4, `${def.id}: a ${m.type} ${off(m).toFixed(2)} m from the line`);
+    const ids = new Set(posts.map((p) => p.id));
+    for (const p of posts) if (p.ropeTo != null) assert.ok(ids.has(p.ropeTo), `${def.id}: rope to a missing post`);
+  }
+  assert.ok(TERRAINS.some((d) => built[d.id].ctx.markers.some((m) => m.type === 'ropePost')), 'no rope barriers anywhere');
+});

@@ -39,8 +39,11 @@ and the keyboard controls. All indicators must read real game state.
 - Physics: audited above; no gaps that justify retuning a handling that was tuned and tested. Revisit only on
   a concrete driving complaint.
 
-**Phase 2 — Trailhead Valley and obstacles**
-- Wooden bridges and deep ruts as trail obstacles (logs, rocks, mud, water, ramps, gravel, narrow passages exist).
+**Phase 2 — Trailhead Valley and obstacles** (done)
+- Plank bridges over ditches (rope handrails, a mud pit instead on too steep a stretch) and deep ruts at track
+  width as trail obstacles; traffic cones at obstacle entries and rope barriers along cliff paths, descents and
+  off-camber slopes, all knockable; silty brown creeks and crossings that keep their flow, ripples and foam.
+- Not yet: mud build-up on the tyres (the body already gets dust, mud and wet).
 
 **Phase 3 — environments and challenges**
 - Mission types beyond timed rings: recovery mission, hill climb, checkpoint race (rings exist), exploration %.
