@@ -1,4 +1,6 @@
-// Keyboard, mouse (orbit + wheel zoom) and on-screen touch controls.
+// Keyboard, mouse (orbit + wheel zoom), on-screen touch controls and a gamepad (core/gamepad.js).
+import { Gamepad, padState, firstPad } from './gamepad.js';
+
 export class Input {
   constructor(canvas) {
     this.keys = new Set();
@@ -6,6 +8,7 @@ export class Input {
     this.handlers = {};
     this.mouseDown = false;
     this.enabled = true;
+    this.gamepad = new Gamepad();
     addEventListener('keydown', (e) => {
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
@@ -35,8 +38,31 @@ export class Input {
   emit(ev, ...a) { (this.handlers[ev] || []).forEach((f) => f(...a)); }
   down(...ks) { return ks.some((k) => this.keys.has(k)); }
 
+  // the gamepad's buttons press keys (once per press); polled every frame from the driving state
+  _pad() {
+    const p = firstPad();
+    if (p) this.gamepad.poll(p, (k) => this.emit('press', k));
+    return p;
+  }
+
+  /** On foot: W/S or the left stick walk, A/D or the stick turn, Shift or the right trigger runs. */
+  get foot() {
+    const p = this.enabled ? firstPad() : null;
+    let forward = (this.down('w', 'arrowup') ? 1 : 0) - (this.down('s', 'arrowdown') ? 1 : 0);
+    let turn = (this.down('a', 'arrowleft') ? 1 : 0) - (this.down('d', 'arrowright') ? 1 : 0);
+    let run = this.down('shift');
+    if (p) {
+      const ly = p.axes[1] || 0, lx = p.axes[0] || 0;
+      if (Math.abs(ly) > 0.15) forward = -ly;
+      if (Math.abs(lx) > 0.15) turn = -lx;
+      run ||= (p.buttons[7]?.value || 0) > 0.5;
+    }
+    return { forward: Math.max(-1, Math.min(1, forward)), turn: Math.max(-1, Math.min(1, turn)), run };
+  }
+
   get state() {
     if (!this.enabled) return { throttle: 0, steer: 0, handbrake: false };
+    const pad = this._pad(), ps = pad ? padState(pad) : null;
     let throttle = 0, steer = 0;
     if (this.down('w', 'arrowup')) throttle += 1;
     if (this.down('s', 'arrowdown')) throttle -= 1;
@@ -44,7 +70,8 @@ export class Input {
     if (this.down('d', 'arrowright')) steer -= 1;
     if (this.down('shift')) throttle *= 0.45; // feather throttle
     throttle += this.touch.throttle; steer += this.touch.steer;
-    return { throttle: Math.max(-1, Math.min(1, throttle)), steer: Math.max(-1, Math.min(1, steer)), handbrake: this.down(' ') || this.touch.brake };
+    if (ps) { throttle += ps.throttle; steer += ps.steer; }
+    return { throttle: Math.max(-1, Math.min(1, throttle)), steer: Math.max(-1, Math.min(1, steer)), handbrake: this.down(' ') || this.touch.brake || !!ps?.handbrake };
   }
 
   // on-screen touch controls: left stick = steer, right pedals = throttle/reverse, brake

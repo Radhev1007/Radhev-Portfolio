@@ -130,6 +130,16 @@ let minimap = null;   // created with the multiplayer objects below; reads them 
 let loadToken = 0;
 const challenges = new ChallengeManager(onChallengeEvent);
 let gateways = null;   // world/gateways.js, rebuilt with each level
+// the truck's own geometry for the cameras mounted on it (bumper, wheel, driver): see camera/cameraRig.js
+const _eye = new THREE.Vector3();
+function truckView() {
+  const g = phys.geo, hood = Math.max(...g.boxes.filter((b) => b[5] === 'body' && b[3] >= 0.2).map((b) => b[2]));
+  const d = model.driver?.group.visible ? model.driver : null;
+  // his eyes: a little above and ahead of the head joint (figure units, in the head bone's frame)
+  if (d) { d.group.updateMatrixWorld(true); d.rig.bones.head.localToWorld(_eye.set(0, 0.08, 0.08)); }
+  return { noseZ: g.bodyZF, halfTrack: g.halfTrack, wheelR: g.R, hubY: phys.hubLocalY(0), hood, eye: d ? _eye : null };
+}
+
 // on foot (world/onFoot.js): the driver out of the truck, walking; null while he is driving
 let foot = null;
 function getOut() {
@@ -688,13 +698,12 @@ function tick(dt, forced) {
   if (watched) { spectatePhys.yaw = Math.atan2(_spF.set(0, 0, 1).applyQuaternion(watched.q).x, _spF.z); spectatePhys.stats.speed = watched.vel.length(); }
   if (foot) {
     const walking = state === 'play' && !mpUI.open;
-    const fw = walking ? (input.down('w', 'arrowup') ? 1 : 0) - (input.down('s', 'arrowdown') ? 1 : 0) : 0;
-    const tn = walking ? (input.down('a', 'arrowleft') ? 1 : 0) - (input.down('d', 'arrowright') ? 1 : 0) : 0;
-    foot.walker.update(dt, { forward: fw, turn: tn, run: walking && input.down('shift') }, level.hf, level.trunks.concat(level.posts));
+    if (walking) input._pad();   // (gamepad buttons: X gets back in)
+    foot.walker.update(dt, walking ? input.foot : { forward: 0, turn: 0, run: false }, level.hf, level.trunks.concat(level.posts));
     foot.fig.walk(foot.walker);
   }
   if (foot && !watched) rig.update(dt, foot.fig.group, foot.walker);
-  else rig.update(dt, watched ? watched.model.group : model.group, watched ? spectatePhys : phys);
+  else rig.update(dt, watched ? watched.model.group : model.group, watched ? spectatePhys : phys, watched ? null : truckView());
   // 3D audio: the camera listens, the truck's own sounds come from the truck
   camera.getWorldDirection(_aFwd);
   audio.setListener(camera.position, _aFwd, camera.up);
