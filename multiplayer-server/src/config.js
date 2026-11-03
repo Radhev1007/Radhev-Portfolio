@@ -34,4 +34,4 @@ export const MODES = ['free', 'race', 'timed', 'stunt', 'checkpoint', 'coop'];
 export const MODE_LIMIT = { free: 0, race: 6 * 60e3, timed: 4 * 60e3, stunt: 3 * 60e3, checkpoint: 5 * 60e3, coop: 8 * 60e3 };
 export const PALETTE_SIZE = 20;
 // vehicle bodies a player can drive (public/rc-crawler/src/vehicles/bodies.js); all on the same RC chassis
-export const VEHICLES = ['scx30', 'bronco', 'cruiser'];
+export const VEHICLES = ['scx30', 'bronco', 'willys'];

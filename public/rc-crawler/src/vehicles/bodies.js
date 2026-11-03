@@ -18,15 +18,17 @@ export const VEHICLES = [
     credit: { title: '2022 Ford Bronco', author: 'tonielpro520', changes: 'its wheels moved onto the RC hubs, tyres and alloys in black', url: 'https://sketchfab.com/3d-models/2022-ford-bronco-9eda0b20a8454f7b936ac2a393d82e8f', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
   {
-    id: 'cruiser', name: 'Toyota Land Cruiser 80', short: 'LAND CRUISER', file: 'assets/vehicles/cruiser.glb', paint: null,   // a photo scan: its paint is in the photos
-    wheels: { front: 1.63, rear: -1.23, y: 0.44, x: 0.81, r: 0.44 },
-    credit: { title: 'Older Matte Land Cruiser', author: 'jtressle', changes: 'wheels removed, simplified, underside darkened', url: 'https://sketchfab.com/3d-models/older-matte-land-cruiser-6fc05e37e8174446884981282dbc7a0d', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+    // an open buggy on solid axles: its own wheels turn on the RC hubs and its axle housings, tie rods and knuckles
+    // ride on the RC axles; narrowed to the RC track so its wheels sit where the RC tyres are
+    id: 'willys', name: 'Willys Mountain Buggy', short: 'WILLYS', file: 'assets/vehicles/willys.glb', paint: null, fitTrack: true,
+    wheels: { front: 1.356, rear: -1.355, y: -0.475, x: 1.022, r: 0.564 },
+    credit: { title: 'Willys mountain buggy 1', author: 'Rustam T', changes: 'its wheels moved onto the RC hubs, its axles onto the RC axles, narrowed to the RC track, simplified', url: 'https://sketchfab.com/3d-models/willys-mountain-buggy-1-f536a233a3d84735ab4b967f90e212db', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   },
 ];
 export const VEHICLE_IDS = VEHICLES.map((v) => v.id);
 export const vehicleById = (id) => VEHICLES.find((v) => v.id === id) || VEHICLES[0];
 // a body's own colour when driving alone (in multiplayer each player's livery colour is used instead); a body
-// without one (the photo-scanned Land Cruiser) keeps the default
+// without one (the Willys, textured as modelled) keeps the default
 export const vehicleColor = (id) => vehicleById(id).color ?? 0xf1f1ee;
 
 // RC chassis reference: axles at +-wheelBase/2, hubs at hubRestY, tyres of wheelRadius
@@ -52,7 +54,7 @@ function template(v) {
 // its own proportions
 function fit(scene, v) {
   const w = v.wheels, s = WB / (w.front - w.rear);
-  const sx = v.exact ? 1 : Math.min(1.12, Math.max(0.96, HALF_TRACK / (w.x * s)));
+  const sx = v.fitTrack ? HALF_TRACK / (w.x * s) : v.exact ? 1 : Math.min(1.12, Math.max(0.96, HALF_TRACK / (w.x * s)));
   const holder = new THREE.Group();
   holder.name = `Body:${v.id}`;
   scene.scale.set(s * sx, s, s);

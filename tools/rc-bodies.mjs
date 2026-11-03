@@ -12,7 +12,8 @@
 //   RC_BODIES_DEPS=/tmp/rc-bodies node tools/rc-bodies.mjs bronco ~/Downloads/2022_ford_bronco.glb \
 //     public/rc-crawler/assets/vehicles/bronco.glb
 // ids with their own wheel handling: bronco (2022 Ford Bronco, tonielpro520), cruiser (Older Matte Land Cruiser,
-// jtressle), gladiator (2020 Jeep Gladiator, Ddiaz Design; CC BY-NC-SA, not in the game).
+// jtressle; retired), willys (Willys mountain buggy 1, Rustam T), gladiator (2020 Jeep Gladiator, Ddiaz Design;
+// CC BY-NC-SA, not in the game).
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 const req = createRequire(resolve(process.env.RC_BODIES_DEPS || '.', 'index.js'));
@@ -150,6 +151,21 @@ if (id === 'gladiator') {
     }
   }
   console.log('  running gear moved to the axle pieces:', moved, 'triangles');
+} else if (id === 'willys') {
+  // every part is its own named node. The front-left tyre and rim (material `wheels`) are saved as RCWheel, centred
+  // on the hub, in their own materials. What rides on each axle, so it moves with the wheels as the suspension
+  // works: the axle housing, the tie rods (the buggy steers at both ends) and the knuckles inside the wheels (not
+  // round: they must not turn with the wheel). The 4-link arms, coilovers, springs and anti-roll bars stay on the
+  // body, which keeps everything else exactly as modelled.
+  const W = /^(front|rear)_(left|right)_wheel$/;
+  const tyre = (rx) => box(root.listNodes().filter((n) => n.getMesh() && underName(n, rx) && n.getMesh().listPrimitives().some((p) => p.getMaterial()?.getName() === 'wheels')).flatMap((n) => nodePoints(n, 5)));
+  const fl = tyre(/^front_left_wheel$/), rl = tyre(/^rear_left_wheel$/);
+  const mid = (b, k) => (b.min[k] + b.max[k]) / 2;
+  wheels = { front: mid(fl, 2), rear: mid(rl, 2), y: mid(fl, 1), x: mid(fl, 0), r: (fl.max[1] - fl.min[1]) / 2 };
+  wheelSource = grabTriangles((c, mat, n) => mat === 'wheels' && underName(n, /^front_left_wheel$/));
+  const onAxle = (end) => (c, mat, n) => (underName(n, new RegExp(`^${end}_axle$|^${end}_steering_part_`)) || (underName(n, new RegExp(`^${end}_(left|right)_wheel$`)) && mat !== 'wheels'));
+  axleSources = { AxleFront: [wheels.front, grabTriangles(onAxle('front'))], AxleRear: [wheels.rear, grabTriangles(onAxle('rear'))] };
+  cutTriangles((c, mat, n) => underName(n, W) || underName(n, /^(front|rear)_axle$|^(front|rear)_steering_part_/));
 } else if (id === 'cruiser') {
   // a photogrammetry scan: the tyres are part of the body mesh, so cut out every triangle inside a tyre cylinder
   wheels = { front: 1.63, rear: -1.23, y: 0.44, x: 0.81, r: 0.44 };
@@ -160,7 +176,7 @@ if (id === 'gladiator') {
 //  - inside each wheel cylinder: rims, hubs, brakes (and the scan's tyres)
 //  - the running gear between the wheels below axle height: axles, driveshafts, arms (the RC chassis has its own)
 //  - the scan only: anything below the tyres' bottoms (ground picked up by the scan)
-if (!EXACT) {
+if (!EXACT && id !== 'willys') {   // (the willys brings its own running gear: nothing between the wheels is cut)
   const { front, rear, y: wy, x: wx, r } = wheels, scan = id === 'cruiser';
   const RC = r * (scan ? 1.14 : 1.12), XW = r * 0.8;
   cutTriangles((p) => {
@@ -254,7 +270,7 @@ if (wheelSource) {
   const node = (name, source, offset) => {
     const parts = new Map();   // tyre / alloy -> triangles
     for (const [mat, o] of source) {
-      const to = /Pneu/.test(mat?.getName() || '') ? TYRE : ALLOY;
+      const to = id === 'willys' ? mat : /Pneu/.test(mat?.getName() || '') ? TYRE : ALLOY;   // the willys keeps its own
       if (!parts.has(to)) parts.set(to, { pos: [], nor: [], uv: [] });
       const d = parts.get(to);
       for (let i = 0; i < o.pos.length; i++) d.pos.push(o.pos[i] - offset[i % 3]);
