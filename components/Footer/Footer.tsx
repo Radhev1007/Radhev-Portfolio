@@ -11,16 +11,16 @@ export function Footer() {
   const social = (label: string) => site.socials.find((s) => s.label === label)!.href;
   return (
     <footer className="border-t border-line">
-      <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-8 py-10 text-[length:var(--text-ui)] leading-[1.7] lg:grid-cols-[28.5%_1fr]">
+      <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-12 py-16 text-[length:var(--text-ui)] leading-[1.7] lg:gap-y-8 lg:py-10 lg:grid-cols-[28.5%_1fr]">
         <div>
           <p className="text-bone">{site.brand}</p>
           <p className="text-soft">{site.role}</p>
         </div>
-        <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-3 sm:gap-y-8">
           <p className="max-w-[28ch] text-mute">{site.tagline}</p>
           <nav aria-label="Footer">
             <h2 className="label">Navigation</h2>
-            <ul className="mt-3">
+            <ul className="mt-4 flex flex-col gap-3 lg:mt-3 lg:gap-0">
               {footerNav.map((n) => (
                 <li key={n.target}>
                   <button
@@ -39,7 +39,7 @@ export function Footer() {
           </nav>
           <div>
             <h2 className="label">Connect</h2>
-            <ul className="mt-3">
+            <ul className="mt-4 flex flex-col gap-3 lg:mt-3 lg:gap-0">
               <li>
                 <a href={`mailto:${site.email}`} className={link}>
                   Email
@@ -59,7 +59,7 @@ export function Footer() {
           </div>
         </div>
       </div>
-      <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-1 border-t border-line py-6 text-[length:var(--text-ui)] leading-[1.7] text-mute lg:grid-cols-[28.5%_1fr_auto]">
+      <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-3 border-t border-line py-8 lg:gap-y-1 lg:py-6 text-[length:var(--text-ui)] leading-[1.7] text-mute lg:grid-cols-[28.5%_1fr_auto]">
         <p>&copy; {new Date().getFullYear()} {site.brand}. All rights reserved.</p>
         <p>Designed with intention.</p>
         <button

@@ -2,11 +2,13 @@ import { Contact } from "@/components/Contact/Contact";
 import { Experience } from "@/components/Experience/Experience";
 import { Hero } from "@/components/Hero/Hero";
 import { Projects } from "@/components/Projects/Projects";
+import { FloatBand } from "@/components/Sections/FloatBand";
+import { LoopBand } from "@/components/Sections/LoopBand";
 import { About, Approach } from "@/components/Sections/Sections";
 import { homeJsonLd, jsonLdString } from "@/lib/seo";
 
 /**
- * Hero → about → selected work → approach → experience → contact.
+ * Hero → about → selected work → a looping ribbon → approach → experience → a closing line → contact.
  */
 export default function Home() {
   return (
@@ -16,9 +18,11 @@ export default function Home() {
       <Hero />
       <About />
       <Projects />
-      <div className="mt-16 lg:mt-24">
+      <LoopBand />
+      <div>
         <Approach />
         <Experience />
+        <FloatBand />
         <Contact />
       </div>
     </main>
