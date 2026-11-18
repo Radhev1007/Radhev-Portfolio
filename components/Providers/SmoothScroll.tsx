@@ -6,6 +6,9 @@ import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
+/** The fixed header's height: anchors land just below it. */
+const HEADER = -67;
+
 const LenisContext = createContext<Lenis | null>(null);
 
 export const useLenis = () => useContext(LenisContext);
@@ -16,7 +19,7 @@ export function useScrollTo() {
   return (id: string) => {
     const target = id === "home" ? 0 : document.getElementById(id);
     if (target === null) return;
-    if (lenis) lenis.scrollTo(target, { duration: 1.4, offset: 0 });
+    if (lenis) lenis.scrollTo(target, { duration: 1.4, offset: HEADER });
     else if (target === 0) window.scrollTo({ top: 0 });
     else target.scrollIntoView();
   };
@@ -51,7 +54,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       lenis?.resize();
       const target = id ? document.getElementById(id) : null;
       if (target) {
-        if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
+        if (lenis) lenis.scrollTo(target, { immediate: true, force: true, offset: HEADER });
         else target.scrollIntoView();
       } else {
         window.scrollTo(0, 0);

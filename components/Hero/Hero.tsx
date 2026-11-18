@@ -1,83 +1,48 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { Button } from "@/components/Animations/Button";
-import { HeroIllustration } from "@/components/Illustrations/HeroIllustration";
+import { Reveal } from "@/components/Animations/Reveal";
+import { TextReveal } from "@/components/Animations/TextReveal";
 import { site } from "@/lib/content";
-import { usePrefersReducedMotion } from "@/lib/hooks";
-import { intro, transition } from "@/lib/motion";
-import { HeroIdentity } from "./HeroIdentity";
-import { PixelField } from "./PixelField";
-import { ScrollCue } from "./ScrollCue";
-import { SocialLinks, SocialRail } from "./SocialLinks";
-import { useScrollTo } from "@/components/Providers/SmoothScroll";
+import { SocialLinks } from "./SocialLinks";
+import { ToolStrip } from "./ToolStrip";
 
 /**
- * Two columns rather than two stacked rows: the left carries the whole
- * written argument — disciplines, display line, statement, actions — and
- * the right is given over to an animated design-session illustration —
- * the work itself, shown rather than described.
+ * The reference's opening screen, typography first: the name in the left rail, a single headline and one
+ * grey line in the wide column, then the tools I work in.
  */
 export function Hero() {
-  const reduced = usePrefersReducedMotion();
-  const scrollTo = useScrollTo();
-
-  const appear = (delay: number) => ({
-    initial: { opacity: 0, y: reduced ? 0 : 16 },
-    animate: { opacity: 1, y: 0 },
-    transition: transition(delay, 1.1),
-  });
-
+  const headline = `${site.heroTitle.lead} ${site.heroTitle.mid} ${site.heroTitle.tail}`;
   return (
-    <section id="home" aria-label="Introduction" className="relative flex min-h-[100svh] flex-col overflow-hidden">
-      <PixelField />
-      <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-6 gutter pb-8 pt-24 md:grid-cols-12 md:gap-10 md:pb-10 md:pt-24">
-        {/* The illustration follows the words on narrow screens (so the headline, statement and résumé come
-            first on a phone) and takes the right-hand column on wide ones. It sits behind the written column's
-            stacking context, so the links and buttons there still take their own clicks. */}
-        <div data-pixel-avoid className="order-2 mx-auto w-full max-w-[300px] md:order-2 md:col-span-5 md:col-start-8 md:max-w-[520px] md:pr-14">
-          <HeroIllustration delay={intro.objects} />
+    <section id="home" aria-label="Introduction" className="gutter mx-auto max-w-[1920px] pb-24 pt-[calc(67px+clamp(120px,24svh,240px))] max-md:pt-[calc(67px+96px)]">
+      <div className="grid grid-cols-1 gap-x-5 gap-y-4 lg:grid-cols-[28.5%_1fr]">
+        <div className="text-[length:var(--text-ui)] leading-[1.7]">
+          <p className="text-bone">{site.brand}</p>
+          <p className="text-mute">
+            {site.location}
+            {site.available && <span> · {site.availabilityLabel}</span>}
+          </p>
+          <Reveal delay={0.85} className="mt-5">
+            <SocialLinks />
+          </Reveal>
         </div>
-
-        <div data-pixel-avoid className="relative z-10 order-1 md:order-1 md:col-span-6">
-          <HeroIdentity
-            lines={[site.heroTitle.lead, site.heroTitle.mid, site.heroTitle.tail]}
-            accent={site.heroTitle.accent}
-            delay={intro.title}
+        <div>
+          <TextReveal
+            as="h1"
+            immediate
+            delay={0.15}
+            text={headline}
+            className="max-w-[26ch] text-[length:var(--text-h1)] leading-[1.1] tracking-[-0.033em] text-bone"
           />
-
-          {/* The statement is the page's largest text block on phones, so it is painted at once (only its
-              slide-up waits for the intro): a fade from transparent held it back ~2.5 s on a mid-range phone,
-              and that is what Google measures as the page's load time. */}
-          <motion.p
-            className="mt-6 max-w-[52ch] text-body leading-[1.625] text-mute md:mt-8"
-            initial={{ y: reduced ? 0 : 16 }}
-            animate={{ y: 0 }}
-            transition={transition(intro.supporting, 1.1)}
-          >
-            {site.statement}
-          </motion.p>
-
-          <motion.div className="mt-8 flex flex-wrap items-center gap-3 md:mt-10" {...appear(intro.cta)}>
-            <Button href={site.resume} external cursor="view" cursorLabel="Open">
-              View Resume
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => scrollTo(site.heroCtas.secondary.target)}
-              cursor="view"
-              cursorLabel="Read"
-            >
-              {site.heroCtas.secondary.label}
-            </Button>
-          </motion.div>
-
-          <SocialLinks />
+          <Reveal delay={0.5}>
+            <p className="mt-3 max-w-[56ch] text-[length:var(--text-ui)] leading-[1.7] text-mute">{site.intro}</p>
+          </Reveal>
         </div>
       </div>
 
-      <SocialRail />
-      <ScrollCue />
+      <div className="mt-14 grid grid-cols-1 gap-x-5 lg:grid-cols-[28.5%_1fr]">
+        <div aria-hidden className="hidden lg:block" />
+        <Reveal delay={0.7}>
+          <ToolStrip />
+        </Reveal>
+      </div>
     </section>
   );
 }

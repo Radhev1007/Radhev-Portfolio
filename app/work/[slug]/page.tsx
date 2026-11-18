@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { seoTitle: title, seoDescription: description } = project.story;
   const url = workPath(project);
   const images = project.image
-    ? [{ url: project.image, width: 808, height: 632, alt: project.imageAlt ?? project.title }]
+    ? [{ url: project.image, width: 1400, height: 1095, alt: project.imageAlt ?? project.title }]
     : undefined;
   return {
     title,

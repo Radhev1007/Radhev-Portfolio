@@ -1,277 +1,158 @@
 "use client";
 
-import { ScrambleText } from "@/components/Animations/ScrambleText";
-import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Magnetic } from "@/components/Animations/Magnetic";
+import { GarageLauncher } from "@/components/Garage/Garage";
 import { useLenis, useScrollTo } from "@/components/Providers/SmoothScroll";
 import { navItems, site, type SectionId } from "@/lib/content";
-import { usePrefersReducedMotion } from "@/lib/hooks";
-import { ease, intro } from "@/lib/motion";
-import { GarageLauncher } from "@/components/Garage/Garage";
-import { Logo } from "@/components/Chrome/Logo";
-import { StatusBadge } from "./StatusBadge";
-
-/** 14px Host Grotesk, sentence case, −0.01em — the reference's nav type. */
-function NavLink({
-  item,
-  active,
-  onClick,
-}: {
-  item: (typeof navItems)[number];
-  active: boolean;
-  onClick: (e: React.MouseEvent) => void;
-}) {
-  return (
-    <Magnetic strength={0.4}>
-      <Link
-        href={"href" in item && item.href ? item.href : `/#${item.id}`}
-        onClick={"href" in item && item.href ? undefined : onClick}
-        aria-current={active ? "true" : undefined}
-        className={`block text-small tracking-[-0.01em] transition-colors duration-300 ${
-          active ? "text-bone" : "text-mute hover:text-bone"
-        }`}
-      >
-        <ScrambleText text={item.label} />
-      </Link>
-    </Magnetic>
-  );
-}
-
-function useActiveSection(enabled: boolean) {
-  const [active, setActive] = useState<SectionId>("home");
-  useEffect(() => {
-    if (!enabled) return;
-    const els = navItems.map((n) => document.getElementById(n.id)).filter(Boolean) as HTMLElement[];
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => e.isIntersecting && setActive(e.target.id as SectionId));
-      },
-      { rootMargin: "-45% 0px -50% 0px" },
-    );
-    els.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
-  }, [enabled]);
-  return active;
-}
+import { ease } from "@/lib/motion";
 
 /**
- * Flanking groups either side of a centred wordmark, as on the reference.
- * "Home" is carried by the wordmark itself, so the two groups stay even.
+ * The reference's header: a 67px black bar with a hairline, the name on the left and the links on the
+ * right. On the homepage the links scroll smoothly to their section and the current one turns white;
+ * on a case study they go to the homepage section. Below `md` the links move into a full-screen menu.
  */
-/** All four sit together on the right; the wordmark takes the left. */
-const items = navItems;
-
 export function Navigation() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const reduced = usePrefersReducedMotion();
   const scrollTo = useScrollTo();
   const lenis = useLenis();
-  const active = useActiveSection(isHome);
-
-  const { scrollY } = useScroll();
-  const [hidden, setHidden] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState<SectionId>("home");
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const firstLink = useRef<HTMLAnchorElement>(null);
 
-  useMotionValueEvent(scrollY, "change", (y) => {
-    const prev = scrollY.getPrevious() ?? 0;
-    setScrolled(y > 40);
-    setHidden(y > prev && y > 240 && !menuOpen);
-  });
+  // which section is under the reading line
+  useEffect(() => {
+    if (!isHome) return;
+    const els = navItems.map((n) => document.getElementById(n.id)).filter(Boolean) as HTMLElement[];
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && setActive(e.target.id as SectionId)),
+      { rootMargin: "-35% 0px -60% 0px" },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [isHome]);
 
-  // While the menu is open it is the page for keyboard and screen-reader users too: what is behind it is inert,
-  // focus moves to its first link, and returns to the toggle when it closes.
-  const toggle = useRef<HTMLButtonElement>(null);
+  // the open menu pauses smooth scrolling, closes on Escape and hands focus back to its button
   useEffect(() => {
     if (!menuOpen) return;
-    const behind = [...document.querySelectorAll<HTMLElement>("main, footer")];
-    behind.forEach((el) => (el.inert = true));
-    const t = setTimeout(() => document.querySelector<HTMLElement>("#mobile-menu a")?.focus(), 50);
-    const button = toggle.current;
-    return () => {
-      clearTimeout(t);
-      behind.forEach((el) => (el.inert = false));
-      button?.focus();
-    };
-  }, [menuOpen]);
-
-  useEffect(() => {
-    if (menuOpen) lenis?.stop();
-    else lenis?.start();
+    const fullScreen = !window.matchMedia("(min-width: 768px)").matches;
+    if (fullScreen) lenis?.stop();
+    firstLink.current?.focus();
+    const button = menuButton.current;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    // the desktop menu is a small drop-down, so a press anywhere outside the header closes it
+    const onPress = (e: PointerEvent) => {
+      if (!fullScreen && !(e.target as Element).closest("header")) setMenuOpen(false);
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onPress);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onPress);
+      lenis?.start();
+      button?.focus({ preventScroll: true });
+    };
   }, [menuOpen, lenis]);
 
   const go = (id: SectionId) => (e: React.MouseEvent) => {
-    if (!isHome) return; // let the Link navigate to /#id
+    if (!isHome) return; // the link itself navigates to /#id
     e.preventDefault();
     setMenuOpen(false);
-    lenis?.start(); // the open menu pauses Lenis; resume before scrolling
+    lenis?.start();
     scrollTo(id);
+    history.replaceState(null, "", id === "home" ? "/" : `/#${id}`);
   };
 
-  // Reveal once the hero intro has played (immediately elsewhere).
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), isHome && !reduced ? intro.nav * 1000 : 0);
-    return () => clearTimeout(t);
-  }, [isHome, reduced]);
+  const linkClass = (id: SectionId) =>
+    `transition-colors duration-300 hover:text-bone focus-visible:text-bone ${active === id ? "text-bone" : "text-mute"}`;
 
   return (
-    <>
-      <motion.header
-        className="fixed inset-x-0 top-0 z-50"
-        initial={{ y: -40, opacity: 0 }}
-        animate={{ y: !ready ? -40 : hidden ? -110 : 0, opacity: ready ? 1 : 0 }}
-        transition={{ duration: 0.8, ease: ease.outExpo }}
-      >
-        <div
-          className={`transition-[background-color,backdrop-filter] duration-700 ${
-            scrolled || menuOpen ? "bg-ink/70 backdrop-blur-xl" : "bg-transparent"
-          }`}
-        >
-        <nav
-          aria-label="Primary"
-          className="mx-auto flex h-[88px] max-w-[1600px] items-center justify-between gutter"
-        >
-          {/* The wordmark leads, as a masthead rather than a centred emblem. */}
-          <Magnetic strength={0.3}>
-            <Link
-              href="/"
-              onClick={go("home")}
-              className="flex items-center gap-3 text-bone"
-              aria-label={`${site.name.first} ${site.name.last} — home`}
-            >
-              <Logo className="h-6 w-auto" />
-              <span className="text-small font-medium uppercase tracking-[0.18em]">
-                {site.name.first}
-              </span>
-            </Link>
-          </Magnetic>
+    <header className="fixed inset-x-0 top-0 z-50 h-[67px] border-b border-line bg-ink">
+      <nav aria-label="Primary" className="gutter mx-auto flex h-full max-w-[1920px] items-center justify-between text-[length:var(--text-ui)] leading-[1.7]">
+        <Link href="/" onClick={go("home")} className="text-bone">
+          {site.brand}
+          <span className="hidden text-mute sm:inline"> · Senior UX Designer / Product Designer</span>
+        </Link>
 
-          <div className="flex items-center gap-8 md:gap-10">
-            <ul className="hidden items-center gap-10 md:flex">
-              {items.map((item) => (
-                <li key={item.id}>
-                  <NavLink item={item} active={isHome && active === item.id} onClick={go(item.id)} />
-                </li>
-              ))}
-            </ul>
-
-            {/* The one action the nav is for: straight into a WhatsApp chat. */}
-            <a
-              href={site.whatsapp}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Let's talk on WhatsApp"
-              data-cursor="cta"
-              className="group hidden items-center gap-2 rounded-control border border-line px-4 py-2 text-small tracking-[-0.01em] text-bone transition-colors duration-300 hover:border-bone/45 hover:bg-bone/5 md:inline-flex"
-            >
-              <ScrambleText text="Let's talk" />
-              <span
-                aria-hidden
-                className="transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-1"
-              >
-                →
-              </span>
-            </a>
-
-            <div className="flex items-center gap-5">
-              {/* A toggle rather than a nav item: there is nothing to scroll
-                  to and nothing to deep-link. */}
-              <GarageLauncher className="opacity-60" />
-              {/* a 44px target around the 16px glyph */}
-              <button
-                ref={toggle}
-                type="button"
-                className="relative -m-3 grid size-11 place-items-center"
-                aria-expanded={menuOpen}
-                aria-controls="mobile-menu"
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
-                onClick={() => setMenuOpen((v) => !v)}
-              >
-                <span
-                  className={`absolute h-px w-4 bg-bone transition-transform duration-500 ${menuOpen ? "rotate-45" : "-translate-y-[3px]"}`}
-                />
-                <span
-                  className={`absolute h-px w-4 bg-bone transition-transform duration-500 ${menuOpen ? "-rotate-45" : "translate-y-[3px]"}`}
-                />
-              </button>
-            </div>
-          </div>
-        </nav>
+        <div className="flex items-center gap-5 md:gap-7">
+          <a
+            href={`mailto:${site.email}`}
+            className="hidden text-bone underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:decoration-bone md:inline"
+          >
+            Email
+          </a>
+          <GarageLauncher className="opacity-60" />
+          <button
+            ref={menuButton}
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="site-menu"
+            onClick={() => setMenuOpen((o) => !o)}
+            className="group -mr-2 flex items-center gap-2 px-2 py-3 text-[13px] font-bold uppercase leading-none tracking-[0.03em] text-bone"
+          >
+            Menu
+            <DotGrid open={menuOpen} />
+          </button>
         </div>
-      </motion.header>
+      </nav>
 
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            id="mobile-menu"
-            className="fixed inset-0 z-40 flex flex-col justify-between bg-ink gutter pb-10 pt-32"
-            initial={{ clipPath: "inset(0 0 100% 0)" }}
-            animate={{ clipPath: "inset(0 0 0% 0)" }}
-            exit={{ clipPath: "inset(0 0 100% 0)" }}
-            transition={{ duration: 0.8, ease: ease.inOutQuart }}
+            id="site-menu"
+            className="fixed inset-x-0 bottom-0 top-[67px] z-40 overflow-y-auto bg-ink md:absolute md:inset-x-auto md:bottom-auto md:right-[var(--gutter)] md:top-full md:overflow-visible md:border md:border-t-0 md:border-line md:px-6 md:py-5"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.35, ease: ease.outExpo }}
           >
-            <ul className="flex flex-col gap-2">
-              {navItems.map((item, i) => (
-                <li key={item.id} className="overflow-hidden">
-                  <motion.div
-                    initial={{ y: "110%" }}
-                    animate={{ y: 0 }}
-                    exit={{ y: "110%" }}
-                    transition={{ duration: 0.8, ease: ease.outExpo, delay: 0.15 + i * 0.05 }}
+            {/* phones: a full-screen list; from tablet up, a compact right-aligned stack under the button */}
+            <ul className="gutter flex flex-col pt-6 md:items-end md:gap-1.5 md:p-0">
+              {navItems.map((n, i) => (
+                <li key={n.id} className="border-b border-line md:border-0">
+                  <Link
+                    ref={i === 0 ? firstLink : undefined}
+                    href={`/#${n.id}`}
+                    onClick={go(n.id)}
+                    aria-current={active === n.id ? "location" : undefined}
+                    className={`block py-5 text-[length:var(--text-h1)] leading-none tracking-[-0.033em] transition-colors duration-300 hover:text-bone focus-visible:text-bone md:py-0 md:text-[13px] md:font-bold md:uppercase md:leading-[1.35] md:tracking-[0.03em] ${active === n.id ? "text-bone" : "text-soft"}`}
                   >
-                    <Link
-                      href={"href" in item && item.href ? item.href : `/#${item.id}`}
-                      onClick={(e) => {
-                        setMenuOpen(false);
-                        if (!("href" in item && item.href)) go(item.id)(e);
-                      }}
-                      className="flex items-baseline gap-4 py-2 text-headline font-light leading-[1.05] tracking-[-0.03em] md:text-headline"
-                    >
-                      <span className="label">0{i + 1}</span>
-                      <ScrambleText text={item.label} onMount />
-                    </Link>
-                  </motion.div>
+                    {n.label}
+                  </Link>
                 </li>
               ))}
+              <li className="md:mt-3">
+                <a href={`mailto:${site.email}`} className="block py-5 text-[length:var(--text-ui)] text-mute transition-colors duration-300 hover:text-bone md:py-0">
+                  {site.email}
+                </a>
+              </li>
             </ul>
-            <motion.div
-              className="flex flex-col gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { delay: 0.5 } }}
-              exit={{ opacity: 0 }}
-            >
-              {site.available && <StatusBadge className="inline-flex self-start" />}
-              <a href={`mailto:${site.email}`} className="text-lead">
-                {site.email}
-              </a>
-              <a
-                href={site.resume}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 self-start rounded-control border border-line px-4 py-3 text-small uppercase tracking-[0.12em]"
-              >
-                View résumé <span aria-hidden>↗</span>
-              </a>
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {site.socials.map((s) => (
-                  <a key={s.label} href={s.href} target="_blank" rel="noreferrer" className="label !text-bone">
-                    <ScrambleText text={s.label} />
-                  </a>
-                ))}
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </header>
   );
 }
 
+/** Four squares in a two-by-two grid, as on the reference menu button; they turn into diamonds when the menu opens. */
+function DotGrid({ open }: { open: boolean }) {
+  return (
+    <motion.svg
+      aria-hidden
+      viewBox="0 0 6 6"
+      className="size-3"
+      fill="currentColor"
+      animate={{ rotate: open ? 45 : 0 }}
+      transition={{ duration: 0.45, ease: ease.outExpo }}
+    >
+      <rect width="2" height="2" />
+      <rect x="4" width="2" height="2" />
+      <rect y="4" width="2" height="2" />
+      <rect x="4" y="4" width="2" height="2" />
+    </motion.svg>
+  );
+}

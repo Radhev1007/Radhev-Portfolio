@@ -3,10 +3,6 @@ import { Host_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import type { ReactNode } from "react";
-import { Backdrop } from "@/components/Chrome/Backdrop";
-import { StatusBar } from "@/components/Chrome/StatusBar";
-import { Cursor } from "@/components/Cursor/Cursor";
-import { IntroLoader } from "@/components/Chrome/IntroLoader";
 import { Footer } from "@/components/Footer/Footer";
 import { Navigation } from "@/components/Navigation/Navigation";
 import { SmoothScroll } from "@/components/Providers/SmoothScroll";
@@ -17,11 +13,7 @@ import "@/styles/globals.css";
 
 const sans = Host_Grotesk({ subsets: ["latin"], variable: "--font-host-grotesk", display: "swap" });
 
-/*
- * One typeface. Geist Mono, used for the small uppercase labels, is gone: they are Host Grotesk at 500 with
- * tabular figures (so the status bar's clock does not jitter), and `--font-mono` points at the same face.
- */
-
+/* One typeface, Host Grotesk, self-hosted through next/font. Hierarchy comes from size and colour. */
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -52,18 +44,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Script id="scroll-restoration" strategy="beforeInteractive">{`history.scrollRestoration='manual'`}</Script>
         <a
           href="#main"
-          className="fixed left-4 top-4 z-[200] -translate-y-24 bg-bone px-4 py-2 text-small text-ink focus:translate-y-0"
+          className="fixed left-4 top-4 z-[200] -translate-y-24 bg-bone px-4 py-2 text-[length:var(--text-ui)] text-ink focus:translate-y-0"
         >
           Skip to content
         </a>
-        <Backdrop />
         <SmoothScroll>
-            <IntroLoader />
             <Navigation />
             {children}
             <Footer />
-            <StatusBar />
-            <Cursor />
         </SmoothScroll>
         {/* Vercel Web Analytics: visits, pages, referrers, countries and devices, without cookies (vercel.com →
             project → Analytics). Sends nothing outside Vercel, e.g. on localhost or the static build. */}

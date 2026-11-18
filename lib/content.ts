@@ -16,12 +16,15 @@ export const site = {
    * step is bound to viewport height and only fits a word or two.
    */
   heroTitle: {
-    lead: "I design complex",
-    mid: "digital products into",
-    tail: "clear experiences.",
-    /** Set in the accent colour wherever it appears in the headline. */
-    accent: "products",
+    lead: "I turn complex products",
+    mid: "into clear, usable",
+    tail: "experiences.",
+    /** Used by the share card to set one word apart. */
+    accent: "clear,",
   },
+  /** The homepage hero's supporting line. */
+  intro:
+    "I'm Radhev, a UI/UX and Product Designer with five years of experience across enterprise SaaS, fintech, education and government. I take complicated workflows and make them simple to understand, hand over and use.",
   brand: "Radhev R",
   /** One wording everywhere: the hero, the footer, the share card and structured data. */
   role: "Senior UI/UX & Product Designer",
@@ -55,8 +58,9 @@ export const site = {
 } as const;
 
 export const navItems = [
-  { id: "work", label: "Work" },
-  { id: "experience", label: "Experience" },
+  { id: "work", label: "Selected Work" },
+  { id: "about", label: "About" },
+  { id: "focus", label: "Focus" },
   { id: "contact", label: "Contact" },
 ] as const;
 
@@ -64,7 +68,7 @@ export const navItems = [
  * Every scrollable target, not only the ones the nav lists. "home" is reachable
  * from the wordmark and the footer without being a nav item.
  */
-export type SectionId = (typeof navItems)[number]["id"] | "home";
+export type SectionId = (typeof navItems)[number]["id"] | "home" | "experience" | "clients" | "open";
 
 /* ── Projects ───────────────────────────────────────────────── */
 
@@ -106,6 +110,8 @@ export type Project = {
   title: string;
   /** "Concept" for self-initiated work, shown on the card and the page; omitted when not confirmed either way. */
   status?: "Concept";
+  /** The organisation the work is for or about, where the title names one. */
+  client?: string;
   categories: string[];
   description: string;
   role: string;
@@ -124,6 +130,7 @@ const conceptScope =
 export const projects: Project[] = [
   {
     slug: "dilmon-property-dashboard",
+    client: "Dilmon",
     story: {
       seoTitle: "Dilmon Property Management Dashboard — UI/UX",
       seoDescription:
@@ -152,7 +159,7 @@ export const projects: Project[] = [
       scope:
         "Published on Behance, where the full set of screens lives.",
     },
-    image: "/projects/dilmon-property-dashboard.webp",
+    image: "/projects/dilmon-property-dashboard.jpg",
     imageAlt: "Dilmon property dashboard on a tablet: portfolio value, debt and equity cards, portfolio allocation, capital structure, a performance snapshot and a geographic exposure map",
     href: "https://www.behance.net/gallery/257441355/Dilmon-Property-management-Admin-Dashboard",
     number: "01",
@@ -166,6 +173,7 @@ export const projects: Project[] = [
   },
   {
     slug: "kia-landing-page",
+    client: "Kuwait Investment Authority",
     status: "Concept",
     story: {
       seoTitle: "Kuwait Investment Authority Landing Page — UI Concept",
@@ -194,7 +202,7 @@ export const projects: Project[] = [
       scope:
         "A concept published on Behance, not the Kuwait Investment Authority's live website.",
     },
-    image: "/projects/kia-landing-page.webp",
+    image: "/projects/kia-landing-page.jpg",
     imageAlt: "Kuwait Investment Authority landing page concept on a laptop: the line Safeguarding Kuwait's Wealth for Future Generations over the Kuwait Towers",
     href: "https://www.behance.net/gallery/205427461/KIA-Concept-landing-page",
     number: "02",
@@ -208,6 +216,7 @@ export const projects: Project[] = [
   },
   {
     slug: "university-admin-dashboard",
+    client: "Kuwait University",
     status: "Concept",
     story: {
       seoTitle: "KW University Admin Dashboard & Student App — UI/UX Case Study",
@@ -238,7 +247,7 @@ export const projects: Project[] = [
       scope:
         "A self-initiated concept, published on Behance, with provisional personas and an expert usability review of the screens.",
     },
-    image: "/projects/kw-university-dashboard-app.webp",
+    image: "/projects/kw-university-dashboard-app.jpg",
     imageAlt: "Kuwait University dashboard and mobile cover: the student app's home screen, with credit progress and today's schedule, on a phone between dark rocks",
     href: "https://www.behance.net/gallery/205423733/KW-University-Admin-Dashboard-Concept",
     number: "03",
@@ -252,6 +261,7 @@ export const projects: Project[] = [
   },
   {
     slug: "stride-fitness-dashboard",
+    client: "Stride",
     status: "Concept",
     story: {
       seoTitle: "Stride Health & Fitness Dashboard — UI/UX Case Study",
@@ -282,7 +292,7 @@ export const projects: Project[] = [
       scope:
         "A self-initiated concept, published on Behance, with role-based personas built from the brief and outcomes stated as goals.",
     },
-    image: "/projects/stride-health-fitness.webp",
+    image: "/projects/stride-health-fitness.jpg",
     imageAlt: "Stride health and fitness dashboard cover: the Health & Fitness Dashboard title beside a trainer, with heart-rate, weekly compliance and attention-required callouts",
     href: "https://www.behance.net/gallery/166160121/Stride-Health-Fitness-Case-Study",
     number: "04",
@@ -322,7 +332,7 @@ export const projects: Project[] = [
       ],
       scope: conceptScope,
     },
-    image: "/projects/dashboard-concept.webp",
+    image: "/projects/dashboard-concept.jpg",
     imageAlt: "Employee self-service dashboard: loan and leave balances, an uncovered-hours gauge, recent requests and request forms",
     href: "https://www.behance.net/gallery/164544999/Dashboard-Concept",
     number: "05",
@@ -336,6 +346,7 @@ export const projects: Project[] = [
   },
   {
     slug: "thuna-mobile-ui",
+    client: "Thuna.Care",
     story: {
       seoTitle: "Thuna Care Mobile App — Elder-Care UI/UX",
       seoDescription:
@@ -361,7 +372,7 @@ export const projects: Project[] = [
       scope:
         "Published on Behance, where the full set of screens lives.",
     },
-    image: "/projects/thuna-mobile-ui.webp",
+    image: "/projects/thuna-mobile-ui.jpg",
     imageAlt: "Thuna.Care mobile app screens: splash, an elder's home screen with an SOS button and vitals, and an emergency responder's dispatch",
     href: "https://www.behance.net/gallery/128315087/UI-UX-Design-Thuna-Mobile-UI",
     number: "06",
@@ -480,17 +491,86 @@ export const specialisms: Specialism[] = [
 
 
 
-/* ── Process ────────────────────────────────────────────────── */
 
-export const processSteps = [
-  { n: "01", title: "Discover", body: "Understand business requirements, user needs and the constraints of the product." },
-  { n: "02", title: "Structure", body: "Define the information architecture and the user flows that hold it together." },
-  { n: "03", title: "Prototype", body: "Turn flows into wireframes and interactive Figma prototypes." },
-  { n: "04", title: "Systemise", body: "Build scalable interface components and the design system behind them." },
-  { n: "05", title: "Validate", body: "Test with usability evaluations, heuristic reviews and feedback, then iterate." },
-  { n: "06", title: "Deliver", body: "Work with developers through implementation and run design QA to keep quality consistent." },
+
+
+
+
+/* ── Homepage sections ──────────────────────────────────────── */
+
+/** About: written from the experience above; nothing here is a claim the roles do not already make. */
+export const about = [
+  "I'm a UI/UX Designer focused on creating thoughtful digital experiences and solving complex product challenges. Over the past five years, I've worked across multiple industries, designing enterprise platforms, SaaS products and user-focused interfaces.",
+  "Lately that has meant 18+ client projects for Qatar and GCC organisations, from government portals and fintech to CRM platforms: complex dashboards, scalable design systems and interactive prototypes for 400+ screens.",
+  "I work in Figma with design tokens, components and Auto Layout, hand developers specs I have checked against the build, and use AI-assisted workflows, including Figma MCP and Figma AI, to move faster without lowering the bar.",
 ] as const;
 
+/** Focus: three columns, as the reference sets them. */
+export const focus = [
+  {
+    title: "Design",
+    items: ["Product Design", "UI/UX Design", "Interaction Design", "Wireframing", "Prototyping", "Design Systems", "Responsive Web Design"],
+  },
+  {
+    title: "Strategy",
+    items: ["User Research", "Competitor Analysis", "Information Architecture", "User Flows", "UX Problem Solving", "Design Thinking"],
+  },
+  {
+    title: "Build",
+    items: [
+      "Figma",
+      "Design Tokens",
+      "Component Libraries",
+      "Auto Layout",
+      "Interactive Prototypes",
+      "Developer Handoff",
+      "AI-assisted Design Workflows",
+      "Figma MCP",
+      "Blender",
+    ],
+  },
+] as const;
 
+/**
+ * Organisations named in the experience above: the key clients on the Appstation role and the product
+ * redesigned at Beinex. Text only; no logos are used without the clients' permission.
+ */
+export const clients = [
+  "Invest Qatar",
+  "Milaha",
+  "MOCI",
+  "MOT",
+  "NPC",
+  "QOC",
+  "QFZ",
+  "Joud BNPL",
+  "Applabtracker CRM",
+  "Aurex",
+] as const;
 
+export const openTo = {
+  statement: "Open to opportunities and meaningful collaborations.",
+  lead: "I'm interested in connecting with",
+  list: [
+    "Product companies.",
+    "Technology teams.",
+    "UI/UX design teams.",
+    "SaaS and enterprise product organisations.",
+    "Recruiters hiring experienced UI/UX Designers.",
+  ],
+  cta: "If that sounds like you, drop me a line",
+} as const;
 
+/** The tools shown under the hero, all of them named in the roles and projects above. `mark` keys into components/Hero/ToolStrip. */
+export const tools = [
+  { name: "Figma", mark: "figma" },
+  { name: "Photoshop", mark: "photoshop" },
+  { name: "Jitter", mark: "jitter" },
+  { name: "Blender", mark: "blender" },
+  { name: "Claude", mark: "claude" },
+  { name: "ChatGPT", mark: "chatgpt" },
+  { name: "Hotjar", mark: "hotjar" },
+  { name: "HTML", mark: "html5" },
+  { name: "CSS", mark: "css" },
+  { name: "React", mark: "react" },
+] as const;

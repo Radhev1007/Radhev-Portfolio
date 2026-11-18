@@ -75,7 +75,7 @@ export function GarageLauncher({ className }: { className?: string }) {
         aria-label="Open my garage — drive the RC crawler"
         title="My garage"
         data-cursor="cta"
-        className={`group grid size-6 place-items-center text-bone transition-opacity duration-300 hover:opacity-100 ${className ?? ""}`}
+        className={`group grid h-8 w-9 place-items-center text-bone transition-opacity duration-300 hover:opacity-100 ${className ?? ""}`}
       >
         <RcIcon />
       </button>
@@ -101,31 +101,41 @@ export function GarageLauncher({ className }: { className?: string }) {
 }
 
 /**
- * A lifted 4×4 in side profile on a 24px grid: one rounded outline from the
- * bumper over the raked windscreen and roof, wheel arches cut with clearance
- * above oversized tyres, a single pillar for the windows, and the accent as a
- * tail light. On hover the body rocks on its suspension — a hint that it drives.
+ * A lifted 4×4 in side profile, drawn as a solid silhouette on a 28×20 grid: a long hood, a boxy cab with a
+ * raked windscreen, big tyres with room above them. The windows and wheel arches are cut out by a mask, a light bar on the roof, and tyres standing clear of the arches with a
+ * hub cut into each. It is one colour (currentColor), so it takes the nav's white and its hover. On hover
+ * the body rocks on its suspension, a hint that it drives.
  */
 function RcIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-6 overflow-visible" fill="none">
-      <g transform="translate(0 -1.4)">
-        <g className="origin-bottom [transform-box:fill-box] group-hover:animate-[rock_0.6s_ease-in-out_infinite]">
-          <path
-            d="M2.6 14.6V12.2Q2.6 11 3.8 10.9L8.2 10.6 10.4 7.9Q10.7 7.5 11.2 7.5H19.4Q20.2 7.5 20.5 8.2L21.3 10.6Q21.4 10.9 21.4 11.4V14.6H20.3A3.2 3.2 0 0 0 13.9 14.6H10.1A3.2 3.2 0 0 0 3.7 14.6Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-          <path d="M15.2 7.6v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          <rect x="19.9" y="11.6" width="0.9" height="1.5" rx="0.35" fill="var(--color-accent)" />
-        </g>
-        {[6.9, 17.1].map((cx) => (
-          <g key={cx}>
-            <circle cx={cx} cy="17.3" r="2.3" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx={cx} cy="17.3" r="0.75" fill="currentColor" />
-          </g>
-        ))}
+    <svg viewBox="0 0 28 20" aria-hidden className="h-[22px] w-8 overflow-visible">
+      <defs>
+        <mask id="rc-body" maskUnits="userSpaceOnUse" x="0" y="0" width="28" height="20">
+          <rect width="28" height="20" fill="#fff" />
+          {/* windows */}
+          <rect x="11.4" y="4.2" width="4.4" height="3" rx="0.6" fill="#000" />
+          <rect x="17.2" y="4.2" width="4.6" height="3" rx="0.6" fill="#000" />
+          {/* wheel arches */}
+          <circle cx="7.2" cy="14.2" r="5.4" fill="#000" />
+          <circle cx="20.8" cy="14.2" r="5.4" fill="#000" />
+        </mask>
+        <mask id="rc-tyre" maskUnits="userSpaceOnUse" x="0" y="0" width="28" height="20">
+          <rect width="28" height="20" fill="#fff" />
+          <circle cx="7.2" cy="14.2" r="1.6" fill="#000" />
+          <circle cx="20.8" cy="14.2" r="1.6" fill="#000" />
+        </mask>
+      </defs>
+      <g className="origin-bottom [transform-box:fill-box] group-hover:animate-[rock_0.6s_ease-in-out_infinite]">
+        <rect x="12.4" y="0.8" width="7.2" height="1.1" rx="0.55" fill="currentColor" />
+        <path
+          mask="url(#rc-body)"
+          fill="currentColor"
+          d="M1.8 12.8V9.6Q1.8 8.4 3 8.2L8.4 7.4 9.6 3.6Q9.8 2.8 10.7 2.8H22.6Q23.4 2.8 23.4 3.6V7.6L25.2 8Q26.4 8.3 26.4 9.5V12.8z"
+        />
+      </g>
+      <g mask="url(#rc-tyre)" fill="currentColor">
+        <circle cx="7.2" cy="14.2" r="4.4" />
+        <circle cx="20.8" cy="14.2" r="4.4" />
       </g>
     </svg>
   );
