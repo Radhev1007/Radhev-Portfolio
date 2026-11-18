@@ -11,7 +11,7 @@ import {
 export function About() {
   return (
     <CopySection id="about" copy={aboutSection}>
-      <div className="flex max-w-[640px] flex-col gap-4 text-[length:var(--text-ui)] leading-[1.7]">
+      <div className="flex max-w-[640px] flex-col gap-5 text-[length:var(--text-ui)] leading-[1.7]">
         {about.map((para, i) => (
           <Reveal key={i} delay={i * 0.05}>
             <p className={i === 0 ? "text-bone" : "text-soft"}>{para}</p>

@@ -19,9 +19,9 @@ export function CopySection({ id, copy, children }: { id: string; copy: SectionC
     <Section id={id} title={copy.label}>
       <Reveal>
         <Headline>{copy.headline}</Headline>
-        {copy.description && <Lead className="mt-3">{copy.description}</Lead>}
+        {copy.description && <Lead className="mt-5">{copy.description}</Lead>}
       </Reveal>
-      {children && <div className="mt-10">{children}</div>}
+      {children && <div className="mt-12 lg:mt-16">{children}</div>}
     </Section>
   );
 }
@@ -31,7 +31,7 @@ export function NumberedList({ items }: { items: readonly (Numbered | { title: s
   return (
     <ol className="text-[length:var(--text-ui)] leading-[1.7]">
       {items.map((it, i) => (
-        <li key={it.title} className="grid grid-cols-[2.5rem_1fr] gap-x-5 border-t border-line py-5 first:border-t-0 first:pt-0 sm:grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,2fr)]">
+        <li key={it.title} className="grid grid-cols-[2.5rem_1fr] gap-x-5 border-t border-line py-7 first:border-t-0 first:pt-0 sm:grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,2fr)]">
           <span aria-hidden className="text-mute tabular-nums">
             {String(i + 1).padStart(2, "0")}
           </span>

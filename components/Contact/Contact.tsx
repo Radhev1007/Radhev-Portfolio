@@ -15,14 +15,14 @@ export function Contact() {
     <Section id="contact" title={contactSection.label}>
       <Reveal>
         <Headline>{contactSection.headline}</Headline>
-        <div className="mt-3 flex max-w-[56ch] flex-col gap-3">
+        <div className="mt-5 flex max-w-[56ch] flex-col gap-4">
           {contactSection.description.map((p) => (
             <Lead key={p}>{p}</Lead>
           ))}
         </div>
       </Reveal>
       <Reveal delay={0.1}>
-        <dl className="mt-8 text-[length:var(--text-ui)] leading-[1.7]">
+        <dl className="mt-12 text-[length:var(--text-ui)] leading-[1.7]">
           <div className="flex gap-x-5">
             <dt className="w-20 text-mute">Email</dt>
             <dd>
@@ -36,7 +36,7 @@ export function Contact() {
             <dd className="text-bone">{site.location}</dd>
           </div>
         </dl>
-        <ul className="mt-6 text-[length:var(--text-ui)] leading-[1.7]">
+        <ul className="mt-8 flex flex-col gap-1 text-[length:var(--text-ui)] leading-[1.7]">
           <li>
             <a href={`mailto:${site.email}`} className={linkClass}>
               Get in Touch
@@ -51,9 +51,6 @@ export function Contact() {
             </li>
           ))}
         </ul>
-        <p className="mt-6 border-t border-line pt-5 text-[length:var(--text-ui)] leading-[1.7] text-mute">
-          <span className="text-bone">Availability.</span> {contactSection.availability}
-        </p>
       </Reveal>
     </Section>
   );
