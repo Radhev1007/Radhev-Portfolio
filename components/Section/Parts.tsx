@@ -21,7 +21,7 @@ export function CopySection({ id, copy, children }: { id: string; copy: SectionC
         <Headline>{copy.headline}</Headline>
         {copy.description && <Lead className="mt-5">{copy.description}</Lead>}
       </Reveal>
-      {children && <div className="mt-12 lg:mt-16">{children}</div>}
+      {children && <div className="mt-14 lg:mt-16">{children}</div>}
     </Section>
   );
 }

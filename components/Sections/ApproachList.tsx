@@ -66,7 +66,7 @@ export function ApproachList({ items }: { items: readonly Item[] }) {
                 setArmed(true);
                 setActive(i);
               }}
-              className="group grid grid-cols-[2.5rem_1fr] gap-x-5 border-t border-line py-7 first:border-t-0 first:pt-0 sm:grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,2fr)]"
+              className="group grid grid-cols-[2.5rem_1fr] gap-x-5 gap-y-1.5 border-t border-line py-7 first:border-t-0 first:pt-0 sm:grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,2fr)]"
             >
               <span aria-hidden className={`tabular-nums transition-colors duration-300 ${on ? "text-bone" : "text-mute"}`}>
                 {String(i + 1).padStart(2, "0")}

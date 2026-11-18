@@ -107,36 +107,31 @@ export function GarageLauncher({ className }: { className?: string }) {
  * the body rocks on its suspension, a hint that it drives.
  */
 function RcIcon() {
+  // A lifted rock crawler in line, to sit with the header's text links: cab body on long shocks over big knobby
+  // tyres. On hover the body rocks on its suspension while the tyres stay planted.
   return (
-    <svg viewBox="0 0 28 20" aria-hidden className="h-[22px] w-8 overflow-visible">
-      <defs>
-        <mask id="rc-body" maskUnits="userSpaceOnUse" x="0" y="0" width="28" height="20">
-          <rect width="28" height="20" fill="#fff" />
-          {/* windows */}
-          <rect x="11.4" y="4.2" width="4.4" height="3" rx="0.6" fill="#000" />
-          <rect x="17.2" y="4.2" width="4.6" height="3" rx="0.6" fill="#000" />
-          {/* wheel arches */}
-          <circle cx="7.2" cy="14.2" r="5.4" fill="#000" />
-          <circle cx="20.8" cy="14.2" r="5.4" fill="#000" />
-        </mask>
-        <mask id="rc-tyre" maskUnits="userSpaceOnUse" x="0" y="0" width="28" height="20">
-          <rect width="28" height="20" fill="#fff" />
-          <circle cx="7.2" cy="14.2" r="1.6" fill="#000" />
-          <circle cx="20.8" cy="14.2" r="1.6" fill="#000" />
-        </mask>
-      </defs>
+    <svg
+      viewBox="0 0 32 22"
+      aria-hidden
+      className="h-[22px] w-8 overflow-visible"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <g className="origin-bottom [transform-box:fill-box] group-hover:animate-[rock_0.6s_ease-in-out_infinite]">
-        <rect x="12.4" y="0.8" width="7.2" height="1.1" rx="0.55" fill="currentColor" />
-        <path
-          mask="url(#rc-body)"
-          fill="currentColor"
-          d="M1.8 12.8V9.6Q1.8 8.4 3 8.2L8.4 7.4 9.6 3.6Q9.8 2.8 10.7 2.8H22.6Q23.4 2.8 23.4 3.6V7.6L25.2 8Q26.4 8.3 26.4 9.5V12.8z"
-        />
+        <path d="M4.5 11.2 6.2 7.4H11.6L13.6 3.4H21.2L23 7.4H26.6Q28 7.4 28 8.8V11.2Z" strokeWidth="1.5" />
+        <rect x="14.6" y="4.9" width="5.4" height="2.5" rx="0.5" strokeWidth="1.1" />
+        <path d="M15.2 1.6H21" strokeWidth="1.4" />
       </g>
-      <g mask="url(#rc-tyre)" fill="currentColor">
-        <circle cx="7.2" cy="14.2" r="4.4" />
-        <circle cx="20.8" cy="14.2" r="4.4" />
-      </g>
+      <path d="M8.4 11.2 7.6 15.2M23.6 11.2 24.4 15.2" strokeWidth="1.3" />
+      {[7.6, 24.4].map((cx) => (
+        <g key={cx}>
+          <circle cx={cx} cy="16.6" r="4.2" strokeWidth="1.5" />
+          <circle cx={cx} cy="16.6" r="5.2" strokeWidth="1.1" strokeDasharray="1.3 1.4" />
+          <circle cx={cx} cy="16.6" r="1.3" fill="currentColor" stroke="none" />
+        </g>
+      ))}
     </svg>
   );
 }

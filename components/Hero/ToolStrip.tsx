@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Magnet from "@/components/Magnet/Magnet";
 import { tools } from "@/lib/content";
 import { iconPaths } from "./toolMarks";
 
@@ -19,7 +20,8 @@ const REACH = 220;
  *
  * Hover works like the macOS dock: the logo nearest the pointer swells and lifts, and the logos either side of it
  * swell less the further they are, so the magnification rolls along the strip as the pointer moves. Only the
- * logos grow; the tiles keep their size. Skipped for visitors who ask for reduced motion.
+ * logos grow; the tiles keep their size. Each logo also leans toward the pointer inside its tile (React Bits'
+ * Magnet). Skipped for visitors who ask for reduced motion.
  */
 export function ToolStrip() {
   const [tip, setTip] = useState<Tip>(null);
@@ -72,9 +74,11 @@ export function ToolStrip() {
                     onBlur={hide}
                     className="grid h-[66px] w-[99px] place-items-center rounded-[4px] bg-ink-3 transition-colors duration-300 hover:bg-line-strong focus-visible:bg-line-strong"
                   >
-                    <span data-mag className="inline-flex transition-transform duration-200 ease-out will-change-transform">
-                      <Mark mark={t.mark} />
-                    </span>
+                    <Magnet padding={30} magnetStrength={3} maxOffset={12}>
+                      <span data-mag className="inline-flex transition-transform duration-200 ease-out will-change-transform">
+                        <Mark mark={t.mark} />
+                      </span>
+                    </Magnet>
                   </span>
                 </li>
               ))}

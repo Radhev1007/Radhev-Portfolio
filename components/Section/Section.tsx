@@ -15,7 +15,7 @@ type Props = {
 export function Section({ id, title, children, className = "" }: Props) {
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-[67px] border-t border-line">
-      <div className={`gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-6 py-16 lg:py-24 lg:grid-cols-[28.5%_1fr] ${className}`}>
+      <div className={`gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-8 py-20 lg:gap-y-6 lg:py-24 lg:grid-cols-[28.5%_1fr] ${className}`}>
         <h2 id={`${id}-title`} className="label">
           {title}
         </h2>

@@ -39,8 +39,9 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
-  /* The reference's own scale: 14px body at 1.7, a 30px headline, 10px chips. */
-  --text-ui: 0.875rem;
+  /* The reference's own scale: 14px body at 1.7 (15px on phones, where 14 reads cramped), a 30px headline,
+     10px chips. */
+  --text-ui: 0.9375rem;
   --text-h1: 1.5rem;       /* 24 → 30 */
   --text-chip: 0.625rem;
 
@@ -61,6 +62,7 @@
 /* Type-scale steps. Unlayered, so they override the theme defaults above. */
 @media (min-width: 48rem) {
   :root {
+    --text-ui: 0.875rem;
     --text-h1: 1.875rem;
     --text-display: 4rem;
     --text-headline: 3rem;
@@ -98,8 +100,13 @@
 }
 
 :root {
-  --gutter: 1.25rem; /* 20px, as the reference */
+  --gutter: 1.5rem; /* 24px on phones; 20px from tablet up, as the reference */
   color-scheme: dark;
+}
+@media (min-width: 48rem) {
+  :root {
+    --gutter: 1.25rem;
+  }
 }
 
 /* ── Base ────────────────────────────────────────────────────── */

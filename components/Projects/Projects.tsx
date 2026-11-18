@@ -13,7 +13,7 @@ export function Projects() {
   return (
     <section id="work" aria-labelledby="work-title" className="scroll-mt-[67px]">
       <div className="border-t border-line">
-        <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-6 py-16 lg:py-24 lg:grid-cols-[28.5%_1fr]">
+        <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-8 py-20 lg:gap-y-6 lg:py-24 lg:grid-cols-[28.5%_1fr]">
           <h2 id="work-title" className="label">
             {workSection.label}
           </h2>
@@ -23,7 +23,7 @@ export function Projects() {
           </Reveal>
         </div>
       </div>
-      <ul className="gutter mx-auto flex max-w-[1920px] flex-col gap-16 lg:gap-24">
+      <ul className="gutter mx-auto flex max-w-[1920px] flex-col gap-24">
         {projects.map((p, i) => (
           <li key={p.slug}>
             <Project p={p} first={i === 0} />
@@ -39,9 +39,9 @@ function Project({ p, first }: { p: Project; first: boolean }) {
   const meta = [p.client, industry, p.story.year].filter(Boolean).join(" · ");
   return (
     <Reveal>
-      <article className="grid grid-cols-1 gap-x-5 gap-y-5 lg:grid-cols-[28.5%_1fr] lg:items-end">
-        <div className="order-2 flex flex-col gap-1 text-[length:var(--text-ui)] leading-[1.7] lg:order-1">
-          <h3 className="text-bone">{p.title}</h3>
+      <article className="grid grid-cols-1 gap-x-5 gap-y-7 lg:gap-y-5 lg:grid-cols-[28.5%_1fr] lg:items-end">
+        <div className="order-2 flex flex-col gap-2 lg:gap-1 text-[length:var(--text-ui)] leading-[1.7] lg:order-1">
+          <h3 className="mb-1 max-w-[22ch] text-[length:var(--text-h1)] leading-[1.1] tracking-[-0.033em] text-bone">{p.title}</h3>
           <p className="text-soft">{p.description}</p>
           <p className="text-mute">
             {meta}
