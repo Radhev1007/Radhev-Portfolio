@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Reveal } from "@/components/Animations/Reveal";
 import { Chip, Ext } from "@/components/Section/Section";
-import { projects, workPath, type Project } from "@/lib/content";
+import { Headline, Lead } from "@/components/Section/Parts";
+import { projects, workPath, workSection, type Project } from "@/lib/content";
 import { ProjectImage } from "./ProjectImage";
 
 /**
@@ -11,9 +12,17 @@ import { ProjectImage } from "./ProjectImage";
 export function Projects() {
   return (
     <section id="work" aria-labelledby="work-title" className="scroll-mt-[67px]">
-      <h2 id="work-title" className="sr-only">
-        Selected work
-      </h2>
+      <div className="border-t border-line">
+        <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-5 py-10 lg:grid-cols-[28.5%_1fr]">
+          <h2 id="work-title" className="label">
+            {workSection.label}
+          </h2>
+          <Reveal>
+            <Headline>{workSection.headline}</Headline>
+            <Lead className="mt-3">{workSection.description}</Lead>
+          </Reveal>
+        </div>
+      </div>
       <ul className="gutter mx-auto flex max-w-[1920px] flex-col gap-10 lg:gap-[30px]">
         {projects.map((p, i) => (
           <li key={p.slug}>
@@ -52,7 +61,7 @@ function Project({ p, first }: { p: Project; first: boolean }) {
           </ul>
           <p className="mt-3 flex flex-wrap gap-x-5 text-bone">
             <Link href={workPath(p)} className="underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:decoration-bone">
-              Case study
+              Explore project
             </Link>
             <a
               href={p.href}
