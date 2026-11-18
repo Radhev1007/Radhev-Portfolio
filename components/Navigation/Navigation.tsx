@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Logo } from "@/components/Chrome/Logo";
 import { GarageLauncher } from "@/components/Garage/Garage";
 import { useLenis, useScrollTo } from "@/components/Providers/SmoothScroll";
 import { navItems, site, type SectionId } from "@/lib/content";
@@ -73,9 +74,8 @@ export function Navigation() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 h-[67px] border-b border-line bg-ink">
       <nav aria-label="Primary" className="gutter mx-auto flex h-full max-w-[1920px] items-center justify-between text-[length:var(--text-ui)] leading-[1.7]">
-        <Link href="/" onClick={go("home")} className="text-bone">
-          {site.brand}
-          <span className="hidden text-mute sm:inline"> · Senior UX Designer / Product Designer</span>
+        <Link href="/" onClick={go("home")} aria-label={`${site.brand}, home`} className="flex items-center gap-3 text-bone">
+          <Logo className="h-[22px] w-auto" />
         </Link>
 
         <div className="flex items-center gap-5 md:gap-7">
