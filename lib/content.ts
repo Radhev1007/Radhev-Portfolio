@@ -659,7 +659,6 @@ export const contactSection = {
     "I'm interested in opportunities where I can contribute to meaningful digital products, solve complex design problems, and collaborate with teams that value thoughtful user experiences.",
     "If you're looking for a designer who brings together UX thinking, visual design, and product understanding, I'd be happy to connect.",
   ],
-  availability: "Open to Senior UI/UX Designer and Product Designer opportunities.",
 } as const;
 
 /* Footer */

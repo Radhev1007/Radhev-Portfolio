@@ -33,7 +33,7 @@ export function Experience() {
                     aria-expanded={isOpen}
                     aria-controls={panel}
                     onClick={() => toggle(r.company)}
-                    className="group grid w-full cursor-pointer grid-cols-[1fr_auto] items-start gap-x-5 py-5 text-left sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_13rem_1rem]"
+                    className="group grid w-full cursor-pointer grid-cols-[1fr_auto] items-start gap-x-5 py-7 text-left sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_13rem_1rem]"
                   >
                     <span className="text-bone">{r.company}</span>
                     <span aria-hidden className="relative mt-[0.6em] size-2.5 justify-self-end text-mute transition-colors duration-300 group-hover:text-bone sm:order-last">
@@ -53,15 +53,15 @@ export function Experience() {
                   className={`grid transition-[grid-template-rows] duration-500 ease-[var(--ease-out-expo)] motion-reduce:transition-none ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
                 >
                   <div className="overflow-hidden" inert={!isOpen}>
-                    <div className="pb-8">
+                    <div className="pb-12">
                       <p className="text-mute">{r.location}</p>
-                      <div className="mt-4 flex max-w-[640px] flex-col gap-3 text-soft">
+                      <div className="mt-5 flex max-w-[640px] flex-col gap-4 text-soft">
                         {r.summary.map((p) => (
                           <p key={p}>{p}</p>
                         ))}
                       </div>
-                      <p className="label mt-6">Key contributions</p>
-                      <ul className="mt-2 max-w-[640px] list-disc pl-5 text-soft marker:text-mute">
+                      <p className="label mt-8">Key contributions</p>
+                      <ul className="mt-3 flex max-w-[640px] list-disc flex-col gap-1.5 pl-5 text-soft marker:text-mute">
                         {r.points.map((pt) => (
                           <li key={pt}>{pt}</li>
                         ))}

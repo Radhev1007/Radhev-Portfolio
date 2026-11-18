@@ -13,17 +13,17 @@ export function Projects() {
   return (
     <section id="work" aria-labelledby="work-title" className="scroll-mt-[67px]">
       <div className="border-t border-line">
-        <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-5 py-10 lg:grid-cols-[28.5%_1fr]">
+        <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-6 py-16 lg:py-24 lg:grid-cols-[28.5%_1fr]">
           <h2 id="work-title" className="label">
             {workSection.label}
           </h2>
           <Reveal>
             <Headline>{workSection.headline}</Headline>
-            <Lead className="mt-3">{workSection.description}</Lead>
+            <Lead className="mt-5">{workSection.description}</Lead>
           </Reveal>
         </div>
       </div>
-      <ul className="gutter mx-auto flex max-w-[1920px] flex-col gap-10 lg:gap-[30px]">
+      <ul className="gutter mx-auto flex max-w-[1920px] flex-col gap-16 lg:gap-24">
         {projects.map((p, i) => (
           <li key={p.slug}>
             <Project p={p} first={i === 0} />
@@ -47,7 +47,7 @@ function Project({ p, first }: { p: Project; first: boolean }) {
             {meta}
             <span className="block">{p.role}</span>
           </p>
-          <ul aria-label="Categories" className="mt-3 flex flex-wrap gap-1.5">
+          <ul aria-label="Categories" className="mt-4 flex flex-wrap gap-1.5">
             {p.status && (
               <li>
                 <Chip>{p.status}</Chip>
@@ -59,7 +59,7 @@ function Project({ p, first }: { p: Project; first: boolean }) {
               </li>
             ))}
           </ul>
-          <p className="mt-3 flex flex-wrap gap-x-5 text-bone">
+          <p className="mt-4 flex flex-wrap gap-x-5 text-bone">
             <Link href={workPath(p)} className="underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:decoration-bone">
               Explore project
             </Link>
