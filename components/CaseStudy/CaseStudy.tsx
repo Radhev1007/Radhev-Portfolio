@@ -94,6 +94,14 @@ export function CaseStudy({ project, next }: Props) {
           </div>
         </Section>
 
+        <Section id="contribution" title="My contribution">
+          <ul className="max-w-[640px] list-disc pl-5 text-[length:var(--text-ui)] leading-[1.7] text-soft marker:text-mute">
+            {project.contribution.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+        </Section>
+
         <Section id="screens" title="What the design covers">
           <dl className="text-[length:var(--text-ui)] leading-[1.7]">
             {story.screens.map((sc) => (

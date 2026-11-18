@@ -42,7 +42,7 @@ export function ToolStrip() {
                     onPointerLeave={hide}
                     onFocus={show(t.name)}
                     onBlur={hide}
-                    className="grid h-[66px] w-[99px] place-items-center rounded-[4px] bg-ink-2 transition-colors duration-300 hover:bg-ink-3 focus-visible:bg-ink-3"
+                    className="grid h-[66px] w-[99px] place-items-center rounded-[4px] bg-ink-3 transition-colors duration-300 hover:bg-line-strong focus-visible:bg-line-strong"
                   >
                     <Mark mark={t.mark} />
                   </span>

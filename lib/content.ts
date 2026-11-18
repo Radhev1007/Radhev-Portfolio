@@ -10,37 +10,43 @@
 export const site = {
   /** Hero identity. `first` is set in the display medium, `last` in the lighter voice. */
   name: { first: "Radhev", last: "R" },
-  /**
-   * The hero's positioning statement. Long enough that it sets at the display
-   * step across three lines rather than the hero step across two — the hero
-   * step is bound to viewport height and only fits a word or two.
-   */
+  /** The hero headline, in three runs so the share card can set one word apart. */
   heroTitle: {
-    lead: "I turn complex products",
-    mid: "into clear, usable",
-    tail: "experiences.",
-    /** Used by the share card to set one word apart. */
-    accent: "clear,",
+    lead: "Designing digital experiences that make",
+    mid: "complexity",
+    tail: "feel simple.",
+    accent: "complexity",
   },
-  /** The homepage hero's supporting line. */
-  intro:
-    "I'm Radhev, a UI/UX and Product Designer with five years of experience across enterprise SaaS, fintech, education and government. I take complicated workflows and make them simple to understand, hand over and use.",
+  /** Small line above the headline. */
+  eyebrow: "Senior UI/UX & Product Designer",
+  /** The homepage hero's supporting copy, one paragraph each. */
+  intro: [
+    "I'm Radhev, a UI/UX Designer with 5 years of experience transforming complex requirements into intuitive digital products.",
+    "I work across enterprise SaaS, fintech, government, and other digital platforms, creating meaningful user experiences through thoughtful UX, refined interfaces, and scalable design systems.",
+  ],
+  /** Figures shown under the hero copy. */
+  highlights: [
+    { value: "5 Years", label: "of Experience" },
+    { value: "18+", label: "Client Projects" },
+    { value: "400+", label: "Screens Designed" },
+    { value: "Enterprise", label: "& Product Design" },
+  ],
   brand: "Radhev R",
   /** The titles shown under the name in the hero. */
-  titles: "Senior UX Designer / Product Designer",
+  titles: "Senior UI/UX & Product Designer",
   /** One wording everywhere: the hero, the footer, the share card and structured data. */
   role: "Senior UI/UX & Product Designer",
   /** The live address: canonical URL, sitemap, share cards and structured data are built on it. */
   url: "https://www.radhev.in",
   available: true,
-  availabilityLabel: "Open to new roles",
+  availabilityLabel: "Open to Senior UI/UX Designer and Product Designer opportunities",
   email: "radhev1999@gmail.com",
   phone: "+91 808 982 1700",
   /** The nav's "Let's talk" opens a WhatsApp chat with this number. */
   whatsapp: "https://wa.me/918089821700",
   /** Hosted on Drive, so the CV can be updated without a deploy. */
   resume: "https://drive.google.com/file/d/1aZVd8yCqh1uFCw_0ubPjlkxiKlwqtgYv/view?usp=sharing",
-  location: "Kollam, Kerala",
+  location: "Kerala, India",
   statement:
     "Senior UI/UX and Product Designer with 5 years of experience across enterprise SaaS, fintech and government. 18+ client projects for Qatar and the GCC, specialising in complex dashboards and scalable design systems.",
   /**
@@ -48,8 +54,10 @@ export const site = {
    * opens first — and the secondary jumps to the work, the evidence behind it.
    */
   heroCtas: {
-    secondary: { label: "View Selected Work", target: "work" },
+    primary: { label: "Explore My Work", target: "work" },
   },
+  /** The tagline used in the footer. */
+  tagline: "Designing thoughtful digital experiences through UX, visual design, and systems thinking.",
   /** Shown as icons in the hero's social rail, in this order. */
   socials: [
     { label: "Behance", href: "https://www.behance.net/radhev1999707d", icon: "behance" },
@@ -60,9 +68,10 @@ export const site = {
 } as const;
 
 export const navItems = [
-  { id: "work", label: "Selected Work" },
   { id: "about", label: "About" },
-  { id: "focus", label: "Focus" },
+  { id: "work", label: "Selected Work" },
+  { id: "approach", label: "Approach" },
+  { id: "experience", label: "Experience" },
   { id: "contact", label: "Contact" },
 ] as const;
 
@@ -70,7 +79,7 @@ export const navItems = [
  * Every scrollable target, not only the ones the nav lists. "home" is reachable
  * from the wordmark and the footer without being a nav item.
  */
-export type SectionId = (typeof navItems)[number]["id"] | "home" | "experience" | "clients" | "open";
+export type SectionId = (typeof navItems)[number]["id"] | "home";
 
 /* ── Projects ───────────────────────────────────────────────── */
 
@@ -117,6 +126,8 @@ export type Project = {
   categories: string[];
   description: string;
   role: string;
+  /** What I did on it, as a short list. */
+  contribution: string[];
   story: CaseStudy;
   /** Optional real cover image in /public. When omitted, a generated interface composition is shown. */
   image?: string;
@@ -129,7 +140,7 @@ export type Project = {
 const conceptScope =
   "A self-initiated concept, published on Behance.";
 
-export const projects: Project[] = [
+const baseProjects: Omit<Project, "contribution">[] = [
   {
     slug: "dilmon-property-dashboard",
     client: "Dilmon",
@@ -388,6 +399,76 @@ export const projects: Project[] = [
   },
 ];
 
+/** The wording shown on the homepage and at the top of each project page. */
+const projectCopy: Record<string, { description: string; overview: string[]; contribution: string[] }> = {
+  "dilmon-property-dashboard": {
+    description: "Bringing real estate investment data into one clear, connected experience.",
+    overview: [
+      "Dilmon is a property management dashboard concept designed to simplify the way real estate investment portfolios are monitored and managed.",
+      "The experience brings essential investment information into a centralised interface, helping users understand portfolio value, capital structure, geographic exposure, asset performance, and associated loans.",
+      "The dashboard focuses on presenting complex financial and property information through a structured, accessible interface.",
+    ],
+    contribution: ["Dashboard interface design.", "Information hierarchy.", "Data visualisation.", "Portfolio overview experience.", "Responsive interface considerations."],
+  },
+  "kia-landing-page": {
+    description: "A digital introduction to one of Kuwait's most significant investment institutions.",
+    overview: [
+      "A landing page concept for Kuwait Investment Authority, designed to communicate the organisation's identity, history, investment structure, and institutional information through a clear digital experience.",
+      "The concept brings important information together, including its two funds, history spanning seven decades, and opportunities to engage with the organisation.",
+      "The content structure focuses on making institutional information easier to discover while maintaining a professional digital presence.",
+    ],
+    contribution: ["Website interface design.", "Content hierarchy.", "Information organisation.", "Visual design.", "Responsive layout considerations."],
+  },
+  "university-admin-dashboard": {
+    description: "Connecting the student experience with streamlined academic administration.",
+    overview: [
+      "An education platform concept designed around two connected experiences: a student-facing mobile application and an administrative dashboard.",
+      "The student application provides access to classes, credits, courses, and certificate requests. The administrative experience supports staff in reviewing and approving requests through structured workflows.",
+      "The concept also explores AI-assisted pre-checks and audit trails to support a more organised request management process.",
+    ],
+    contribution: [
+      "Student application interface design.",
+      "Administrative dashboard design.",
+      "User flow organisation.",
+      "Request management workflows.",
+      "Information architecture.",
+      "Interface consistency across platforms.",
+    ],
+  },
+  "stride-fitness-dashboard": {
+    description: "Helping fitness trainers understand client progress through meaningful health insights.",
+    overview: [
+      "Stride is a health and fitness dashboard concept designed for gym trainers and fitness coaches who need a clearer view of their clients' health information and progress.",
+      "The dashboard brings together health alerts, workout analytics, and weekly compliance information, helping trainers monitor multiple clients from a centralised workspace.",
+      "The experience prioritises clear data presentation and a structured overview of the information trainers need during their daily work.",
+    ],
+    contribution: ["Dashboard UX/UI design.", "Health information hierarchy.", "Data visualisation.", "Client monitoring experience.", "Workout analytics presentation."],
+  },
+  "dashboard-concept": {
+    description: "Making everyday employee tasks and workplace information easier to access.",
+    overview: [
+      "An employee self-service dashboard concept designed to bring essential workplace information and employee requests into a single interface.",
+      "The home screen provides an overview of leave balances, uncovered hours, recent requests, and commonly used request forms.",
+      "The goal is to create a more organised employee experience by making frequently needed information and actions accessible from one place.",
+    ],
+    contribution: ["Dashboard UI design.", "Information hierarchy.", "Employee request interface.", "Data presentation.", "Interface organisation."],
+  },
+  "thuna-mobile-ui": {
+    description: "Making everyday elder care and emergency assistance more connected.",
+    overview: [
+      "Thuna Care is a mobile application concept focused on supporting elderly individuals and their caregivers.",
+      "The experience explores two important interactions: a simple daily check-in and a one-tap SOS feature for the elderly user, alongside an emergency response flow for the responder.",
+      "The concept focuses on making essential actions straightforward and reducing friction during situations where clarity and accessibility matter.",
+    ],
+    contribution: ["Mobile application UX/UI.", "User flow design.", "Emergency interaction design.", "Daily check-in experience.", "Interface design."],
+  },
+};
+
+export const projects: Project[] = baseProjects.map((p) => {
+  const c = projectCopy[p.slug];
+  return { ...p, description: c.description, contribution: c.contribution, story: { ...p.story, overview: c.overview } };
+});
+
 /* ── Case study ─────────────────────────────────────────────── */
 
 /** A project's own page on this site. */
@@ -397,7 +478,89 @@ export function getProject(slug: string) {
   return projects.find((p) => p.slug === slug);
 }
 
-/* ── Experience ─────────────────────────────────────────────── */
+/* ── Section copy ───────────────────────────────────────────── */
+
+/** The header every homepage section shares: a rail label, a headline and an optional lead. */
+export type SectionCopy = { label: string; headline: string; description?: string };
+
+export type Numbered = { title: string; body: string };
+
+/* About */
+export const aboutSection: SectionCopy = {
+  label: "A little about me",
+  headline: "I turn complex problems into thoughtful digital experiences.",
+};
+export const about = [
+  "I'm Radhev, a UI/UX Designer passionate about creating digital experiences that bring clarity to complexity.",
+  "Over the past five years, I've worked across enterprise SaaS, fintech, government, education, and technology, designing products for different business needs and user groups.",
+  "My experience spans the complete design process, from understanding requirements and structuring user journeys to creating wireframes, interactive prototypes, and polished interfaces.",
+  "At Appstation, I've contributed to digital products for Qatar and GCC clients across multiple industries. Previously, at Beinex Consulting, I worked on Aurex, an enterprise Governance, Risk, and Compliance platform, where I explored complex workflows, data-heavy dashboards, and scalable design systems.",
+  "I believe good design goes beyond visual appearance. It should make information easier to understand, interactions easier to navigate, and products more meaningful to the people who use them.",
+] as const;
+export const aboutClosing =
+  "I'm always interested in exploring new challenges, improving my design approach, and creating digital products that make a difference.";
+
+/* Selected work */
+export const workSection: SectionCopy = {
+  label: "Selected projects",
+  headline: "A collection of ideas, interfaces, and digital experiences.",
+  description:
+    "From enterprise platforms and data-rich dashboards to mobile applications and responsive websites, here's a selection of projects that reflect my approach to solving design challenges.",
+};
+
+/* Specialisms: not shown on the page, used for search (lib/seo.ts) */
+export type Specialism = { id: string; title: string; blurb: string };
+export const specialisms: Specialism[] = [
+  {
+    id: "product",
+    title: "Product Design",
+    blurb: "Designing end-to-end digital experiences for enterprise platforms and business applications, translating requirements into user flows, wireframes, and interactive prototypes.",
+  },
+  {
+    id: "systems",
+    title: "Design Systems",
+    blurb: "Building scalable Figma design systems using design tokens, variables, reusable components, variants, and Auto Layout.",
+  },
+  {
+    id: "research",
+    title: "UX Research & Usability",
+    blurb: "Applying user research, usability testing, heuristic evaluations, competitive analysis, and analytical insights to inform design decisions.",
+  },
+  {
+    id: "visual",
+    title: "Visual & Interaction Design",
+    blurb: "Creating structured, intuitive, and visually engaging interfaces with a focus on information hierarchy, interaction patterns, responsive layouts, and accessibility.",
+  },
+  {
+    id: "handoff",
+    title: "Design to Development",
+    blurb: "Bridging design and implementation through clear documentation, developer-ready specifications, design QA, and an understanding of front-end technologies.",
+  },
+];
+
+/* How I design */
+export const approachSection: SectionCopy = {
+  label: "My approach",
+  headline: "A thoughtful process behind every experience.",
+  description:
+    "Every product comes with its own challenges. My approach is to understand the problem, create structure, explore solutions, and refine the experience through collaboration and iteration.",
+};
+export const approach: Numbered[] = [
+  { title: "Discover", body: "Understand the product, business requirements, user needs, and project constraints before exploring solutions." },
+  { title: "Structure", body: "Organise information architecture, define user journeys, and create clear flows that connect different parts of the experience." },
+  { title: "Prototype", body: "Translate ideas into wireframes and interactive prototypes to explore structure, functionality, and user interactions." },
+  { title: "Systemise", body: "Create consistent interface patterns and reusable components that support the product as it evolves." },
+  { title: "Validate", body: "Review usability, evaluate interface consistency, gather feedback, and refine design decisions through iteration." },
+  { title: "Deliver", body: "Prepare clear design specifications, collaborate with developers, and support implementation through design QA." },
+];
+
+/* Experience */
+export const experienceSection: SectionCopy = {
+  label: "My journey",
+  headline: "Experience shaped by different products, people, and challenges.",
+  description:
+    "My professional journey has given me the opportunity to work across different industries, product types, and digital experiences. Each role has helped me strengthen my approach to UX, visual design, and product thinking.",
+};
 
 export type Role = {
   company: string;
@@ -405,6 +568,7 @@ export type Role = {
   title: string;
   from: string;
   to: string;
+  summary: string[];
   points: string[];
 };
 
@@ -412,158 +576,68 @@ export type Role = {
 export const experience: Role[] = [
   {
     company: "Appstation Pvt Ltd",
-    location: "Technopark, Trivandrum",
+    location: "Technopark, Trivandrum, India",
     title: "Senior UI/UX Designer",
-    from: "Dec 2025",
+    from: "January 2025",
     to: "Present",
+    summary: [
+      "At Appstation, I work on digital products for clients across Qatar and the GCC, contributing to projects in government, fintech, SaaS, HRTech, media, and events.",
+      "My work involves translating complex requirements into structured user experiences, designing scalable interfaces, and supporting product delivery across different platforms.",
+    ],
     points: [
-      "Delivered end-to-end product design for 18+ client projects across 6 domains for Qatar and GCC clients.",
-      "Key clients: Invest Qatar, Milaha, MOCI, MOT, NPC, QOC, QFZ, Joud BNPL and Applabtracker CRM.",
-      "Designed information architecture, user flows, wireframes and interactive prototypes for 400+ screens.",
-      "Built scalable UI with design tokens, components, variants and Auto Layout.",
-      "Used Figma MCP and Figma AI to speed up design delivery by 30%.",
-      "Delivered developer-ready specs and ran design QA on built screens.",
-      "Mentored 2 junior designers and led design reviews in Agile/Scrum teams.",
+      "Contributed to 18+ client projects across six business domains.",
+      "Worked on projects for Invest Qatar, Milaha, MOCI, MOT, NPC, QOC, QFZ, Joud BNPL, and Applabtracker CRM.",
+      "Designed user flows, wireframes, interactive prototypes, and high-fidelity interfaces.",
+      "Contributed to more than 400 screens across digital products.",
+      "Built reusable Figma components, variants, and design tokens.",
+      "Used Figma MCP and Figma AI to support design workflows and improve delivery speed.",
+      "Prepared developer-ready specifications and supported design QA.",
+      "Mentored junior designers and contributed to design reviews.",
     ],
   },
   {
     company: "Beinex Consulting Pvt Ltd",
-    location: "Infopark, Kochi",
+    location: "Infopark, Kochi, India",
     title: "UI/UX Designer",
-    from: "Apr 2023",
-    to: "Nov 2024",
+    from: "April 2023",
+    to: "November 2024",
+    summary: [
+      "At Beinex, I worked on Aurex, an AI-powered enterprise Governance, Risk, and Compliance platform.",
+      "My work focused on simplifying complex enterprise workflows and designing data-heavy dashboards and reporting experiences across web, tablet, and mobile.",
+    ],
     points: [
-      "Delivered a complete UX/UI redesign of Aurex (aurex.ai), an AI-powered B2B GRC SaaS platform.",
-      "Designed data-heavy dashboards and reporting views across 21 modules: 14 for web and tablet, 7 for mobile.",
-      "Built and maintained a Figma design system with tokens and variables.",
-      "Ran usability testing, heuristic evaluations and Hotjar analysis to drive design iterations.",
-      "Shipped responsive, accessible (WCAG) UI in close collaboration with developers.",
+      "Contributed to the complete UX/UI redesign of Aurex.",
+      "Worked across 21 product modules.",
+      "Designed dashboard and reporting experiences for enterprise users.",
+      "Built and maintained a scalable Figma design system.",
+      "Worked with design tokens, variables, and reusable components.",
+      "Conducted usability testing and heuristic evaluations.",
+      "Used Hotjar analytics and competitive analysis to inform design iterations.",
+      "Collaborated with developers on responsive and accessible interfaces.",
     ],
   },
   {
     company: "OrisysIndia Consultancy Services LLP",
-    location: "Technopark, Trivandrum",
+    location: "Technopark, Trivandrum, India",
     title: "UI/UX Designer",
-    from: "Oct 2021",
-    to: "Apr 2023",
+    from: "October 2021",
+    to: "April 2023",
+    summary: [
+      "Orisys was where I began my professional journey in UI/UX design. I worked across education, IT, and technology projects, gaining experience in designing websites, dashboards, and mobile applications.",
+      "This role helped me build a strong foundation in interface design, user flows, prototyping, and developer collaboration.",
+    ],
     points: [
-      "Designed and delivered 10+ client projects across Education, IT and Government domains, including websites, dashboards and mobile applications.",
-      "Took projects from requirements and user flows to interactive Figma prototypes.",
-      "Prepared front-end-ready specs for pixel-perfect developer handoff.",
+      "Worked on 10+ client projects.",
+      "Designed websites, dashboards, and mobile applications.",
+      "Translated project requirements into user flows and wireframes.",
+      "Created high-fidelity interfaces and interactive Figma prototypes.",
+      "Prepared design specifications for development.",
+      "Collaborated with project managers, business analysts, clients, and developers.",
     ],
   },
 ];
 
-
-
-
-/* ── Specialisms ───────────────────────────────────────────── */
-
-export type Specialism = { id: string; title: string; blurb: string };
-
-/** Five, in the order they matter for the work I want. */
-export const specialisms: Specialism[] = [
-  {
-    id: "product",
-    title: "Product design",
-    blurb: "End-to-end design for enterprise SaaS and complex business applications, from requirements and user flows to interactive prototypes.",
-  },
-  {
-    id: "systems",
-    title: "Design systems",
-    blurb: "Scalable Figma design systems built on design tokens, variables, reusable components, variants and Auto Layout.",
-  },
-  {
-    id: "strategy",
-    title: "UX research & usability",
-    blurb: "User research, usability testing, heuristic evaluation, A/B testing and Hotjar analysis that steer each iteration.",
-  },
-  {
-    id: "visual",
-    title: "Visual & interaction design",
-    blurb: "Data-heavy dashboards and responsive, accessible interfaces that follow WCAG principles.",
-  },
-  {
-    id: "handoff",
-    title: "Design → development",
-    blurb:
-      "Developer-ready specs, design QA and AI-assisted workflows with Figma MCP, Figma AI, Claude and ChatGPT, backed by working HTML, CSS and React knowledge.",
-  },
-];
-
-
-
-
-
-
-
-
-/* ── Homepage sections ──────────────────────────────────────── */
-
-/** About: written from the experience above; nothing here is a claim the roles do not already make. */
-export const about = [
-  "I'm a UI/UX Designer focused on creating thoughtful digital experiences and solving complex product challenges. Over the past five years, I've worked across multiple industries, designing enterprise platforms, SaaS products and user-focused interfaces.",
-  "Lately that has meant 18+ client projects for Qatar and GCC organisations, from government portals and fintech to CRM platforms: complex dashboards, scalable design systems and interactive prototypes for 400+ screens.",
-  "I work in Figma with design tokens, components and Auto Layout, hand developers specs I have checked against the build, and use AI-assisted workflows, including Figma MCP and Figma AI, to move faster without lowering the bar.",
-] as const;
-
-/** Focus: three columns, as the reference sets them. */
-export const focus = [
-  {
-    title: "Design",
-    items: ["Product Design", "UI/UX Design", "Interaction Design", "Wireframing", "Prototyping", "Design Systems", "Responsive Web Design"],
-  },
-  {
-    title: "Strategy",
-    items: ["User Research", "Competitor Analysis", "Information Architecture", "User Flows", "UX Problem Solving", "Design Thinking"],
-  },
-  {
-    title: "Build",
-    items: [
-      "Figma",
-      "Design Tokens",
-      "Component Libraries",
-      "Auto Layout",
-      "Interactive Prototypes",
-      "Developer Handoff",
-      "AI-assisted Design Workflows",
-      "Figma MCP",
-      "Blender",
-    ],
-  },
-] as const;
-
-/**
- * Organisations named in the experience above: the key clients on the Appstation role and the product
- * redesigned at Beinex. Text only; no logos are used without the clients' permission.
- */
-export const clients = [
-  "Invest Qatar",
-  "Milaha",
-  "MOCI",
-  "MOT",
-  "NPC",
-  "QOC",
-  "QFZ",
-  "Joud BNPL",
-  "Applabtracker CRM",
-  "Aurex",
-] as const;
-
-export const openTo = {
-  statement: "Open to opportunities and meaningful collaborations.",
-  lead: "I'm interested in connecting with",
-  list: [
-    "Product companies.",
-    "Technology teams.",
-    "UI/UX design teams.",
-    "SaaS and enterprise product organisations.",
-    "Recruiters hiring experienced UI/UX Designers.",
-  ],
-  cta: "If that sounds like you, drop me a line",
-} as const;
-
-/** The tools shown under the hero, all of them named in the roles and projects above. `mark` keys into components/Hero/ToolStrip. */
+/** The tools shown under the hero. `mark` keys into components/Hero/ToolStrip. */
 export const tools = [
   { name: "Figma", mark: "figma" },
   { name: "Photoshop", mark: "photoshop" },
@@ -575,4 +649,24 @@ export const tools = [
   { name: "HTML", mark: "html5" },
   { name: "CSS", mark: "css" },
   { name: "React", mark: "react" },
+] as const;
+
+/* Contact */
+export const contactSection = {
+  label: "Let's connect",
+  headline: "Have an interesting challenge? Let's create something meaningful.",
+  description: [
+    "I'm interested in opportunities where I can contribute to meaningful digital products, solve complex design problems, and collaborate with teams that value thoughtful user experiences.",
+    "If you're looking for a designer who brings together UX thinking, visual design, and product understanding, I'd be happy to connect.",
+  ],
+  availability: "Open to Senior UI/UX Designer and Product Designer opportunities.",
+} as const;
+
+/* Footer */
+export const footerNav = [
+  { label: "Home", target: "home" },
+  { label: "Selected Work", target: "work" },
+  { label: "About", target: "about" },
+  { label: "Experience", target: "experience" },
+  { label: "Contact", target: "contact" },
 ] as const;

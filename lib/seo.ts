@@ -8,28 +8,26 @@ import { experience, projects, site, specialisms, workPath, type Project } from 
  * about 155 characters so it is not cut in results.
  */
 export const fullName = `${site.name.first} ${site.name.last}`;
-export const seoTitle = `${fullName} | Senior UI/UX & Product Designer`;
-export const seoDescription = `Explore the portfolio of ${fullName}, a Senior UI/UX and Product Designer with 5 years of experience in enterprise SaaS, product design, dashboards and scalable design systems.`;
+export const seoTitle = `${fullName} | Senior UI/UX Designer & Product Designer Portfolio`;
+export const seoDescription = `Explore ${fullName}'s portfolio, a UI/UX and Product Designer with 5 years of experience designing enterprise SaaS, fintech, government platforms, dashboards, and scalable design systems.`;
 export const seoKeywords = [
-  fullName,
-  "Radhev",
   "Senior UI/UX Designer",
+  "UI/UX Designer Portfolio",
+  "Product Designer",
   "Senior Product Designer",
-  "UI/UX designer in India",
-  "product design",
-  "UX designer Kerala",
-  "UI designer Kochi",
-  "UI/UX designer Trivandrum",
-  "enterprise SaaS UX",
-  "dashboard design",
-  "UX design systems",
-  "Figma design systems",
-  "user-centred design",
-  "usability testing",
-  "fintech UX",
-  "government platform UX",
-  "Figma",
-  "portfolio",
+  "UX Designer India",
+  "UI Designer India",
+  "Enterprise UX Designer",
+  "SaaS Product Designer",
+  "Dashboard UI/UX Designer",
+  "Figma Design Systems",
+  "UX Research and Prototyping",
+  "Responsive Web Design",
+  "Mobile App UI/UX Design",
+  "Fintech Product Design",
+  "Government Website Design",
+  "Design System Designer",
+  fullName,
 ];
 
 const abs = (path: string) => new URL(path, site.url).toString();
@@ -88,7 +86,7 @@ export function homeJsonLd() {
         jobTitle: site.role,
         description: site.statement,
         email: `mailto:${site.email}`,
-        address: { "@type": "PostalAddress", addressLocality: "Kollam", addressRegion: "Kerala", addressCountry: "IN" },
+        address: { "@type": "PostalAddress", addressRegion: "Kerala", addressCountry: "IN" },
         ...(current ? { worksFor: { "@type": "Organization", name: current.company } } : {}),
         knowsAbout: [...specialisms.map((s) => s.title), "UI design", "UX design", "Figma", "Enterprise SaaS", "Dashboard design", "Usability testing", "Fintech"],
         sameAs: site.socials.map((s) => s.href),

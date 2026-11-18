@@ -1,43 +1,59 @@
 import { Reveal } from "@/components/Animations/Reveal";
+import { Headline, Lead, linkClass } from "@/components/Section/Parts";
 import { Ext, Section } from "@/components/Section/Section";
-import { site } from "@/lib/content";
+import { contactSection, site } from "@/lib/content";
 
-const linkClass =
-  "text-bone underline decoration-transparent underline-offset-4 transition-colors duration-300 hover:decoration-bone focus-visible:decoration-bone";
-
-/** Connect: the closing statement, then the ways to reach me. */
+/** Connect: the closing statement, the ways to reach me and my availability. */
 export function Contact() {
-  const links = site.socials.filter((s) => s.label === "LinkedIn" || s.label === "Behance" || s.label === "Dribbble");
+  const social = (label: string) => site.socials.find((s) => s.label === label)!.href;
+  const links = [
+    { label: "Connect on LinkedIn", href: social("LinkedIn") },
+    { label: "View My Behance", href: social("Behance") },
+    { label: "Download Resume", href: site.resume },
+  ];
   return (
-    <Section id="contact" title="Connect">
+    <Section id="contact" title={contactSection.label}>
       <Reveal>
-        <p className="max-w-[22ch] text-[length:var(--text-h1)] leading-[1.1] tracking-[-0.033em] text-bone">
-          Let&rsquo;s design something clear together.
-        </p>
+        <Headline>{contactSection.headline}</Headline>
+        <div className="mt-3 flex max-w-[56ch] flex-col gap-3">
+          {contactSection.description.map((p) => (
+            <Lead key={p}>{p}</Lead>
+          ))}
+        </div>
       </Reveal>
       <Reveal delay={0.1}>
-        <ul className="mt-8 text-[length:var(--text-ui)] leading-[1.7]">
+        <dl className="mt-8 text-[length:var(--text-ui)] leading-[1.7]">
+          <div className="flex gap-x-5">
+            <dt className="w-20 text-mute">Email</dt>
+            <dd>
+              <a href={`mailto:${site.email}`} className={linkClass}>
+                {site.email}
+              </a>
+            </dd>
+          </div>
+          <div className="flex gap-x-5">
+            <dt className="w-20 text-mute">Location</dt>
+            <dd className="text-bone">{site.location}</dd>
+          </div>
+        </dl>
+        <ul className="mt-6 text-[length:var(--text-ui)] leading-[1.7]">
           <li>
             <a href={`mailto:${site.email}`} className={linkClass}>
-              Email me
+              Get in Touch
             </a>
-            <span className="ml-3 text-mute">{site.email}</span>
           </li>
-          {links.map((s) => (
-            <li key={s.label}>
-              <a href={s.href} target="_blank" rel="noreferrer" className={linkClass}>
-                {s.label}
+          {links.map((l) => (
+            <li key={l.label}>
+              <a href={l.href} target="_blank" rel="noreferrer" className={linkClass}>
+                {l.label}
               </a>
               <Ext />
             </li>
           ))}
-          <li>
-            <a href={site.resume} target="_blank" rel="noreferrer" className={linkClass}>
-              Résumé
-            </a>
-            <Ext />
-          </li>
         </ul>
+        <p className="mt-6 border-t border-line pt-5 text-[length:var(--text-ui)] leading-[1.7] text-mute">
+          <span className="text-bone">Availability.</span> {contactSection.availability}
+        </p>
       </Reveal>
     </Section>
   );
