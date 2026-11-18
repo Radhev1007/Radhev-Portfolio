@@ -7,7 +7,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Magnetic } from "@/components/Animations/Magnetic";
 import { useLenis, useScrollTo } from "@/components/Providers/SmoothScroll";
-import { navItems, site, type SectionId } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
+import { navItems, type SectionId } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, intro } from "@/lib/motion";
 import { GarageLauncher } from "@/components/Garage/Garage";
@@ -65,6 +66,7 @@ function useActiveSection(enabled: boolean) {
 const items = navItems;
 
 export function Navigation() {
+  const { site } = useContent();
   const pathname = usePathname();
   const isHome = pathname === "/";
   const reduced = usePrefersReducedMotion();
@@ -248,7 +250,7 @@ export function Navigation() {
               animate={{ opacity: 1, transition: { delay: 0.5 } }}
               exit={{ opacity: 0 }}
             >
-              {site.available && <StatusBadge className="inline-flex self-start" />}
+              {site.available && <StatusBadge label={site.availabilityLabel} className="inline-flex self-start" />}
               <a href={`mailto:${site.email}`} className="text-lead">
                 {site.email}
               </a>

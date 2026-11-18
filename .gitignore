@@ -6,6 +6,7 @@ next-env.d.ts
 
 # Static export output (npm run build:static)
 out/
+.static-build/
 
 # Single-file build (python3 tools/build_standalone.py) — generated, not source
 radhev-portfolio.html

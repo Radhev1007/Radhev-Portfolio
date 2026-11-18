@@ -6,6 +6,7 @@ import { Hero } from "@/components/Hero/Hero";
 import { Process } from "@/components/Process/Process";
 import { Projects } from "@/components/Projects/Projects";
 import { Specialisms } from "@/components/Specialisms/Specialisms";
+import { getContent } from "@/lib/content-store";
 import { homeJsonLd, jsonLdString } from "@/lib/seo";
 
 /**
@@ -17,11 +18,12 @@ import { homeJsonLd, jsonLdString } from "@/lib/seo";
  * portfolio. Each section is its own scene — it arrives over the previous one
  * and recedes as the next arrives.
  */
-export default function Home() {
+export default async function Home() {
+  const content = await getContent();
   return (
     <main id="main">
       {/* structured data for search engines: the person, the site and the selected work (lib/seo.ts) */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(homeJsonLd()) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(homeJsonLd(content)) }} />
       <SectionScene>
         <Hero />
       </SectionScene>

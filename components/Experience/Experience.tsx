@@ -4,27 +4,36 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Reveal } from "@/components/Animations/Reveal";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
-import { experience, type Role } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
+import type { Role } from "@/lib/content";
 import { ease } from "@/lib/motion";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "Jan 2025" → months since year 0; "Present" → the current month. */
-function toMonth(label: string) {
+/**
+ * "Jan 2025" → months since year 0; "Present" → the current month; anything else → null
+ * (the schema only admits those two forms, but the component must not throw on stored data it cannot read).
+ */
+function toMonth(label: string): number | null {
   if (label === "Present") {
     const now = new Date();
     return now.getFullYear() * 12 + now.getMonth();
   }
   const [m, y] = label.split(" ");
-  return Number(y) * 12 + MONTHS.indexOf(m);
+  const month = MONTHS.indexOf(m);
+  const year = Number(y);
+  return month < 0 || !Number.isFinite(year) || y === "" ? null : year * 12 + month;
 }
 
-/** Tenure is inclusive of both end months, as a CV reads it. */
-function tenure(role: Role) {
-  return toMonth(role.to) - toMonth(role.from) + 1;
+/** Tenure is inclusive of both end months, as a CV reads it; null when a date cannot be read. */
+function tenure(role: Role): number | null {
+  const from = toMonth(role.from);
+  const to = toMonth(role.to);
+  return from === null || to === null ? null : Math.max(to - from + 1, 0);
 }
 
-function formatTenure(months: number) {
+function formatTenure(months: number | null) {
+  if (months === null || months <= 0) return "";
   const y = Math.floor(months / 12);
   const m = months % 12;
   return [y && `${y} yr${y > 1 ? "s" : ""}`, m && `${m} mo${m > 1 ? "s" : ""}`].filter(Boolean).join(" ");
@@ -41,14 +50,21 @@ function formatTenure(months: number) {
  * row or a timeline segment highlights its counterpart.
  */
 export function Experience() {
+  const { experience } = useContent();
   const [open, setOpen] = useState<number | null>(0);
   const [hover, setHover] = useState<number | null>(null);
 
-  const start = toMonth(experience[experience.length - 1].from);
-  const end = toMonth("Present") + 1;
-  const span = end - start;
-  const years = Math.floor(span / 12);
   const focus = hover ?? open;
+  if (experience.length === 0) return null;
+
+  const now = toMonth("Present")!;
+  const oldest = experience[experience.length - 1];
+  // The earliest readable start, falling back to this month so an unreadable date cannot produce NaN.
+  const starts = experience.map((r) => toMonth(r.from)).filter((m): m is number => m !== null);
+  const start = starts.length ? Math.min(...starts) : now;
+  const end = now + 1;
+  const span = Math.max(end - start, 1);
+  const years = Math.floor(span / 12);
 
   return (
     <section id="experience" aria-label="Experience" className="surface-invert relative section-y">
@@ -83,8 +99,11 @@ export function Experience() {
             <div className="border-t border-line pt-6">
               <div className="relative h-2 overflow-hidden bg-ink-3" aria-hidden>
                 {experience.map((role, i) => {
-                  const left = ((toMonth(role.from) - start) / span) * 100;
-                  const width = ((toMonth(role.to) + (role.to === "Present" ? 1 : 0) - toMonth(role.from)) / span) * 100;
+                  const from = toMonth(role.from);
+                  const to = toMonth(role.to);
+                  const readable = from !== null && to !== null;
+                  const left = readable ? ((from - start) / span) * 100 : 0;
+                  const width = readable ? (Math.max(to + (role.to === "Present" ? 1 : 0) - from, 0) / span) * 100 : 0;
                   return (
                     <motion.button
                       key={role.company}
@@ -103,7 +122,7 @@ export function Experience() {
                 })}
               </div>
               <div className="label mt-3 flex justify-between" suppressHydrationWarning>
-                <span>{experience[experience.length - 1].from}</span>
+                <span>{oldest.from}</span>
                 <span>Today</span>
               </div>
             </div>

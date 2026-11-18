@@ -7,17 +7,19 @@ import { TextReveal } from "@/components/Animations/TextReveal";
 import { IconLink } from "@/components/Hero/SocialLinks";
 import type { SocialIcon } from "@/components/Hero/SocialIcons";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
-import { site } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
+import type { SiteData } from "@/lib/content";
 import { ease } from "@/lib/motion";
 
 /** The ways to reach me, most direct first. */
-const channels = [
+const channelsOf = (site: SiteData) => [
   { label: "Email", value: site.email, href: `mailto:${site.email}` },
   { label: "WhatsApp", value: site.phone, href: site.whatsapp, external: true },
   { label: "Résumé", value: "View CV", href: site.resume, external: true },
 ];
 
-const profiles = site.socials.flatMap((s) => ("icon" in s ? [{ ...s, icon: s.icon as SocialIcon }] : []));
+const profilesOf = (site: SiteData) =>
+  site.socials.flatMap((s) => ("icon" in s ? [{ ...s, icon: s.icon as SocialIcon }] : []));
 
 /**
  * The close, in two columns.
@@ -32,6 +34,9 @@ const profiles = site.socials.flatMap((s) => ("icon" in s ? [{ ...s, icon: s.ico
  * to, and a dead one that silently drops enquiries is worse than none.
  */
 export function Contact() {
+  const { site } = useContent();
+  const channels = channelsOf(site);
+  const profiles = profilesOf(site);
   return (
     <section id="contact" aria-label="Contact" className="relative gutter mx-auto max-w-[1600px] section-y">
       <SectionHeader index="06" label="Contact" />

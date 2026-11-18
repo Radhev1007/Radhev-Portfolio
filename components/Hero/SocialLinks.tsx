@@ -1,12 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { site } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
 import { intro, transition } from "@/lib/motion";
 import { SocialGlyph, type SocialIcon } from "./SocialIcons";
 
 /** Profiles that carry an icon. */
-const profiles = site.socials.flatMap((s) => ("icon" in s ? [{ ...s, icon: s.icon as SocialIcon }] : []));
+function useProfiles() {
+  const { site } = useContent();
+  return site.socials.flatMap((s) => ("icon" in s ? [{ ...s, icon: s.icon as SocialIcon }] : []));
+}
 
 export function IconLink({ label, href, icon }: { label: string; href: string; icon: SocialIcon }) {
   return (
@@ -36,6 +39,7 @@ const appear = { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: t
 
 /** Phones: a row under the call to action. */
 export function SocialLinks() {
+  const profiles = useProfiles();
   return (
       <motion.ul aria-label="Profiles" className="z-10 mt-8 flex items-center gap-3 md:hidden" {...appear}>
         {profiles.map((p) => (
@@ -49,6 +53,7 @@ export function SocialLinks() {
 
 /** Tablet up: a vertical rail. Render it as a direct child of the hero section. */
 export function SocialRail() {
+  const profiles = useProfiles();
   return (
       <motion.div
         className="pointer-events-none absolute inset-y-0 right-[max(0.75rem,calc(var(--gutter)/2-1.25rem))] z-10 hidden flex-col items-center justify-center gap-4 md:flex"

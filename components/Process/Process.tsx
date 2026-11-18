@@ -6,7 +6,8 @@ import { Reveal } from "@/components/Animations/Reveal";
 import { TextReveal } from "@/components/Animations/TextReveal";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
 import { useScrollRange } from "@/lib/motion";
-import { processSteps } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
+import type { ProcessStep } from "@/lib/content";
 import { useDeviceTier, usePrefersReducedMotion } from "@/lib/hooks";
 import { ProcessGlyph } from "./ProcessGlyph";
 
@@ -31,6 +32,7 @@ function Intro() {
 
 /** Desktop: the section pins and vertical scroll drives a horizontal track. */
 function HorizontalProcess() {
+  const { processSteps } = useContent();
   const section = useRef<HTMLElement>(null);
   const track = useRef<HTMLDivElement>(null);
   const [distance, setDistance] = useState(0);
@@ -56,7 +58,7 @@ function HorizontalProcess() {
   useMotionValueEvent(scrollYProgress, "change", (p) => {
     let best = 0;
     processSteps.forEach((_, i) => {
-      if (Math.abs(p - stageCenter(i)) < Math.abs(p - stageCenter(best))) best = i;
+      if (Math.abs(p - stageCenter(i, processSteps.length)) < Math.abs(p - stageCenter(best, processSteps.length))) best = i;
     });
     setActive(best);
   });
@@ -69,7 +71,7 @@ function HorizontalProcess() {
             <Intro />
           </div>
           {processSteps.map((s, i) => (
-            <StepPanel key={s.n} step={s} index={i} progress={scrollYProgress} active={i === active} />
+            <StepPanel key={s.n} step={s} index={i} count={processSteps.length} progress={scrollYProgress} active={i === active} />
           ))}
         </motion.div>
 
@@ -85,17 +87,17 @@ function HorizontalProcess() {
   );
 }
 
-type Step = (typeof processSteps)[number];
+type Step = ProcessStep;
 
 /** Scroll position at which each stage sits at the centre of the track. */
-const stageCenter = (index: number) => (index + 0.6) / (processSteps.length + 0.4);
+const stageCenter = (index: number, count: number) => (index + 0.6) / (count + 0.4);
 
 /**
  * Every card stays fully legible. The active stage is inverted — off-white
  * surface, black type — so focus reads through colour, not by dimming others.
  */
-function StepPanel({ step, index, progress, active }: { step: Step; index: number; progress: MotionValue<number>; active: boolean }) {
-  const center = stageCenter(index);
+function StepPanel({ step, index, count, progress, active }: { step: Step; index: number; count: number; progress: MotionValue<number>; active: boolean }) {
+  const center = stageCenter(index, count);
   // Offsets must stay inside 0…1 and non-decreasing for scroll-linked animations.
   const range = [Math.max(0, center - 0.22), center, Math.min(1, center + 0.22)];
   const lift = useScrollRange(progress, range, [24, 0, -24]);
@@ -131,6 +133,7 @@ function StepPanel({ step, index, progress, active }: { step: Step; index: numbe
 
 /** Tablet & mobile: a vertical path that draws itself as you scroll. */
 function StackedProcess() {
+  const { processSteps } = useContent();
   const ref = useRef<HTMLOListElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 70%", "end 60%"] });
   const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);

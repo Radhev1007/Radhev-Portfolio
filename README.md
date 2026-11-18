@@ -61,6 +61,41 @@ The log model is also the logs' collision shape, so the truck climbs what you se
 All are adapted: one of each repeated part taken out and instanced, textures recompressed (the mountain forest's
 rocks and ground are one baked mesh and aren't used). The game credits them in Controls. `tools/rc-forest.mjs` rebuilds the kit from the downloaded models (usage at the top of the file).
 
+## Editing content
+
+The site can be edited from `/admin` without touching code or redeploying. Content is stored in Neon Postgres and
+images in Vercel Blob; the public pages stay static and refresh when you save. Setup on Vercel:
+
+1. In the Vercel dashboard open the project, then **Storage** and add **Neon** (Vercel Marketplace). This sets `DATABASE_URL`.
+2. Still in **Storage**, create a **Blob** store and connect it to the project. This sets `BLOB_READ_WRITE_TOKEN`.
+3. Open **Settings → Environment Variables** and add `ADMIN_PASSWORD` (your login password) and `ADMIN_SESSION_SECRET`
+   (a random string of **at least 32 characters**, e.g. `openssl rand -base64 48`). See `.env.example`.
+4. **Redeploy** so the new variables take effect.
+5. Visit `/admin` and log in.
+6. The first time, click **Load current content into the database** to copy the built-in content in.
+7. Edit and **Save**. Changes go live without a redeploy.
+
+Limitations:
+
+- Single user, one shared password. No version history: a save overwrites the previous content.
+- The login rate limit is in memory, so on serverless it is best-effort only (each instance counts separately).
+- Every uploaded image is downscaled in the browser first (at most 1600 px wide, re-encoded as WebP), whatever its
+  size. 4.5 MB is Vercel's request-body limit for serverless functions, not an upload limit; downscaling keeps
+  uploads far below it. The server itself rejects anything over 8 MB.
+- Project images must be a path starting with `/` (a file in `public/`) or an image uploaded through the admin
+  (`*.public.blob.vercel-storage.com`); links to other websites are rejected because `next/image` is only configured
+  for the Blob store.
+- Changing `ADMIN_PASSWORD` does **not** sign out existing sessions: a session is a signed token that stays valid for
+  7 days. To sign everyone out, rotate `ADMIN_SESSION_SECRET` and redeploy.
+- After the first deploy with the admin connected, check once that `/sitemap.xml`, `/robots.txt` and the share image
+  (`/opengraph-image`) pick up an edit after a save (for example change the site name, save, reload them).
+- If the stored content is ever found invalid (for example after a manual database edit), the public site shows the
+  built-in content and `/admin` shows a warning with the reasons; saving replaces the stored content.
+- `npm run build:static` ships the built-in content only and has no `/admin` or API (it builds a temporary copy of
+  the project without `app/(admin)` and `app/api`; see `tools/build-static.mjs`).
+- Locally the admin works without any env vars: `/admin` shows "not set up" and the site uses the built-in content.
+- The repo uses npm (`package-lock.json`); there is no pnpm lockfile, so install with `npm install`, not pnpm.
+
 ## Replacing the content
 
 All copy lives in **`lib/content.ts`**. Content is populated from the owner's CV: name, role, contact, projects, skills and about copy all live in `site`, `projects`, `skills` and `about`. The nav initials, footer and page title all follow it.

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/Animations/Reveal";
 import { SectionHeader } from "@/components/Projects/SectionHeader";
-import { specialisms } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
 
 /**
  * What I specialise in.
@@ -16,6 +16,7 @@ import { specialisms } from "@/lib/content";
  * Hovering inverts the card, the same move the contact channels make.
  */
 export function Specialisms() {
+  const { specialisms } = useContent();
   return (
     <section
       id="specialisms"

@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
-import { site } from "@/lib/content";
+import { defaultContent } from "@/lib/content";
+import { getContent } from "@/lib/content-store";
 import { fullName } from "@/lib/seo";
 
 /**
@@ -8,13 +9,18 @@ import { fullName } from "@/lib/seo";
  * once at build time.
  */
 export const dynamic = "force-static";
-export const alt = `${fullName} — ${site.role}`;
+// `alt` must be a static string export (Next reads it without calling a function), so it comes from the
+// built-in defaults; the image itself is drawn from the stored content.
+export const alt = `${fullName(defaultContent)} — ${defaultContent.site.role}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 const INK = "#0b0b0c", BONE = "#ece8e1", ACCENT = "#ff4d1a", DIM = "rgba(236,232,225,0.55)";
 
-export default function Image() {
+export default async function Image() {
+  const content = await getContent();
+  const { site } = content;
+  const name = fullName(content);
   const { lead, mid, tail, accent } = site.heroTitle;
   return new ImageResponse(
     (
@@ -22,7 +28,7 @@ export default function Image() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 28, letterSpacing: 6, textTransform: "uppercase" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <div style={{ width: 18, height: 18, background: ACCENT }} />
-            {fullName}
+            {name}
           </div>
           <div style={{ color: DIM, fontSize: 24 }}>{site.url.replace(/^https?:\/\//, "")}</div>
         </div>

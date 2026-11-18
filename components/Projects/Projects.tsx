@@ -5,11 +5,13 @@ import { useState } from "react";
 import { Parallax } from "@/components/Animations/Parallax";
 import { Reveal } from "@/components/Animations/Reveal";
 import { ProjectCard } from "@/components/ProjectCard/ProjectCard";
-import { projects, type Project } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
+import type { Project } from "@/lib/content";
 import { TextReveal } from "@/components/Animations/TextReveal";
 import { SectionHeader } from "./SectionHeader";
 
 export function Projects() {
+  const { projects } = useContent();
   const [active, setActive] = useState<Project | null>(null);
 
   return (

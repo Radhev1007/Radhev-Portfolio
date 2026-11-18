@@ -8,10 +8,12 @@ import { usePathname } from "next/navigation";
 import { Magnetic } from "@/components/Animations/Magnetic";
 import { Logo } from "@/components/Chrome/Logo";
 import { useScrollTo } from "@/components/Providers/SmoothScroll";
-import { navItems, site } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
+import { navItems } from "@/lib/content";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
 export function Footer() {
+  const { site } = useContent();
   const scrollTo = useScrollTo();
   const isHome = usePathname() === "/";
   const year = new Date().getFullYear();

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { ScrambleText } from "@/components/Animations/ScrambleText";
 import { useLenis } from "@/components/Providers/SmoothScroll";
-import { site } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ease, INTRO_HOLD } from "@/lib/motion";
 
@@ -77,6 +77,7 @@ function PixelLogo({ size, still }: { size: number; still: boolean }) {
 }
 
 export function IntroLoader() {
+  const { site } = useContent();
   const reduced = usePrefersReducedMotion();
   const lenis = useLenis();
   const [open, setOpen] = useState(true);

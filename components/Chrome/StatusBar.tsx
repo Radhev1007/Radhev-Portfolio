@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { site } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
 
 /**
  * Fixed footer rail: year, timezone, a live local clock and availability.
@@ -20,6 +20,7 @@ import { site } from "@/lib/content";
  * it and say the year twice.
  */
 export function StatusBar() {
+  const { site } = useContent();
   const [now, setNow] = useState<string>("");
   const [zone, setZone] = useState<string>("");
   const [atFooter, setAtFooter] = useState(false);

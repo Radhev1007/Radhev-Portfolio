@@ -7,7 +7,25 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-export const site = {
+export type SiteData = {
+  name: { first: string; last: string };
+  heroTitle: { lead: string; mid: string; tail: string; accent: string };
+  brand: string;
+  role: string;
+  url: string;
+  available: boolean;
+  availabilityLabel: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  resume: string;
+  location: string;
+  statement: string;
+  heroCtas: { secondary: { label: string; target: string } };
+  socials: { label: string; href: string; icon: string }[];
+};
+
+export const site: SiteData = {
   /** Hero identity. `first` is set in the display medium, `last` in the lighter voice. */
   name: { first: "Radhev", last: "R" },
   /**
@@ -52,7 +70,7 @@ export const site = {
     { label: "Pinterest", href: "https://in.pinterest.com/radhev99/", icon: "pinterest" },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/radhev-r-74481021a", icon: "linkedin" },
   ],
-} as const;
+};
 
 export const navItems = [
   { id: "work", label: "Work" },
@@ -378,10 +396,10 @@ export const projects: Project[] = [
 /* ── Case study ─────────────────────────────────────────────── */
 
 /** A project's own page on this site. */
-export const workPath = (p: Project) => `/work/${p.slug}`;
+export const workPath = (p: Pick<Project, "slug">) => `/work/${p.slug}`;
 
-export function getProject(slug: string) {
-  return projects.find((p) => p.slug === slug);
+export function getProject(content: ContentData, slug: string): Project | undefined {
+  return content.projects.find((p) => p.slug === slug);
 }
 
 /* ── Experience ─────────────────────────────────────────────── */
@@ -482,15 +500,32 @@ export const specialisms: Specialism[] = [
 
 /* ── Process ────────────────────────────────────────────────── */
 
-export const processSteps = [
+export type ProcessStep = { n: string; title: string; body: string };
+
+export const processSteps: ProcessStep[] = [
   { n: "01", title: "Discover", body: "Understand business requirements, user needs and the constraints of the product." },
   { n: "02", title: "Structure", body: "Define the information architecture and the user flows that hold it together." },
   { n: "03", title: "Prototype", body: "Turn flows into wireframes and interactive Figma prototypes." },
   { n: "04", title: "Systemise", body: "Build scalable interface components and the design system behind them." },
   { n: "05", title: "Validate", body: "Test with usability evaluations, heuristic reviews and feedback, then iterate." },
   { n: "06", title: "Deliver", body: "Work with developers through implementation and run design QA to keep quality consistent." },
-] as const;
+];
 
+/* ── Editable content bundle ───────────────────────────────── */
 
+/** Everything the admin can edit. `navItems` is structural and stays a static export. */
+export type ContentData = {
+  site: SiteData;
+  projects: Project[];
+  experience: Role[];
+  specialisms: Specialism[];
+  processSteps: ProcessStep[];
+};
 
-
+export const defaultContent: ContentData = {
+  site,
+  projects,
+  experience,
+  specialisms,
+  processSteps,
+};

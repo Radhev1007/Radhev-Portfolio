@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { site } from "@/lib/content";
+import { getContent } from "@/lib/content-store";
 
 /**
  * Everything is open to crawlers except the RC garage's game files: the game
@@ -8,7 +8,8 @@ import { site } from "@/lib/content";
  */
 export const dynamic = "force-static";
 
-export default function robots(): MetadataRoute.Robots {
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const { site } = await getContent();
   return {
     rules: { userAgent: "*", allow: "/", disallow: "/rc-crawler/" },
     sitemap: `${site.url}/sitemap.xml`,

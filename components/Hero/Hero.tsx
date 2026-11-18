@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/Animations/Button";
 import { HeroIllustration } from "@/components/Illustrations/HeroIllustration";
-import { site } from "@/lib/content";
+import { useContent } from "@/components/Providers/ContentProvider";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { intro, transition } from "@/lib/motion";
 import { HeroIdentity } from "./HeroIdentity";
@@ -19,6 +19,7 @@ import { useScrollTo } from "@/components/Providers/SmoothScroll";
  * the work itself, shown rather than described.
  */
 export function Hero() {
+  const { site } = useContent();
   const reduced = usePrefersReducedMotion();
   const scrollTo = useScrollTo();
 
