@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none" font-family="Helvetica, Arial, sans-serif"><rect width="400" height="300" fill="#0f0f0f"/>
+<!-- usability review: a screen with a click heatmap and a checklist -->
+<defs><radialGradient id="h"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".45" stop-color="#b5b5b5" stop-opacity=".45"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient></defs>
+<rect x="30" y="36" width="210" height="190" rx="10" fill="#1a1a1a" stroke="#4a4a4a"/>
+<rect x="30" y="36" width="210" height="22" rx="10" fill="#262626"/><g fill="#5a5a5a"><circle cx="44" cy="47" r="3.5"/><circle cx="56" cy="47" r="3.5"/><circle cx="68" cy="47" r="3.5"/></g>
+<g fill="#333333"><rect x="46" y="72" width="120" height="8" rx="4"/><rect x="46" y="88" width="170" height="54" rx="6"/><rect x="46" y="154" width="80" height="22" rx="11"/><rect x="46" y="188" width="170" height="6" rx="3"/><rect x="46" y="202" width="140" height="6" rx="3"/></g>
+<circle cx="86" cy="165" r="34" fill="url(#h)"/><circle cx="170" cy="112" r="22" fill="url(#h)" opacity=".7"/><circle cx="72" cy="76" r="14" fill="url(#h)" opacity=".5"/>
+<g><rect x="262" y="52" width="110" height="160" rx="10" fill="#1a1a1a" stroke="#3a3a3a"/>
+<g fill="#e9e9e9"><rect x="276" y="70" width="16" height="16" rx="4"/><rect x="276" y="104" width="16" height="16" rx="4"/><rect x="276" y="138" width="16" height="16" rx="4"/></g>
+<g stroke="#0f0f0f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M280 78l3 3 6-6"/><path d="M280 112l3 3 6-6"/><path d="M280 146l3 3 6-6"/></g>
+<rect x="276" y="172" width="16" height="16" rx="4" fill="none" stroke="#6a6a6a" stroke-width="2"/>
+<g fill="#8c8c8c"><rect x="302" y="75" width="56" height="6" rx="3"/><rect x="302" y="109" width="48" height="6" rx="3"/><rect x="302" y="143" width="54" height="6" rx="3"/></g><rect x="302" y="177" width="44" height="6" rx="3" fill="#4a4a4a"/></g>
+<text x="20" y="284" fill="#6a6a6a" font-size="11" letter-spacing="2">05 — VALIDATE</text></svg>

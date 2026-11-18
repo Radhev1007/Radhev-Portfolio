@@ -545,13 +545,14 @@ export const approachSection: SectionCopy = {
   description:
     "Every product comes with its own challenges. My approach is to understand the problem, create structure, explore solutions, and refine the experience through collaboration and iteration.",
 };
-export const approach: Numbered[] = [
-  { title: "Discover", body: "Understand the product, business requirements, user needs, and project constraints before exploring solutions." },
-  { title: "Structure", body: "Organise information architecture, define user journeys, and create clear flows that connect different parts of the experience." },
-  { title: "Prototype", body: "Translate ideas into wireframes and interactive prototypes to explore structure, functionality, and user interactions." },
-  { title: "Systemise", body: "Create consistent interface patterns and reusable components that support the product as it evolves." },
-  { title: "Validate", body: "Review usability, evaluate interface consistency, gather feedback, and refine design decisions through iteration." },
-  { title: "Deliver", body: "Prepare clear design specifications, collaborate with developers, and support implementation through design QA." },
+/** Each step carries an illustration of that step (public/approach) that follows the pointer while its row is hovered. */
+export const approach: (Numbered & { image: string })[] = [
+  { title: "Discover", body: "Understand the product, business requirements, user needs, and project constraints before exploring solutions.", image: "/approach/discover.svg" },
+  { title: "Structure", body: "Organise information architecture, define user journeys, and create clear flows that connect different parts of the experience.", image: "/approach/structure.svg" },
+  { title: "Prototype", body: "Translate ideas into wireframes and interactive prototypes to explore structure, functionality, and user interactions.", image: "/approach/prototype.svg" },
+  { title: "Systemise", body: "Create consistent interface patterns and reusable components that support the product as it evolves.", image: "/approach/systemise.svg" },
+  { title: "Validate", body: "Review usability, evaluate interface consistency, gather feedback, and refine design decisions through iteration.", image: "/approach/validate.svg" },
+  { title: "Deliver", body: "Prepare clear design specifications, collaborate with developers, and support implementation through design QA.", image: "/approach/deliver.svg" },
 ];
 
 /* Experience */

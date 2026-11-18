@@ -3,7 +3,7 @@ import { Host_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import type { ReactNode } from "react";
-import { SplashLayer } from "@/components/Cursor/SplashLayer";
+import { GlassCursor } from "@/components/Cursor/GlassCursor";
 import { Footer } from "@/components/Footer/Footer";
 import { Navigation } from "@/components/Navigation/Navigation";
 import { SmoothScroll } from "@/components/Providers/SmoothScroll";
@@ -53,7 +53,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Navigation />
             {children}
             <Footer />
-            <SplashLayer />
+            <GlassCursor />
         </SmoothScroll>
         {/* Vercel Web Analytics: visits, pages, referrers, countries and devices, without cookies (vercel.com →
             project → Analytics). Sends nothing outside Vercel, e.g. on localhost or the static build. */}

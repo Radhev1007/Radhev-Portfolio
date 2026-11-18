@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/Animations/Reveal";
-import { CopySection, NumberedList } from "@/components/Section/Parts";
+import { CopySection } from "@/components/Section/Parts";
+import { ApproachList } from "./ApproachList";
 import {
   about,
   aboutClosing,
@@ -28,7 +29,7 @@ export function About() {
 export function Approach() {
   return (
     <CopySection id="approach" copy={approachSection}>
-      <NumberedList items={approach} />
+      <ApproachList items={approach} />
     </CopySection>
   );
 }
