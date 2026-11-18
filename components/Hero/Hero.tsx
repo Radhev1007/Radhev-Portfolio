@@ -15,6 +15,7 @@ export function Hero() {
       <div className="grid grid-cols-1 gap-x-5 gap-y-4 lg:grid-cols-[28.5%_1fr]">
         <div className="text-[length:var(--text-ui)] leading-[1.7]">
           <p className="text-bone">{site.brand}</p>
+          <p className="text-soft">{site.titles}</p>
           <p className="text-mute">
             {site.location}
             {site.available && <span> · {site.availabilityLabel}</span>}

@@ -26,6 +26,8 @@ export const site = {
   intro:
     "I'm Radhev, a UI/UX and Product Designer with five years of experience across enterprise SaaS, fintech, education and government. I take complicated workflows and make them simple to understand, hand over and use.",
   brand: "Radhev R",
+  /** The titles shown under the name in the hero. */
+  titles: "Senior UX Designer / Product Designer",
   /** One wording everywhere: the hero, the footer, the share card and structured data. */
   role: "Senior UI/UX & Product Designer",
   /** The live address: canonical URL, sitemap, share cards and structured data are built on it. */
