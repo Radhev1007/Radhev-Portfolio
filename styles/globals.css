@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Scan the app's own folders for classes, whatever directory the dev server is started from. */
+@source "../app";
+@source "../components";
+@source "../lib";
+
 
 
 /* ── Design tokens ─────────────────────────────────────────────

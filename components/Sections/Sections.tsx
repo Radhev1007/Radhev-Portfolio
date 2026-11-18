@@ -1,5 +1,5 @@
 import { Reveal } from "@/components/Animations/Reveal";
-import { CopySection, Lead, NumberedList } from "@/components/Section/Parts";
+import { CopySection, NumberedList } from "@/components/Section/Parts";
 import {
   about,
   aboutClosing,
