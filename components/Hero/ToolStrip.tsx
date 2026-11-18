@@ -1,48 +1,29 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { tools } from "@/lib/content";
 import { iconPaths } from "./toolMarks";
-
-/** Loaded the first time a tile is hovered, so the WebGL code stays out of the page's first load. */
-const loadMesh = () => import("@/components/ElasticMesh/ElasticMesh");
-const ElasticMesh = dynamic(loadMesh, { ssr: false });
 
 type Tip = { name: string; x: number; y: number } | null;
 
 /**
- * Hovering a tile inflates its logo into an elastic ElasticMesh balloon you can push, pull and poke.
- * The tools I work in, as real, full-colour logos on wide quiet tiles drifting left, as the reference sets its client logos. Hovering or focusing one names it in a tooltip. The
- * tooltip is one floating element placed from the tile's position, because anything inside the scrolling
- * strip would be clipped by it. The strip pauses while a tile is hovered or focused; the second copy that
- * makes the loop seamless is hidden from assistive technology and from the tab order.
+ * The tools I work in, as real, full-colour logos on wide quiet tiles drifting left, as the reference sets its
+ * client logos. Hovering or focusing one names it in a tooltip. The tooltip is one floating element placed from
+ * the tile's position, because anything inside the scrolling strip would be clipped by it. The strip pauses
+ * while a tile is hovered or focused; the second copy that makes the loop seamless is hidden from assistive
+ * technology and from the tab order.
  */
 export function ToolStrip() {
   const [tip, setTip] = useState<Tip>(null);
-  /** The tile under the pointer. Only this one gets a WebGL canvas, since the strip has twenty tiles and a page may hold about sixteen contexts. */
-  const [hot, setHot] = useState<string | null>(null);
-  /** The tile whose balloon has drawn its first frame: its flat logo stays until then, so the tile is never empty. */
-  const [ready, setReady] = useState<string | null>(null);
-
-  // fetch the effect's code while the browser is idle, so the first hover does not wait for it
-  useEffect(() => {
-    const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 1200));
-    idle(() => void loadMesh());
-  }, []);
   const show = (name: string) => (e: React.SyntheticEvent<HTMLElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     setTip({ name, x: r.left + r.width / 2, y: r.top });
   };
-  const hide = () => {
-    setTip(null);
-    setHot(null);
-    setReady(null);
-  };
+  const hide = () => setTip(null);
 
   return (
     <div className="group/strip relative">
-      <div className="-my-6 overflow-hidden py-6 [mask-image:linear-gradient(to_right,transparent,#000_6%,#000_94%,transparent)]">
+      <div className="overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_6%,#000_94%,transparent)]">
         <div className="flex w-max animate-[marquee_40s_linear_infinite] group-focus-within/strip:[animation-play-state:paused] group-hover/strip:[animation-play-state:paused]">
           {[0, 1].map((copy) => (
             <ul
@@ -51,47 +32,22 @@ export function ToolStrip() {
               aria-hidden={copy === 1 || undefined}
               className="flex shrink-0 gap-2.5 pr-2.5"
             >
-              {tools.map((t) => {
-                const id = `${copy}-${t.name}`;
-                return (
+              {tools.map((t) => (
                 <li key={t.name}>
                   <span
                     tabIndex={copy === 0 ? 0 : -1}
                     role="img"
                     aria-label={t.name}
-                    onPointerEnter={(e) => {
-                      show(t.name)(e);
-                      setHot(id);
-                    }}
+                    onPointerEnter={show(t.name)}
                     onPointerLeave={hide}
                     onFocus={show(t.name)}
                     onBlur={hide}
-                    className="relative grid h-[66px] w-[99px] place-items-center rounded-[4px] bg-ink-2 transition-colors duration-300 hover:bg-ink-3 focus-visible:bg-ink-3"
+                    className="grid h-[66px] w-[99px] place-items-center rounded-[4px] bg-ink-2 transition-colors duration-300 hover:bg-ink-3 focus-visible:bg-ink-3"
                   >
-                    <span className={`grid place-items-center transition-opacity duration-200 ${ready === id ? "opacity-0" : "opacity-100"}`}>
-                      <Mark mark={t.mark} />
-                    </span>
-                    {hot === id && (
-                      <span className="absolute left-1/2 top-1/2 z-20 size-[110px] -translate-x-1/2 -translate-y-1/2">
-                        <ElasticMesh
-                          src={`/tools/${t.mark}.svg`}
-                          material="jelly"
-                          imageColors
-                          inflate={1}
-                          stiffness={0.45}
-                          wobble={0.7}
-                          grabRadius={46}
-                          stretch={0.6}
-                          shadow={0.35}
-                          theme="dark"
-                          onReady={() => setReady(id)}
-                        />
-                      </span>
-                    )}
+                    <Mark mark={t.mark} />
                   </span>
                 </li>
-                );
-              })}
+              ))}
             </ul>
           ))}
         </div>
