@@ -1,56 +1,74 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { useState } from "react";
-import { Parallax } from "@/components/Animations/Parallax";
+import Link from "next/link";
 import { Reveal } from "@/components/Animations/Reveal";
-import { ProjectCard } from "@/components/ProjectCard/ProjectCard";
-import { projects, type Project } from "@/lib/content";
-import { TextReveal } from "@/components/Animations/TextReveal";
-import { SectionHeader } from "./SectionHeader";
+import { Chip, Ext } from "@/components/Section/Section";
+import { projects, workPath, type Project } from "@/lib/content";
+import { ProjectImage } from "./ProjectImage";
 
+/**
+ * The work, one large cover after another, as the reference runs it: the project's words in the left rail,
+ * level with the bottom of the picture, and the picture in the wide column. The cover opens the case study.
+ */
 export function Projects() {
-  const [active, setActive] = useState<Project | null>(null);
-
   return (
-    <section id="work" aria-label="Selected work" className="relative">
-      {/* A flat colour wash that shifts to the focused project's palette */}
-      <motion.div
-        aria-hidden
-        className="pointer-events-none sticky top-0 -mb-[100svh] h-[100svh] w-full"
-        animate={{ backgroundColor: active ? `${active.palette.to}14` : "#00000000" }}
-        transition={{ duration: 0.9 }}
-      />
-
-      {/* The padding lives here, not on the section: `surface-invert` paints
-          this element, so padding on the parent sits outside the white and
-          leaves the header flush against its top edge. */}
-      <div className="surface-invert relative gutter mx-auto max-w-[1600px] section-y">
-        <SectionHeader index="01" label="Selected Work" count={projects.length} />
-
-        {/* Heading on the left; on the right, what the work is. */}
-        <div className="mt-8 grid grid-cols-1 gap-12 md:mt-12 md:grid-cols-12 md:gap-8">
-          <Parallax speed={30} className="md:col-span-6">
-            <h2 className="section-title">
-              <TextReveal as="span" text="Selected" className="block" />{" "}
-              <TextReveal as="span" text="Work" delay={0.1} className="block font-accent text-bone/60" />
-            </h2>
-          </Parallax>
-
-          <Reveal className="md:col-span-5 md:col-start-8 md:self-end" delay={0.2}>
-            <p className="section-intro">
-              A selection of complex digital products, enterprise platforms and interfaces I&apos;ve
-              designed.
-            </p>
-          </Reveal>
-        </div>
-
-        <div className="mt-16 flex flex-col gap-28 md:mt-24 md:gap-44">
-          {projects.map((p, i) => (
-            <ProjectCard key={p.slug} project={p} index={i} onActive={setActive} />
-          ))}
-        </div>
-      </div>
+    <section id="work" aria-labelledby="work-title" className="scroll-mt-[67px]">
+      <h2 id="work-title" className="sr-only">
+        Selected work
+      </h2>
+      <ul className="gutter mx-auto flex max-w-[1920px] flex-col gap-10 lg:gap-[30px]">
+        {projects.map((p, i) => (
+          <li key={p.slug}>
+            <Project p={p} first={i === 0} />
+          </li>
+        ))}
+      </ul>
     </section>
+  );
+}
+
+function Project({ p, first }: { p: Project; first: boolean }) {
+  const [discipline, kind, industry] = p.categories;
+  const meta = [p.client, industry, p.story.year].filter(Boolean).join(" · ");
+  return (
+    <Reveal>
+      <article className="grid grid-cols-1 gap-x-5 gap-y-5 lg:grid-cols-[28.5%_1fr] lg:items-end">
+        <div className="order-2 flex flex-col gap-1 text-[length:var(--text-ui)] leading-[1.7] lg:order-1">
+          <h3 className="text-bone">{p.title}</h3>
+          <p className="text-soft">{p.description}</p>
+          <p className="text-mute">
+            {meta}
+            <span className="block">{p.role}</span>
+          </p>
+          <ul aria-label="Categories" className="mt-3 flex flex-wrap gap-1.5">
+            {p.status && (
+              <li>
+                <Chip>{p.status}</Chip>
+              </li>
+            )}
+            {[discipline, kind, industry].map((c) => (
+              <li key={c}>
+                <Chip>{c}</Chip>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 flex flex-wrap gap-x-5 text-bone">
+            <Link href={workPath(p)} className="underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:decoration-bone">
+              Case study
+            </Link>
+            <a
+              href={p.href}
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:decoration-bone"
+            >
+              Behance
+              <Ext />
+            </a>
+          </p>
+        </div>
+        <Link href={workPath(p)} aria-label={`Read the case study: ${p.title}`} className="order-1 block lg:order-2">
+          <ProjectImage src={p.image ?? ""} alt={p.imageAlt ?? p.title} priority={first} />
+        </Link>
+      </article>
+    </Reveal>
   );
 }

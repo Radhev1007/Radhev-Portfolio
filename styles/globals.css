@@ -3,41 +3,30 @@
 
 
 /* ── Design tokens ─────────────────────────────────────────────
-   Typography: Host Grotesk throughout (self-hosted through next/font, see app/layout.tsx).
-   All three are self-hosted through next/font — see app/layout.tsx.
-   Palette: near-black ground, cream foreground, one hot accent. */
+   Measured from the reference (nickclement.com): a pure black ground, white text, three greys and one
+   raised surface. It has no accent colour, so neither does this site: hierarchy comes from the greys.
+   Typography: Host Grotesk throughout (self-hosted through next/font, see app/layout.tsx). */
 @theme {
-  --color-ink: #000000;
-  --color-ink-2: #0a0a0a;
-  --color-ink-3: #141414;
-  --color-bone: #ffffff;
-  --color-mute: #9c9c9c;
-  --color-faint: #5c5c5c;
-  --color-line: rgb(255 255 255 / 0.14);
-  --color-accent: #f43c00;
-  /* Accent used on the inverse surface (bg-bone), darkened to hold contrast. */
-  --color-accent-inverse: #c62f00;
-  /* Filled accent behind white text (the primary button). Same value on every surface, so it is never
-     re-declared: white on it is 5.5:1, where white on --color-accent is only 3.8:1 (fails AA). */
-  --color-accent-strong: #c62f00;
-  --color-cool: #9c9c9c;
+  --color-ink: #000000;          /* page ground */
+  --color-ink-2: #080808;        /* tile surface: client names */
+  --color-ink-3: #171717;        /* raised surface: chips */
+  --color-bone: #ffffff;         /* primary text */
+  --color-soft: #adadad;         /* secondary text: taglines, list items */
+  --color-mute: #8c8c8c;         /* labels, meta (6:1 on black, so it passes AA at 14px) */
+  --color-faint: #7a7a7a;        /* decoration only: never the only carrier of meaning */
+  --color-line: #1f1f1f;         /* hairline rules */
+  --color-line-strong: #262626;  /* hover and focus borders */
+  --color-accent: #ffffff;       /* no hue: the active state is white */
+  --color-accent-inverse: #000000;
+  --color-accent-strong: #262626; /* filled button behind white text */
+  --color-cool: #8c8c8c;
 
-  /* One family site-wide. Hierarchy comes from size, weight and tracking
-     rather than from switching typeface, so the display, serif and mono
-     tokens all point here and existing utilities keep resolving.
-
-     Host Grotesk is self-hosted through next/font, so there is no external
-     request and no licence to clear. */
   --font-sans: var(--font-host-grotesk), Arial, Helvetica, sans-serif;
   --font-display: var(--font-sans);
-  --font-mono: var(--font-sans);   /* one typeface: any font-mono left resolves to Host Grotesk */
+  --font-mono: var(--font-sans);
 
-  /* ── Corner radius ───────────────────────────────────────────
-     The site is square-cornered. Every surface and control still names
-     its role (`card`, `inner`, `control`, `nested`) so the decision lives
-     in one place; all four are 0. Only true circles — the cursor, status
-     dots, round icon buttons — use rounded-full. */
-  --radius-card: 0;
+  /* Corners: square, except media, which the reference rounds by 4px. */
+  --radius-card: 4px;
   --radius-inner: 0;
   --radius-control: 0;
   --radius-nested: 0;
@@ -45,32 +34,29 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
-  /* ── Type scale ────────────────────────────────────────────────
-     Every size on the site is one of eleven steps:
-       14 · 16 · 18 · 24 · 32 · 40 · 48 · 56 · 64 · 72 · 80 px
-     Each role starts at its phone size here and steps up at the
-     breakpoints below, instead of scaling fluidly through in-between
-     values. The headline tops out at 72 because the hero sets it on one
-     unbroken line per row; display (the large index numbers) takes 80. */
-  /* The hero headline sets each row unbroken in a half-width column, so it
-     steps with that column's width rather than with the section titles. */
-  --text-hero: 2rem; /* 32 → 48 → 64 → 72 */
-  --text-display: 3rem; /* 48 → 64 → 72 → 80 */
-  --text-headline: 2rem; /* 32 → 48 → 56 → 64 → 72 */
-  --text-title: 2rem; /* 32 → 40 → 48 */
-  --text-subtitle: 1.5rem; /* 24 → 32 → 40 */
-  /* Titles of items inside a section: projects, cards, companies, steps. */
-  --text-item: 1.5rem; /* 24 → 32 */
-  --text-lead: 1.125rem; /* 18 → 24 */
-  --text-body: 1rem; /* 16 */
-  --text-small: 0.875rem; /* 14 */
-  --text-caption: 0.875rem; /* 14 */
-  --text-micro: 0.875rem; /* 14 */
+  /* The reference's own scale: 14px body at 1.7, a 30px headline, 10px chips. */
+  --text-ui: 0.875rem;
+  --text-h1: 1.5rem;       /* 24 → 30 */
+  --text-chip: 0.625rem;
+
+  /* Case-study scale (unchanged). Each role starts at its phone size and steps up at the breakpoints below. */
+  --text-hero: 2rem;
+  --text-display: 3rem;
+  --text-headline: 2rem;
+  --text-title: 2rem;
+  --text-subtitle: 1.5rem;
+  --text-item: 1.5rem;
+  --text-lead: 1.125rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-caption: 0.875rem;
+  --text-micro: 0.875rem;
 }
 
 /* Type-scale steps. Unlayered, so they override the theme defaults above. */
 @media (min-width: 48rem) {
   :root {
+    --text-h1: 1.875rem;
     --text-display: 4rem;
     --text-headline: 3rem;
     --text-title: 2.5rem;
@@ -107,20 +93,8 @@
 }
 
 :root {
-  --gutter: clamp(1rem, 4vw, 3.5rem);
+  --gutter: 1.25rem; /* 20px, as the reference */
   color-scheme: dark;
-
-  /* Flat illustration palette (dark theme) */
-  --ill-ink: #000000;
-  --ill-surface: #0d0d0d;
-  --ill-surface2: #161616;
-  --ill-surface3: #222222;
-  --ill-paper: #ffffff;
-  --ill-grey: #9c9c9c;
-  --ill-line: rgb(255 255 255 / 0.16);
-  --ill-faint: rgb(255 255 255 / 0.3);
-  --ill-cyan: #f43c00;
-  --ill-cyan-soft: rgb(244 60 0 / 0.1);
 }
 
 /* ── Base ────────────────────────────────────────────────────── */
@@ -143,10 +117,11 @@
   h2,
   h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.035em;
+    letter-spacing: -0.02em;
+    font-weight: 400;
   }
   ::selection {
-    background: var(--color-accent);
+    background: var(--color-bone);
     color: var(--color-ink);
   }
   :focus-visible {
@@ -185,10 +160,10 @@ html.has-custom-cursor * {
 
 @utility label {
   font-family: var(--font-sans);
-  font-size: var(--text-caption);
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-size: var(--text-ui);
+  font-weight: 400;
+  line-height: 1.7;
+  letter-spacing: 0;
   color: var(--color-mute);
 }
 
@@ -200,8 +175,8 @@ html.has-custom-cursor * {
   font-family: var(--font-display);
   font-size: var(--text-headline);
   /* Light, like the hero headline: every title on the site shares its voice. */
-  font-weight: 300;
-  line-height: 0.95;
+  font-weight: 400;
+  line-height: 1;
   letter-spacing: -0.035em;
 }
 

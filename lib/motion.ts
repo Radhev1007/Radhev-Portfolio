@@ -9,24 +9,6 @@ export const ease = {
 
 export const duration = { fast: 0.35, base: 0.7, slow: 1.1, cinematic: 1.4 };
 
-/**
- * How long the opening screen (components/Chrome/IntroLoader) holds before it lifts. The hero's
- * entrance below starts from then, so it plays as the screen reveals it rather than behind it.
- */
-export const INTRO_HOLD = 2.1;
-const H = INTRO_HOLD + 0.25;   // the lift is under way
-
-/** Hero entrance choreography (seconds from first paint): label → headline → illustration → copy → nav. */
-export const intro = {
-  background: H,
-  label: H + 0.3,
-  title: H + 0.45,
-  objects: H + 0.85,
-  supporting: H + 1.0,
-  cta: H + 1.15,
-  nav: H + 1.5,
-} as const;
-
 export const transition = (delay = 0, d = duration.base): Transition => ({
   duration: d,
   delay,
@@ -34,7 +16,7 @@ export const transition = (delay = 0, d = duration.base): Transition => ({
 });
 
 export const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 28 },
+  hidden: { opacity: 0, y: 14 },
   show: (delay: number = 0) => ({ opacity: 1, y: 0, transition: transition(delay) }),
 };
 
@@ -53,7 +35,7 @@ export const stagger = (each = 0.08, delayChildren = 0): Variants => ({
   show: { transition: { staggerChildren: each, delayChildren } },
 });
 
-export const viewportOnce = { once: true, margin: "0px 0px -12% 0px" } as const;
+export const viewportOnce = { once: true, margin: "0px 0px -8% 0px" } as const;
 
 /**
  * Scroll-linked transform whose keyframes always span the full 0…1 input.
