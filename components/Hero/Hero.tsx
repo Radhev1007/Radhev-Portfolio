@@ -9,7 +9,7 @@ import { SocialLinks } from "./SocialLinks";
 import { ToolStrip } from "./ToolStrip";
 
 /**
- * The opening screen, typography first: the name and portrait in the left rail, the headline, intro and
+ * The opening screen, typography first: the social links and portrait in the left rail, the headline, intro and
  * figures in the wide column, then the tools I work in. From desktop up it fills the viewport, and the portrait
  * and the tool strip both sit on its bottom edge.
  */
@@ -21,14 +21,10 @@ export function Hero() {
       className="gutter mx-auto flex max-w-[1920px] flex-col pb-16 pt-[calc(67px+48px)] lg:min-h-svh lg:pb-10 lg:pt-[calc(67px+clamp(64px,10svh,160px))]"
     >
       <div className="grid flex-1 grid-cols-1 gap-x-5 gap-y-10 lg:grid-cols-[28.5%_1fr] lg:grid-rows-[1fr_auto] lg:gap-y-16">
-        {/* On phones this column dissolves into the grid so the headline comes straight after the name and
+        {/* On phones this column dissolves into the grid so the headline comes straight after the
             icons, and the portrait drops below the tools instead of pushing the headline off the first screen. */}
         <div className="max-lg:contents lg:row-span-2 lg:flex lg:flex-col">
-          <div className="text-[length:var(--text-ui)] leading-[1.7] max-lg:order-1">
-            <p className="text-bone">{site.brand}</p>
-            <p className="text-mute">{site.location}</p>
-          </div>
-          <Reveal delay={0.85} className="max-lg:order-2 lg:mt-5">
+          <Reveal delay={0.85} className="max-lg:order-2">
             <SocialLinks />
           </Reveal>
           <Reveal delay={0.95} className="max-lg:order-5 max-lg:mt-4 lg:mt-auto lg:pt-10">
