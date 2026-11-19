@@ -37,7 +37,7 @@ export function Hero() {
             immediate
             delay={0.15}
             text={site.heroTitle.greeting}
-            className="text-[clamp(2.5rem,5.5vw,4.75rem)] leading-[1.02] tracking-[-0.045em] text-bone"
+            className="text-[clamp(2rem,4vw,3.5rem)] leading-[1.04] tracking-[-0.04em] text-bone"
           />
           <Reveal delay={0.35}>
             <p className="mt-4 max-w-[30ch] text-[clamp(1.375rem,2.4vw,2.25rem)] leading-[1.18] tracking-[-0.03em] text-soft lg:mt-5">
