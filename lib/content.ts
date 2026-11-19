@@ -17,7 +17,7 @@ export const site = {
   },
   /** The homepage hero's supporting copy, one paragraph each. */
   intro: [
-    "I'm Radhev, a UI/UX Designer with 5 years of experience transforming complex requirements into intuitive digital products.",
+    "For 5 years I've been turning complex requirements into intuitive digital products.",
     "I work across enterprise SaaS, fintech, government, and other digital platforms, creating meaningful user experiences through thoughtful UX, refined interfaces, and scalable design systems.",
   ],
   /** Figures shown under the hero copy. */
