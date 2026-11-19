@@ -14,7 +14,6 @@ import { ToolStrip } from "./ToolStrip";
  * and the tool strip both sit on its bottom edge.
  */
 export function Hero() {
-  const headline = `${site.heroTitle.lead} ${site.heroTitle.mid} ${site.heroTitle.tail}`;
   return (
     <section
       id="home"
@@ -38,17 +37,18 @@ export function Hero() {
           </Reveal>
         </div>
         <div className="max-lg:order-3 max-lg:mt-4">
-          {/* the rail already says this on phones, where the two would sit one above the other */}
-          <Reveal delay={0.05} className="max-lg:hidden">
-            <p className="label mb-5">{site.eyebrow}</p>
-          </Reveal>
           <TextReveal
             as="h1"
             immediate
             delay={0.15}
-            text={headline}
-            className="max-w-[22ch] text-[clamp(2rem,4vw,3.5rem)] leading-[1.04] tracking-[-0.04em] text-bone"
+            text={site.heroTitle.greeting}
+            className="text-[clamp(2.5rem,5.5vw,4.75rem)] leading-[1.02] tracking-[-0.045em] text-bone"
           />
+          <Reveal delay={0.35}>
+            <p className="mt-4 max-w-[30ch] text-[clamp(1.375rem,2.4vw,2.25rem)] leading-[1.18] tracking-[-0.03em] text-soft lg:mt-5">
+              {site.heroTitle.tagline}
+            </p>
+          </Reveal>
           <Reveal delay={0.5}>
             <div className="mt-7 flex max-w-[56ch] flex-col gap-5 lg:mt-6 lg:gap-4 text-[length:var(--text-ui)] leading-[1.7] text-mute">
               {site.intro.map((p) => (

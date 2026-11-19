@@ -2,9 +2,8 @@ import { Reveal } from "@/components/Animations/Reveal";
 import { Headline, Lead } from "@/components/Section/Parts";
 import { Ext, Section } from "@/components/Section/Section";
 import { contactSection, site } from "@/lib/content";
-import { LaserCard } from "./LaserCard";
 
-/** Connect: the closing statement, then the ways to reach me on a card lit by a falling beam (LaserCard). */
+/** Connect: the closing statement, then the ways to reach me below it. */
 export function Contact() {
   const social = (label: string) => site.socials.find((s) => s.label === label)!.href;
   const links = [
@@ -22,7 +21,7 @@ export function Contact() {
           ))}
         </div>
       </Reveal>
-      <LaserCard>
+      <div className="mt-12">
         {/* the email first, large, as the main way in; then where I am; then the other routes as ruled rows */}
         <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div>
@@ -63,7 +62,7 @@ export function Contact() {
             ),
           )}
         </ul>
-      </LaserCard>
+      </div>
     </Section>
   );
 }
