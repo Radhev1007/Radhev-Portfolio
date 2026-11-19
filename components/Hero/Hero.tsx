@@ -26,7 +26,6 @@ export function Hero() {
         <div className="max-lg:contents lg:row-span-2 lg:flex lg:flex-col">
           <div className="text-[length:var(--text-ui)] leading-[1.7] max-lg:order-1">
             <p className="text-bone">{site.brand}</p>
-            <p className="text-soft">{site.titles}</p>
             <p className="text-mute">{site.location}</p>
           </div>
           <Reveal delay={0.85} className="max-lg:order-2 lg:mt-5">

@@ -28,8 +28,6 @@ export const site = {
     { value: "Enterprise", label: "& Product Design" },
   ],
   brand: "Radhev R",
-  /** The titles shown under the name in the hero. */
-  titles: "Senior UI/UX & Product Designer",
   /** One wording everywhere: the hero, the footer, the share card and structured data. */
   role: "Senior UI/UX & Product Designer",
   /** The live address: canonical URL, sitemap, share cards and structured data are built on it. */
