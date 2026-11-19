@@ -15,10 +15,9 @@ export const site = {
     greeting: "Hi, I’m Radhev",
     tagline: "Senior UI/UX & Product Designer crafting intuitive and visually engaging digital experiences.",
   },
-  /** The homepage hero's supporting copy, one paragraph each. */
+  /** The homepage hero's supporting copy: one sentence. */
   intro: [
-    "For 5 years I've been turning complex requirements into intuitive digital products.",
-    "I work across enterprise SaaS, fintech, government, and other digital platforms, creating meaningful user experiences through thoughtful UX, refined interfaces, and scalable design systems.",
+    "For 5 years I've been turning complex requirements into intuitive digital products across enterprise SaaS, fintech and government, through thoughtful UX, refined interfaces and scalable design systems.",
   ],
   /** Figures shown under the hero copy. */
   highlights: [
