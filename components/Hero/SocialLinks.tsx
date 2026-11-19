@@ -8,13 +8,13 @@ const profiles = site.socials.flatMap((s) =>
 );
 
 /**
- * Profile links as round hairline buttons that fill white on hover, set in the hero's left rail, just under
- * the location line. A different shape from the boxed icons of the earlier rail: circles, in a row. Each one
+ * Profile links as round hairline buttons that fill white on hover, set at the top of the hero's left rail:
+ * stacked in a column from desktop up, in a row on phones so the headline stays on the first screen. Each one
  * leans toward a nearby pointer (React Bits' Magnet).
  */
 export function SocialLinks() {
   return (
-    <ul aria-label="Profiles" className="flex items-center gap-2.5">
+    <ul aria-label="Profiles" className="flex items-center gap-2.5 lg:flex-col lg:items-start">
       {profiles.map((p) => (
         <li key={p.label}>
           <Magnet padding={40} magnetStrength={3}>
