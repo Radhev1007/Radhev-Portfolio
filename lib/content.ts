@@ -10,15 +10,11 @@
 export const site = {
   /** Hero identity. `first` is set in the display medium, `last` in the lighter voice. */
   name: { first: "Radhev", last: "R" },
-  /** The hero headline, in three runs so the share card can set one word apart. */
+  /** The hero headline: a short greeting set large, then one line on what I do. Also used on the share card. */
   heroTitle: {
-    lead: "Designing digital experiences that make",
-    mid: "complexity",
-    tail: "feel simple.",
-    accent: "complexity",
+    greeting: "Hi, I’m Radhev",
+    tagline: "Senior UI/UX & Product Designer crafting intuitive and visually engaging digital experiences.",
   },
-  /** Small line above the headline. */
-  eyebrow: "Senior UI/UX & Product Designer",
   /** The homepage hero's supporting copy, one paragraph each. */
   intro: [
     "I'm Radhev, a UI/UX Designer with 5 years of experience transforming complex requirements into intuitive digital products.",
@@ -32,8 +28,6 @@ export const site = {
     { value: "Enterprise", label: "& Product Design" },
   ],
   brand: "Radhev R",
-  /** The titles shown under the name in the hero. */
-  titles: "Senior UI/UX & Product Designer",
   /** One wording everywhere: the hero, the footer, the share card and structured data. */
   role: "Senior UI/UX & Product Designer",
   /** The live address: canonical URL, sitemap, share cards and structured data are built on it. */

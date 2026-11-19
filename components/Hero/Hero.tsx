@@ -9,12 +9,11 @@ import { SocialLinks } from "./SocialLinks";
 import { ToolStrip } from "./ToolStrip";
 
 /**
- * The opening screen, typography first: the name and portrait in the left rail, the headline, intro and
+ * The opening screen, typography first: the social links and portrait in the left rail, the headline, intro and
  * figures in the wide column, then the tools I work in. From desktop up it fills the viewport, and the portrait
  * and the tool strip both sit on its bottom edge.
  */
 export function Hero() {
-  const headline = `${site.heroTitle.lead} ${site.heroTitle.mid} ${site.heroTitle.tail}`;
   return (
     <section
       id="home"
@@ -22,15 +21,10 @@ export function Hero() {
       className="gutter mx-auto flex max-w-[1920px] flex-col pb-16 pt-[calc(67px+48px)] lg:min-h-svh lg:pb-10 lg:pt-[calc(67px+clamp(64px,10svh,160px))]"
     >
       <div className="grid flex-1 grid-cols-1 gap-x-5 gap-y-10 lg:grid-cols-[28.5%_1fr] lg:grid-rows-[1fr_auto] lg:gap-y-16">
-        {/* On phones this column dissolves into the grid so the headline comes straight after the name and
+        {/* On phones this column dissolves into the grid so the headline comes straight after the
             icons, and the portrait drops below the tools instead of pushing the headline off the first screen. */}
         <div className="max-lg:contents lg:row-span-2 lg:flex lg:flex-col">
-          <div className="text-[length:var(--text-ui)] leading-[1.7] max-lg:order-1">
-            <p className="text-bone">{site.brand}</p>
-            <p className="text-soft">{site.titles}</p>
-            <p className="text-mute">{site.location}</p>
-          </div>
-          <Reveal delay={0.85} className="max-lg:order-2 lg:mt-5">
+          <Reveal delay={0.85} className="max-lg:order-2">
             <SocialLinks />
           </Reveal>
           <Reveal delay={0.95} className="max-lg:order-5 max-lg:mt-4 lg:mt-auto lg:pt-10">
@@ -38,17 +32,18 @@ export function Hero() {
           </Reveal>
         </div>
         <div className="max-lg:order-3 max-lg:mt-4">
-          {/* the rail already says this on phones, where the two would sit one above the other */}
-          <Reveal delay={0.05} className="max-lg:hidden">
-            <p className="label mb-5">{site.eyebrow}</p>
-          </Reveal>
           <TextReveal
             as="h1"
             immediate
             delay={0.15}
-            text={headline}
-            className="max-w-[22ch] text-[clamp(2rem,4vw,3.5rem)] leading-[1.04] tracking-[-0.04em] text-bone"
+            text={site.heroTitle.greeting}
+            className="text-[clamp(2rem,4vw,3.5rem)] leading-[1.04] tracking-[-0.04em] text-bone"
           />
+          <Reveal delay={0.35}>
+            <p className="mt-4 max-w-[30ch] text-[clamp(1.375rem,2.4vw,2.25rem)] leading-[1.18] tracking-[-0.03em] text-soft lg:mt-5">
+              {site.heroTitle.tagline}
+            </p>
+          </Reveal>
           <Reveal delay={0.5}>
             <div className="mt-7 flex max-w-[56ch] flex-col gap-5 lg:mt-6 lg:gap-4 text-[length:var(--text-ui)] leading-[1.7] text-mute">
               {site.intro.map((p) => (
