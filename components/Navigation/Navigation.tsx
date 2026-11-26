@@ -79,12 +79,6 @@ export function Navigation() {
         </Link>
 
         <div className="flex items-center gap-5 md:gap-7">
-          <a
-            href={`mailto:${site.email}`}
-            className="hidden text-bone underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:decoration-bone md:inline"
-          >
-            Email
-          </a>
           <GarageLauncher className="opacity-60" />
           <button
             ref={menuButton}
