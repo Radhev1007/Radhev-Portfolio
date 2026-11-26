@@ -39,7 +39,7 @@ export function Contact() {
           </div>
         </div>
         <ul className="mt-12 grid grid-cols-1 gap-x-5 text-[length:var(--text-ui)] leading-[1.7] sm:grid-cols-2">
-          {[{ label: "Get in Touch", href: `mailto:${site.email}`, external: false }, ...links.map((l) => ({ ...l, external: true }))].map(
+          {[{ label: "Let's Talk", href: "tel:+918089821700", external: false }, ...links.map((l) => ({ ...l, external: true }))].map(
             (l) => (
               <li key={l.label} className="border-t border-line">
                 <a
