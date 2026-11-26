@@ -11,7 +11,7 @@ const profiles = site.socials.filter((s) => s.label === "Behance" || s.label ===
 /**
  * Selected work: the section label, headline and intro and the profile pills in a left column that stays in view (from desktop up); the projects stacked in the
  * wide column beside it, each a cover with its title, description, details, tags and links underneath.
- * Hovering a cover brings up a round "View Project" mark. All text uses the site's existing type styles.
+ * All text uses the site's existing type styles.
  */
 export function Projects() {
   return (
@@ -63,17 +63,8 @@ function ProjectCard({ p, first }: { p: Project; first: boolean }) {
   return (
     <Reveal>
       <article>
-        <Link href={workPath(p)} aria-label={`Read the case study: ${p.title}`} className="group/card relative block">
+        <Link href={workPath(p)} aria-label={`Read the case study: ${p.title}`} className="block">
           <ProjectImage src={p.image ?? ""} alt={p.imageAlt ?? p.title} priority={first} />
-          {/* the round mark that comes up over the cover on hover (mouse and keyboard focus) */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-1/2 z-10 grid size-28 -translate-x-1/2 -translate-y-1/2 scale-50 place-items-center rounded-full bg-bone text-center text-[length:var(--text-ui)] leading-[1.3] text-ink opacity-0 transition-[opacity,scale] duration-500 ease-[var(--ease-out-expo)] group-hover/card:scale-100 group-hover/card:opacity-100 group-focus-visible/card:scale-100 group-focus-visible/card:opacity-100 motion-reduce:transition-none"
-          >
-            View
-            <br />
-            Project
-          </span>
         </Link>
         <div className="mt-7 flex flex-col gap-2 text-[length:var(--text-ui)] leading-[1.7]">
           <div className="flex items-start justify-between gap-5">
