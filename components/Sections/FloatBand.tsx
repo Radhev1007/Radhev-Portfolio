@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import ScrollFloat from "@/components/ScrollFloat/ScrollFloat";
+import StarBorder from "@/components/StarBorder/StarBorder";
 
 /** WebGPU runs in the browser only, so the galaxy is never rendered on the server. */
 const SpiralGalaxy = dynamic(() => import("@/components/SpiralGalaxy/SpiralGalaxy").then((m) => m.SpiralGalaxy), {
@@ -10,6 +11,7 @@ const SpiralGalaxy = dynamic(() => import("@/components/SpiralGalaxy/SpiralGalax
 });
 
 const LINE = "Let's work together";
+const PHONE = "tel:+918089821700";
 
 /**
  * The display line before the contact section, written in stars: vgpu's Spiral Galaxy example with its stars
@@ -52,6 +54,22 @@ export function FloatBand() {
           heading={<h2 className="sr-only">{LINE}</h2>}
           fallback={<Fallback />}
         />
+      </div>
+      {/* the call to action under the starry line, the same star-bordered pill as the hero's buttons */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-[14%] z-10 flex justify-center lg:bottom-[18%]">
+        <StarBorder
+          as="a"
+          href={PHONE}
+          radius={999}
+          color="var(--color-bone)"
+          backgroundColor="var(--color-ink)"
+          textColor="var(--color-bone)"
+          borderColor="var(--color-line-strong)"
+          className="group pointer-events-auto h-11 gap-2.5 !px-6 !py-0 text-[length:var(--text-ui)] !leading-none"
+        >
+          Let&apos;s Talk
+          <span aria-hidden className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">↗</span>
+        </StarBorder>
       </div>
     </div>
   );

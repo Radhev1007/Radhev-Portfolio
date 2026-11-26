@@ -19,8 +19,7 @@ export function Projects() {
       <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-14 py-20 lg:grid-cols-[28.5%_1fr] lg:py-24">
         <div className="lg:sticky lg:top-[calc(67px+40px)] lg:self-start lg:pr-8">
           <Reveal>
-            <h2 id="work-title" className="label flex items-center gap-4">
-              <span aria-hidden className="h-px w-12 bg-line-strong" />
+            <h2 id="work-title" className="label">
               {workSection.label}
             </h2>
             <div className="mt-8">

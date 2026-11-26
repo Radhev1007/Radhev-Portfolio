@@ -2,9 +2,9 @@ import { Reveal } from "@/components/Animations/Reveal";
 import Magnet from "@/components/Magnet/Magnet";
 import { TextReveal } from "@/components/Animations/TextReveal";
 import { Ext } from "@/components/Section/Section";
-import { linkClass as cta } from "@/components/Section/Parts";
 import { site } from "@/lib/content";
 import { Portrait } from "@/components/Sections/Portrait";
+import StarBorder from "@/components/StarBorder/StarBorder";
 import { SocialLinks } from "./SocialLinks";
 import { ToolStrip } from "./ToolStrip";
 
@@ -13,6 +13,19 @@ import { ToolStrip } from "./ToolStrip";
  * figures in the wide column, then the tools I work in. From desktop up it fills the viewport, and the portrait
  * and the tool strip both sit on its bottom edge.
  */
+/** The hero's two calls to action: React Bits' StarBorder pills, a star running round a hairline on black. */
+const btn = "group h-11 gap-2.5 !px-6 !py-0 text-[length:var(--text-ui)] !leading-none";
+const star = {
+  radius: 999,
+  color: "var(--color-bone)",
+  backgroundColor: "var(--color-ink)",
+  textColor: "var(--color-bone)",
+  borderColor: "var(--color-line-strong)",
+  duration: 4,
+  glow: 0.6,
+  hover: "lap",
+} as const;
+
 export function Hero() {
   return (
     <section
@@ -52,17 +65,19 @@ export function Hero() {
                 </div>
               ))}
             </dl>
-            <div className="mt-12 flex flex-wrap gap-x-8 gap-y-4 lg:mt-10 text-[length:var(--text-ui)] leading-[1.7]">
+            <div className="mt-12 flex flex-wrap gap-3 lg:mt-10">
               <Magnet padding={100} magnetStrength={2}>
-                <a href={`#${site.heroCtas.primary.target}`} className={cta}>
+                <StarBorder as="a" href={`#${site.heroCtas.primary.target}`} {...star} className={btn}>
                   {site.heroCtas.primary.label}
-                </a>
+                  <span aria-hidden className="transition-transform duration-300 group-hover:translate-y-0.5">↓</span>
+                </StarBorder>
               </Magnet>
               <Magnet padding={100} magnetStrength={2}>
-                <a href={site.resume} target="_blank" rel="noreferrer" className={cta}>
+                <StarBorder as="a" href={site.resume} target="_blank" rel="noreferrer" {...star} direction="counterclockwise" className={btn}>
                   Download Resume
+                  <span aria-hidden className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">↗</span>
                   <Ext />
-                </a>
+                </StarBorder>
               </Magnet>
             </div>
           </Reveal>

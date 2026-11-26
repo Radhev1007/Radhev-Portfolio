@@ -1,6 +1,7 @@
 "use client";
 
 import { useScrollTo } from "@/components/Providers/SmoothScroll";
+import SlingButton from "@/components/SlingButton/SlingButton";
 import { footerNav, site } from "@/lib/content";
 
 const link = "text-soft transition-colors duration-300 hover:text-bone focus-visible:text-bone";
@@ -59,19 +60,27 @@ export function Footer() {
           </div>
         </div>
       </div>
-      <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-3 border-t border-line py-8 lg:gap-y-1 lg:py-6 text-[length:var(--text-ui)] leading-[1.7] text-mute lg:grid-cols-[28.5%_1fr_auto]">
+      <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-3 py-8 lg:items-center lg:gap-y-1 lg:py-6 text-[length:var(--text-ui)] leading-[1.7] text-mute lg:grid-cols-[28.5%_1fr]">
         <p>&copy; {new Date().getFullYear()} {site.brand}. All rights reserved.</p>
-        <p>Designed and Developed by Radhev</p>
-        <button
-          type="button"
-          onClick={() => {
-            scrollTo("home");
-            history.replaceState(null, "", window.location.pathname);
-          }}
-          className="text-left text-bone transition-colors duration-300 hover:text-soft"
-        >
-          Back to top <span aria-hidden>↑</span>
-        </button>
+        {/* back to the top: React Bits' SlingButton. Tap it, or pull it back and let go. */}
+        <div className="flex items-center gap-4 lg:justify-end">
+          <span aria-hidden className="text-bone">
+            Back to top
+          </span>
+          <SlingButton
+            onSend={() => {
+              scrollTo("home");
+              history.replaceState(null, "", window.location.pathname);
+            }}
+            ariaLabel="Back to top"
+            padColor="var(--color-bone)"
+            iconColor="var(--color-ink)"
+            accentColor="var(--color-bone)"
+            wellColor="var(--color-ink-3)"
+            bandColor="var(--color-line-strong)"
+            size={44}
+          />
+        </div>
       </div>
     </footer>
   );

@@ -119,18 +119,15 @@ function RcIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
+      {/* a simple line truck: one body outline over two wheels */}
       <g className="origin-bottom [transform-box:fill-box] group-hover:animate-[rock_0.6s_ease-in-out_infinite]">
-        <path d="M4.5 11.2 6.2 7.4H11.6L13.6 3.4H21.2L23 7.4H26.6Q28 7.4 28 8.8V11.2Z" strokeWidth="1.5" />
-        <rect x="14.6" y="4.9" width="5.4" height="2.5" rx="0.5" strokeWidth="1.1" />
-        <path d="M15.2 1.6H21" strokeWidth="1.4" />
+        <path
+          d="M5.5 11.5H4.5Q3.5 11.5 3.5 10.5V8.6Q3.5 7.6 4.5 7.6H12.2L13.9 4.3Q14.3 3.5 15.2 3.5H19.6Q20.5 3.5 20.9 4.3L22.6 7.6H27.5Q28.5 7.6 28.5 8.6V10.5Q28.5 11.5 27.5 11.5H26.5M12 11.5H20"
+          strokeWidth="1.5"
+        />
       </g>
-      <path d="M8.4 11.2 7.6 15.2M23.6 11.2 24.4 15.2" strokeWidth="1.3" />
-      {[7.6, 24.4].map((cx) => (
-        <g key={cx}>
-          <circle cx={cx} cy="16.6" r="4.2" strokeWidth="1.5" />
-          <circle cx={cx} cy="16.6" r="5.2" strokeWidth="1.1" strokeDasharray="1.3 1.4" />
-          <circle cx={cx} cy="16.6" r="1.3" fill="currentColor" stroke="none" />
-        </g>
+      {[8.75, 23.25].map((cx) => (
+        <circle key={cx} cx={cx} cy="16" r="3.75" strokeWidth="1.5" />
       ))}
     </svg>
   );
