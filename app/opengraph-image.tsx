@@ -31,8 +31,9 @@ export default function Image() {
           <div style={{ display: "flex", maxWidth: 960, fontSize: 40, lineHeight: 1.2, letterSpacing: -1, color: DIM }}>{tagline}</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontSize: 26, color: DIM }}>
-          <div style={{ display: "flex", maxWidth: 760, lineHeight: 1.4 }}>Enterprise SaaS · Government platforms · Dashboards · Fintech · Design systems</div>
-          <div style={{ display: "flex", color: BONE, letterSpacing: 3, textTransform: "uppercase", fontSize: 21, whiteSpace: "nowrap" }}>{site.role}</div>
+          {/* the tags take what is left beside the role, so the role keeps to the same right margin as the url above */}
+          <div style={{ display: "flex", flex: 1, minWidth: 0, maxWidth: 520, marginRight: 40, lineHeight: 1.4 }}>Enterprise SaaS · Government platforms · Dashboards · Fintech · Design systems</div>
+          <div style={{ display: "flex", flexShrink: 0, color: BONE, letterSpacing: 3, textTransform: "uppercase", fontSize: 21, whiteSpace: "nowrap" }}>{site.role}</div>
         </div>
       </div>
     ),
