@@ -246,7 +246,7 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
       style={sideways}
       role="dialog"
       aria-modal="true"
-      aria-label="RC Crawler game"
+      aria-label="RC Crawling game"
     >
       {!ready && (
         <div className="absolute inset-0 grid place-items-center text-white">
@@ -259,7 +259,7 @@ function GameFrame({ src, onExit }: { src: string; onExit: () => void }) {
       <iframe
         ref={frame}
         src={src}
-        title="RC Crawler — drive the SCX30"
+        title="RC Crawling — drive the SCX30"
         allow="fullscreen; gamepad; autoplay; microphone; clipboard-write"
         className="absolute inset-0 size-full border-0"
         onLoad={() => {
