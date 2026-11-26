@@ -40,16 +40,10 @@ export function Hero() {
             className="text-[clamp(2rem,4vw,3.5rem)] leading-[1.04] tracking-[-0.04em] text-bone"
           />
           <Reveal delay={0.35}>
-            <p className="mt-4 max-w-[30ch] text-[clamp(1.375rem,2.4vw,2.25rem)] leading-[1.18] tracking-[-0.03em] text-soft lg:mt-5">
-              {site.heroTitle.tagline}
+            {/* one description: the designer line and the intro, together at the paragraph size */}
+            <p className="mt-5 max-w-[56ch] text-[length:var(--text-ui)] leading-[1.7] text-mute lg:mt-6">
+              {[site.heroTitle.tagline, ...site.intro].join(" ")}
             </p>
-          </Reveal>
-          <Reveal delay={0.5}>
-            <div className="mt-7 flex max-w-[56ch] flex-col gap-5 lg:mt-6 lg:gap-4 text-[length:var(--text-ui)] leading-[1.7] text-mute">
-              {site.intro.map((p) => (
-                <p key={p}>{p}</p>
-              ))}
-            </div>
             <dl className="mt-14 grid max-w-[640px] lg:mt-12 grid-cols-2 gap-x-6 gap-y-8 lg:gap-x-5 lg:gap-y-6 sm:grid-cols-4">
               {site.highlights.map((h) => (
                 <div key={h.value} className="border-t border-line pt-3">
