@@ -1,18 +1,15 @@
 import Link from "next/link";
 import { Reveal } from "@/components/Animations/Reveal";
-import Magnet from "@/components/Magnet/Magnet";
 import { Chip, Ext } from "@/components/Section/Section";
 import { Headline, Lead, linkClass } from "@/components/Section/Parts";
 import { projects, site, workPath, workSection, type Project } from "@/lib/content";
 import { ProjectImage } from "./ProjectImage";
 
-const behance = site.socials.find((s) => s.label === "Behance")!.href;
 /** The profiles shown as pills under the intro, where the rest of the work lives. */
 const profiles = site.socials.filter((s) => s.label === "Behance" || s.label === "Dribbble");
 
 /**
- * Selected work: the section label, headline and intro, the profile pills and a round
- * "View all works" link in a left column that stays in view (from desktop up); the projects stacked in the
+ * Selected work: the section label, headline and intro and the profile pills in a left column that stays in view (from desktop up); the projects stacked in the
  * wide column beside it, each a cover with its title, description, details, tags and links underneath.
  * Hovering a cover brings up a round "View Project" mark. All text uses the site's existing type styles.
  */
@@ -45,28 +42,6 @@ export function Projects() {
                 </li>
               ))}
             </ul>
-            <div aria-hidden className="mt-10 h-px max-w-[560px] bg-line" />
-            <div className="mt-12">
-              <Magnet padding={80} magnetStrength={3}>
-                <a
-                  href={behance}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group grid size-40 place-items-center rounded-full border border-line-strong text-center text-[length:var(--text-ui)] leading-[1.4] text-bone transition-colors duration-500 hover:border-bone hover:bg-bone hover:text-ink focus-visible:border-bone focus-visible:bg-bone focus-visible:text-ink"
-                >
-                  <span>
-                    <span
-                      aria-hidden
-                      className="mb-1 block transition-transform duration-500 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                    >
-                      ↗
-                    </span>
-                    View all works
-                    <Ext />
-                  </span>
-                </a>
-              </Magnet>
-            </div>
           </Reveal>
         </div>
 
