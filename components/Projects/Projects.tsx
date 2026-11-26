@@ -16,8 +16,8 @@ const profiles = site.socials.filter((s) => s.label === "Behance" || s.label ===
 export function Projects() {
   return (
     <section id="work" aria-labelledby="work-title" className="scroll-mt-[67px] border-t border-line">
-      <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-14 py-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-x-[6vw] lg:py-24">
-        <div className="lg:sticky lg:top-[calc(67px+40px)] lg:self-start">
+      <div className="gutter mx-auto grid max-w-[1920px] grid-cols-1 gap-x-5 gap-y-14 py-20 lg:grid-cols-[28.5%_1fr] lg:py-24">
+        <div className="lg:sticky lg:top-[calc(67px+40px)] lg:self-start lg:pr-8">
           <Reveal>
             <h2 id="work-title" className="label flex items-center gap-4">
               <span aria-hidden className="h-px w-12 bg-line-strong" />
