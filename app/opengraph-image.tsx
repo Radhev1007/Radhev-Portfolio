@@ -12,7 +12,7 @@ export const alt = `${fullName} — ${site.role}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const INK = "#000000", BONE = "#ffffff", ACCENT = "#8c8c8c", DIM = "rgba(255,255,255,0.55)";
+const INK = "#000000", BONE = "#ffffff", ACCENT = "#D60203", DIM = "rgba(255,255,255,0.55)";
 
 export default function Image() {
   const { greeting, tagline } = site.heroTitle;
