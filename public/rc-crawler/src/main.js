@@ -15,6 +15,7 @@ import { createCrawler } from './vehicles/crawlerModel.js';
 import { CameraRig, CAM_MODES } from './camera/cameraRig.js';
 import { Environment, PRESETS } from './env/environment.js';
 import { PostFX } from './effects/post.js';
+import { probeDevice, lowerQuality, QUALITY_STEPS } from './core/device.js';
 import { Particles } from './effects/particles.js';
 import { TyreTracks } from './effects/tracks.js';
 import { ContactShadow } from './effects/contactShadow.js';
@@ -48,12 +49,54 @@ settings.parts = { ...STOCK_PARTS, ...(settings.parts || {}), acc: [...(settings
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch { /* ignore */ } };
 const params = new URLSearchParams(location.search);
 const NORENDER = params.has('norender');   // dev/test: simulate and network without drawing (headless test clients)
+// Graphics quality: until the player picks one in Settings, start from what this machine's graphics chip can
+// handle (core/device.js), so a laptop with integrated graphics starts lighter than a gaming PC. Phones keep Low.
+const device = NORENDER ? { ok: true, tier: settings.quality }
+  : params.get('simulate') ? { ok: false, reason: params.get('simulate'), tier: 'low' }   // dev: preview the fallback screen
+  : probeDevice();
+if (settings.qualityAuto !== false && !isTouch) {
+  // never start above a level this machine already had to drop to while driving
+  const Q = QUALITY_STEPS;
+  const cap = settings.autoCap && Q.includes(settings.autoCap) ? settings.autoCap : 'ultra';
+  settings.quality = Q[Math.min(Q.indexOf(device.tier), Q.indexOf(cap))];
+}
 if (params.get('q')) settings.quality = params.get('q');
+
+// When the browser can't draw 3D, or draws it in software, the game would never get past loading (or run at a
+// few frames a second). Say so plainly instead of leaving a blank screen; a software renderer may still try.
+function showUnsupported(reason) {
+  document.getElementById('loading')?.classList.add('hidden');
+  const el = document.createElement('div');
+  el.className = 'overlay unsupported';
+  const software = reason === 'software';
+  el.innerHTML = `<div class="unsupported-box">
+      <h2>${software ? 'Your graphics are running in software' : 'This device can\u2019t run the 3D garage'}</h2>
+      <p>${software
+        ? 'The browser is drawing 3D without the graphics chip, so the game would be very slow. Turning on hardware acceleration in the browser settings usually fixes this.'
+        : 'The game needs WebGL 2, which this browser or device doesn\u2019t provide. Try a recent Chrome, Edge, Firefox or Safari.'}</p>
+      ${software ? '<button type="button" class="unsupported-try">Try anyway</button>' : ''}
+      <p class="unsupported-note">Use \u201cBack to portfolio\u201d to return.</p>
+    </div>`;
+  document.body.appendChild(el);
+  el.querySelector('.unsupported-try')?.addEventListener('click', () => {
+    const u = new URL(location.href); u.searchParams.set('force', '1'); u.searchParams.set('q', 'low'); location.replace(u);
+  });
+}
+if (!device.ok && !params.has('force')) {
+  showUnsupported(device.reason);
+  throw new Error(`RC Crawling: 3D unavailable (${device.reason})`);
+}
 if (params.get('level') && LEVEL_BY_ID[params.get('level')]) settings.level = params.get('level');
 
 // ------------------------------------------------------------ renderer / scene
 const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: params.has('capture') || params.has('dev') });
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: params.has('capture') || params.has('dev') });
+} catch (e) {
+  showUnsupported('nowebgl');
+  throw e;
+}
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
@@ -89,6 +132,9 @@ function adaptResolution(rawDt) {
   rawDt = Math.min(rawDt, 0.25);
   if (rawDt > 1 / 48) { slowFor += rawDt; fastFor = 0; } else if (rawDt < 1 / 57) { fastFor += rawDt; slowFor = 0; } else { slowFor = fastFor = 0; }
   let next = resScale;
+  // already at the lowest resolution and still slow: drop a quality step (shadows, blur, glow) when the quality was
+  // picked for the player rather than by them
+  if (slowFor > 3 && resScale <= 0.6 && settings.qualityAuto !== false && settings.quality !== 'low') { stepQualityDown(); return; }
   if (slowFor > 2 && resScale > 0.6) next = Math.max(0.6, Math.round(resScale * 10 - 1) / 10);
   else if (fastFor > 5 && resScale < 1) next = Math.min(1, Math.round(resScale * 10 + 1) / 10);
   if (next === resScale) return;
@@ -100,6 +146,13 @@ function applyPixelRatio() {
   renderer.setSize(innerWidth, innerHeight, false);
   if (post) { post.composer.setPixelRatio(renderer.getPixelRatio()); post.setSize(innerWidth, innerHeight); }
   particles.setPixelScale(innerHeight * renderer.getPixelRatio());
+}
+function stepQualityDown() {
+  const q = lowerQuality(settings.quality);
+  settings.quality = q; settings.autoCap = q; saveSettings();
+  applyQuality();   // the costly parts (shadow map, post effects, resolution) change at once; the level keeps its detail until the next load
+  document.querySelectorAll('#s-quality button').forEach((b) => b.classList.toggle('on', b.dataset.q === q));
+  ui.toast(`Graphics set to ${q[0].toUpperCase() + q.slice(1)}`, 'For smoother driving. Change it in Settings.');
 }
 function applyQuality() {
   resScale = 1; slowFor = fastFor = 0;
@@ -490,7 +543,7 @@ ui.on('restart', () => { ui.closeMenu(); placeAtSpawn(); tracks.reset(); setStat
 ui.on('title', () => { ui.closeMenu(); placeAtSpawn(); setState('title'); });
 ui.on('hub', () => { ui.closeMenu(); setState('play'); travel('hub'); });
 ui.on('challenge', (id) => { audio.uiClick(); challenges.select(challenges.active?.id === id ? null : id); ui.refreshChallenges(challenges); ui.closeMenu(); setState('play'); });
-ui.on('quality', (q) => { settings.quality = q; saveSettings(); rebuildForQuality(); });
+ui.on('quality', (q) => { settings.quality = q; settings.qualityAuto = false; saveSettings(); rebuildForQuality(); });
 ui.on('volume', (v) => { settings.volume = v; saveSettings(); audio.setMasterVolume(v / 100); });
 ui.on('ambience', (v) => { settings.ambience = v; saveSettings(); audio.setAmbience(v === 'on'); });
 ui.on('dragBrake', (v) => { settings.dragBrake = v; saveSettings(); applyDrivetrain(); });

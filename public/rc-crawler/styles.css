@@ -602,3 +602,11 @@ body:has(#hud.touch-on) .mm:not(.big) .mm-ctl button { width: 22px; height: 22px
 .g-row p { margin: 0; font-size: 12px; color: var(--dim); }
 .inspect-hint { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 30; padding: 9px 16px; border-radius: 20px; background: rgba(10,10,10,.65); border: 1px solid var(--line); font: 500 12px var(--cond); letter-spacing: 1.5px; color: var(--dim); }
 .inspect-hint.hidden { display: none; }
+
+/* shown instead of the game when the browser can't draw 3D, or draws it in software (main.js showUnsupported) */
+.overlay.unsupported { z-index: 40; display: flex; align-items: center; justify-content: center; padding: 24px; background: #0b0a09; }
+.unsupported-box { max-width: 460px; text-align: center; }
+.unsupported-box h2 { margin: 0 0 12px; font: 400 clamp(22px, 3vw, 30px)/1.15 var(--cond); letter-spacing: -0.02em; color: var(--txt); }
+.unsupported-box p { margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,.66); }
+.unsupported-try { margin: 4px 0 18px; padding: 12px 22px; border: 0; border-radius: 6px; background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #1a1406; font: 500 13px var(--cond); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.unsupported-box .unsupported-note { font-size: 12px; color: rgba(255,255,255,.45); }
