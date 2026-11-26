@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { wgslTurbopackRule } from "@vgpu/wgsl/next";
 
 /**
  * Two builds from one codebase.
@@ -23,6 +24,12 @@ const STATIC = process.env.STATIC_EXPORT === "1";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // vgpu: .wgsl imports are prepared at build time into ShaderSource objects (typed in wgsl-env.d.ts)
+  turbopack: {
+    rules: {
+      "*.wgsl": wgslTurbopackRule({ minify: true }),
+    },
+  },
   ...(STATIC
     ? { output: "export" as const, images: { unoptimized: true } }
     : { images: { formats: ["image/avif" as const, "image/webp" as const], qualities: [75, 90] } }),
